@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import ImageUpload from './components/ImageUpload';
 import ResultView from './components/ResultView';
 import WeatherDashboard from './components/WeatherDashboard';
+import SmartFarmingDashboard from './components/SmartFarmingDashboard';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 
 export default function App() {
@@ -99,6 +100,10 @@ export default function App() {
 
         {activeTab === 'weather' && (
           <WeatherDashboard onNavigateToDiagnose={() => setActiveTab('diagnose')} />
+        )}
+
+        {activeTab === 'smart-farming' && (
+          <SmartFarmingDashboard />
         )}
 
         {activeTab === 'dataset' && (

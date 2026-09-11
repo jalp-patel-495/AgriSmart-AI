@@ -1203,3 +1203,388 @@ h1, h2, h3, h4, h5, h6 {
   border-left: 3px solid #f59e0b;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08));
 }
+
+/* ==========================================================================
+   Phase 8 – Smart Irrigation & Crop Recommendation Styles
+   ========================================================================== */
+
+.smart-farming-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.35s ease-out;
+}
+
+.smart-farming-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sub-tab-pills {
+  display: flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.3rem;
+  gap: 0.3rem;
+}
+
+.sub-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.sub-tab-btn:hover {
+  color: #fff;
+}
+
+.sub-tab-btn.active {
+  background: var(--bg-surface-elevated);
+  color: var(--primary-400);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Tab 1: Irrigation Grid Layout */
+.irrigation-view-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .irrigation-view-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* IoT Device Banner & Live Dials */
+.iot-device-banner {
+  background: linear-gradient(145deg, rgba(20, 30, 24, 0.95), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.pulsing-iot-dot {
+  width: 10px;
+  height: 10px;
+  background: #34d399;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #34d399;
+  animation: pulseIot 2s infinite;
+}
+
+@keyframes pulseIot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.scenario-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.scenario-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.scenario-btn:hover {
+  border-color: var(--primary-500);
+  color: #fff;
+}
+
+.scenario-btn.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--primary-500);
+  color: #34d399;
+  font-weight: 700;
+}
+
+.iot-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 680px) {
+  .iot-metrics-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.iot-metric-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.iot-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.iot-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: var(--font-heading);
+  margin: 0.2rem 0;
+}
+
+.iot-sub {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+/* Forms & Inputs */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.select-input, .text-input {
+  width: 100%;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.select-input:focus, .text-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.slider-input {
+  width: 100%;
+  accent-color: var(--primary-500);
+  cursor: pointer;
+}
+
+/* Irrigation Decision Card */
+.irrigation-decision-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.decision-status-banner {
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+}
+
+.status-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+}
+
+.pill-immediate { background: #ef4444; color: #fff; }
+.pill-scheduled { background: #eab308; color: #000; }
+.pill-adequate { background: #22c55e; color: #fff; }
+.pill-waterlogged { background: #3b82f6; color: #fff; }
+
+.execution-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.metric-box {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.metric-highlight {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #34d399;
+  font-family: var(--font-heading);
+  margin: 0.2rem 0;
+}
+
+.metric-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Tab 2: Crop Recommendation Grid */
+.crops-view-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.15fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .crops-view-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nutrient-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.nutrient-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Recommended Crop Cards */
+.recommended-crop-card {
+  transition: var(--transition-smooth);
+}
+
+.recommended-crop-card:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+  transform: translateY(-2px);
+}
+
+.crop-rank-badge {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-400));
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.match-percent-label {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #34d399;
+  font-family: var(--font-heading);
+}
+
+.crop-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.crop-detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.detail-val {
+  font-size: 0.85rem;
+  color: #f3f4f6;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+/* Tab 3: History Tables */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.history-table th {
+  text-align: left;
+  padding: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.history-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+}
+
+.history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+

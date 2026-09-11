@@ -28,6 +28,12 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus }) {
           🌦️ Weather Intelligence
         </button>
         <button
+          className={`nav-btn ${activeTab === 'smart-farming' ? 'active' : ''}`}
+          onClick={() => setActiveTab('smart-farming')}
+        >
+          💧 Smart Farming
+        </button>
+        <button
           className={`nav-btn ${activeTab === 'dataset' ? 'active' : ''}`}
           onClick={() => setActiveTab('dataset')}
         >

@@ -1,0 +1,134 @@
+{
+  "Rice": {
+    "water_need": "High (1200-1500 mm)",
+    "duration_days": "110-150 days",
+    "season": "Kharif (Monsoon)",
+    "soil_pref": "Clayey, heavy alluvial soil with standing water tolerance."
+  },
+  "Maize": {
+    "water_need": "Moderate (500-800 mm)",
+    "duration_days": "90-120 days",
+    "season": "Kharif & Rabi",
+    "soil_pref": "Well-drained deep loamy soil rich in organic matter."
+  },
+  "Chickpea": {
+    "water_need": "Low (300-450 mm)",
+    "duration_days": "90-110 days",
+    "season": "Rabi (Winter)",
+    "soil_pref": "Sandy loam to clay loam, drought resistant."
+  },
+  "Kidneybeans": {
+    "water_need": "Moderate (400-600 mm)",
+    "duration_days": "80-100 days",
+    "season": "Kharif / Spring",
+    "soil_pref": "Light well-drained loams, sensitive to waterlogging."
+  },
+  "Pigeonpeas": {
+    "water_need": "Moderate (600-800 mm)",
+    "duration_days": "150-180 days",
+    "season": "Kharif",
+    "soil_pref": "Deep permeable loams, deep taproot system."
+  },
+  "Mothbeans": {
+    "water_need": "Very Low (250-400 mm)",
+    "duration_days": "75-90 days",
+    "season": "Kharif (Arid)",
+    "soil_pref": "Light sandy to loamy soils, highly drought resilient."
+  },
+  "Mungbean": {
+    "water_need": "Low (350-500 mm)",
+    "duration_days": "65-75 days",
+    "season": "Summer / Kharif",
+    "soil_pref": "Loam to sandy loam with good internal drainage."
+  },
+  "Blackgram": {
+    "water_need": "Low to Moderate (400-600 mm)",
+    "duration_days": "70-90 days",
+    "season": "Kharif",
+    "soil_pref": "Heavy clay loam or black cotton soil."
+  },
+  "Lentil": {
+    "water_need": "Low (300-450 mm)",
+    "duration_days": "110-130 days",
+    "season": "Rabi (Winter)",
+    "soil_pref": "Alluvial, light loams to moderate clay soils."
+  },
+  "Pomegranate": {
+    "water_need": "Moderate (600-900 mm)",
+    "duration_days": "Perennial Orchard",
+    "season": "Year-round",
+    "soil_pref": "Deep loamy to gravelly soil with pH 6.0-7.5."
+  },
+  "Banana": {
+    "water_need": "High (1500-2200 mm)",
+    "duration_days": "11-13 months",
+    "season": "Perennial",
+    "soil_pref": "Rich fertile alluvial loam with high potassium."
+  },
+  "Mango": {
+    "water_need": "Moderate (700-1100 mm)",
+    "duration_days": "Perennial Orchard",
+    "season": "Summer harvest",
+    "soil_pref": "Deep alluvial and red loamy soil, good drainage."
+  },
+  "Grapes": {
+    "water_need": "Moderate (500-750 mm)",
+    "duration_days": "Perennial Vine",
+    "season": "Spring harvest",
+    "soil_pref": "Well-drained gravelly loam, sensitive to salinity."
+  },
+  "Watermelon": {
+    "water_need": "Moderate (400-600 mm)",
+    "duration_days": "80-100 days",
+    "season": "Zaid (Summer)",
+    "soil_pref": "Sandy loam, warms quickly in sunlight."
+  },
+  "Muskmelon": {
+    "water_need": "Moderate (400-550 mm)",
+    "duration_days": "75-90 days",
+    "season": "Zaid (Summer)",
+    "soil_pref": "Sandy to sandy loam, neutral to slightly alkaline."
+  },
+  "Apple": {
+    "water_need": "Moderate (700-1000 mm)",
+    "duration_days": "Perennial Orchard",
+    "season": "Autumn harvest",
+    "soil_pref": "Deep well-drained loam with chill requirement."
+  },
+  "Orange": {
+    "water_need": "Moderate (800-1200 mm)",
+    "duration_days": "Perennial Orchard",
+    "season": "Winter / Spring",
+    "soil_pref": "Light loamy to medium textured soil, no hardpan."
+  },
+  "Papaya": {
+    "water_need": "High (1200-1600 mm)",
+    "duration_days": "10-12 months",
+    "season": "Perennial",
+    "soil_pref": "Rich porous loam, zero tolerance for standing water."
+  },
+  "Coconut": {
+    "water_need": "High (1300-2000 mm)",
+    "duration_days": "Perennial Palm",
+    "season": "Year-round",
+    "soil_pref": "Coastal sandy loams, alluvial and red loams."
+  },
+  "Cotton": {
+    "water_need": "Moderate to High (700-1100 mm)",
+    "duration_days": "150-180 days",
+    "season": "Kharif",
+    "soil_pref": "Deep black cotton soil (Vertisols) with moisture retention."
+  },
+  "Jute": {
+    "water_need": "High (1200-1600 mm)",
+    "duration_days": "120-140 days",
+    "season": "Early Kharif",
+    "soil_pref": "Rich alluvial silt deposits along river basins."
+  },
+  "Coffee": {
+    "water_need": "High (1400-2000 mm)",
+    "duration_days": "Perennial Shade",
+    "season": "Winter harvest",
+    "soil_pref": "Fertile volcanic or humus-rich loam on slope terrain."
+  }
+}
