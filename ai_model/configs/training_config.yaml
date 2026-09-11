@@ -1,0 +1,32 @@
+# AgriSmart AI – Model Training Configuration
+project_name: "AgriSmart-AI"
+version: "1.0.0"
+
+dataset:
+  train_manifest: "dataset/splits/train.csv"
+  val_manifest: "dataset/splits/val.csv"
+  test_manifest: "dataset/splits/test.csv"
+  classes_file: "dataset/classes.json"
+  img_size: 224
+  num_classes: 13
+
+model:
+  architecture: "efficientnet_b0" # Options: resnet50, efficientnet_b0, mobilenet_v3
+  pretrained: true
+  dropout_rate: 0.3
+
+training:
+  batch_size: 32
+  epochs: 25
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  lr_scheduler: "cosine_annealing"
+  early_stopping_patience: 5
+
+augmentation:
+  horizontal_flip_prob: 0.5
+  vertical_flip_prob: 0.3
+  rotation_degrees: 30
+  color_jitter: 0.15
+  noise_prob: 0.25

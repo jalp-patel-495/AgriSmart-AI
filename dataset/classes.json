@@ -1,0 +1,134 @@
+{
+  "classes": [
+    {
+      "id": 0,
+      "name": "Apple___Apple_scab",
+      "crop": "Apple",
+      "disease": "Apple Scab",
+      "status": "Diseased",
+      "pathogen": "Venturia inaequalis (Fungus)",
+      "symptoms": "Dull olive-green or brown velvety spots on leaves, puckered surfaces, premature leaf drop.",
+      "treatment": "Apply sulfur or copper-based fungicide sprays during early bud break. Rake and dispose of fallen infected leaves."
+    },
+    {
+      "id": 1,
+      "name": "Apple___Black_rot",
+      "crop": "Apple",
+      "disease": "Black Rot",
+      "status": "Diseased",
+      "pathogen": "Botryosphaeria obtusa (Fungus)",
+      "symptoms": "Frog-eye circular leaf spots with purple margins and tan centers, black rotting mummified fruit.",
+      "treatment": "Prune out dead wood and fire-blight strikes. Apply captan or mancozeb fungicides as recommended."
+    },
+    {
+      "id": 2,
+      "name": "Apple___healthy",
+      "crop": "Apple",
+      "disease": "None (Healthy)",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Vibrant green leaves, unblemished smooth surface, robust foliage.",
+      "treatment": "Maintain balanced fertilization, regular irrigation, and periodic pest monitoring."
+    },
+    {
+      "id": 3,
+      "name": "Corn___Common_rust",
+      "crop": "Corn",
+      "disease": "Common Rust",
+      "status": "Diseased",
+      "pathogen": "Puccinia sorghi (Fungus)",
+      "symptoms": "Cinnamon-brown oval to elongate powdery pustules scattered over upper and lower leaf surfaces.",
+      "treatment": "Plant resistant corn hybrids. Apply foliar triazole or strobilurin fungicides if infection develops early."
+    },
+    {
+      "id": 4,
+      "name": "Corn___Northern_Leaf_Blight",
+      "crop": "Corn",
+      "disease": "Northern Leaf Blight",
+      "status": "Diseased",
+      "pathogen": "Exserohilum turcicum (Fungus)",
+      "symptoms": "Long, elliptical grayish-green or tan lesions (cigar-shaped) expanding parallel to leaf veins.",
+      "treatment": "Utilize crop rotation with non-host crops, till residue, and use fungicide treatments at first onset."
+    },
+    {
+      "id": 5,
+      "name": "Corn___healthy",
+      "crop": "Corn",
+      "disease": "None (Healthy)",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Uniform deep green color, intact leaf margins, no fungal pustules or discoloration.",
+      "treatment": "Ensure adequate nitrogen supply, monitor soil moisture, and scout regularly for root pests."
+    },
+    {
+      "id": 6,
+      "name": "Potato___Early_blight",
+      "crop": "Potato",
+      "disease": "Early Blight",
+      "status": "Diseased",
+      "pathogen": "Alternaria solani (Fungus)",
+      "symptoms": "Concentric rings producing a 'target board' effect surrounded by yellow chlorotic halos on mature leaves.",
+      "treatment": "Apply chlorothalonil or copper-based sprays every 7-10 days. Ensure drip irrigation to minimize leaf wetness."
+    },
+    {
+      "id": 7,
+      "name": "Potato___Late_blight",
+      "crop": "Potato",
+      "disease": "Late Blight",
+      "status": "Diseased",
+      "pathogen": "Phytophthora infestans (Oomycete)",
+      "symptoms": "Water-soaked dark lesions that rapidly expand and turn brown/black with white fuzzy growth underneath.",
+      "treatment": "Eliminate cull piles, use certified disease-free seed tubers, and treat with metalaxyl/cymoxanil formulations."
+    },
+    {
+      "id": 8,
+      "name": "Potato___healthy",
+      "crop": "Potato",
+      "disease": "None (Healthy)",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Healthy dark-green compound leaves, vigorous canopy without necrotic patches.",
+      "treatment": "Keep well-hilled soil, rotate crops on a 3-year cycle, and manage soil moisture levels."
+    },
+    {
+      "id": 9,
+      "name": "Tomato___Bacterial_spot",
+      "crop": "Tomato",
+      "disease": "Bacterial Spot",
+      "status": "Diseased",
+      "pathogen": "Xanthomonas perforans (Bacteria)",
+      "symptoms": "Small, water-soaked, dark brown circular lesions with greasy appearance and yellow borders.",
+      "treatment": "Spray fixed copper mixed with mancozeb. Avoid overhead watering and avoid handling wet plants."
+    },
+    {
+      "id": 10,
+      "name": "Tomato___Early_blight",
+      "crop": "Tomato",
+      "disease": "Early Blight",
+      "status": "Diseased",
+      "pathogen": "Alternaria solani (Fungus)",
+      "symptoms": "Dark brown concentric target-like rings on lower leaves, progressive yellowing and defoliation.",
+      "treatment": "Mulch soil around plants, prune bottom 12 inches of foliage, and apply bio-fungicide Bacillus subtilis or copper."
+    },
+    {
+      "id": 11,
+      "name": "Tomato___Late_blight",
+      "crop": "Tomato",
+      "disease": "Late Blight",
+      "status": "Diseased",
+      "pathogen": "Phytophthora infestans (Oomycete)",
+      "symptoms": "Large, irregular greasy brown blotches on foliage, stems collapse rapidly in humid wet conditions.",
+      "treatment": "Remove and incinerate severely infected plants immediately. Apply protective copper soap sprays preventative."
+    },
+    {
+      "id": 12,
+      "name": "Tomato___healthy",
+      "crop": "Tomato",
+      "disease": "None (Healthy)",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Lush emerald-green leaves, crisp leaflets, strong stems with no leaf spots or curling.",
+      "treatment": "Maintain optimal staking, consistent drip hydration, calcium-rich soil, and regular scouting."
+    }
+  ]
+}
