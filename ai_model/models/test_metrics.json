@@ -1,0 +1,24 @@
+{
+  "architecture": "efficientnet_b0",
+  "checkpoint_epoch": 2,
+  "test_samples": 39,
+  "accuracy": 0.5385,
+  "macro_precision": 0.4679,
+  "macro_recall": 0.5385,
+  "macro_f1": 0.459,
+  "classes": [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___healthy",
+    "Corn___Common_rust",
+    "Corn___Northern_Leaf_Blight",
+    "Corn___healthy",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___healthy"
+  ]
+}
