@@ -1,0 +1,27 @@
+{
+  "baseline_clean": {
+    "accuracy": 53.85,
+    "macro_precision": 46.79,
+    "macro_recall": 53.85,
+    "macro_f1": 45.9
+  },
+  "baseline_field_perturbed": {
+    "accuracy": 38.46,
+    "macro_precision": 37.29,
+    "macro_recall": 38.46,
+    "macro_f1": 32.24
+  },
+  "robust_clean": {
+    "accuracy": 51.28,
+    "macro_precision": 38.72,
+    "macro_recall": 51.28,
+    "macro_f1": 42.11
+  },
+  "robust_field_perturbed": {
+    "accuracy": 48.72,
+    "macro_precision": 42.18,
+    "macro_recall": 48.72,
+    "macro_f1": 44.51
+  },
+  "field_f1_delta": 12.27
+}

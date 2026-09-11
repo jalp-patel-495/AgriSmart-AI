@@ -1,0 +1,282 @@
+{
+  "architecture": "efficientnet_b0",
+  "total_test_samples": 39,
+  "correct_predictions": 21,
+  "total_errors": 18,
+  "test_error_rate": 0.4615,
+  "top_confusion_pairs": [
+    {
+      "pair": "Tomato___Late_blight -> Potato___Late_blight",
+      "count": 3
+    },
+    {
+      "pair": "Apple___Apple_scab -> Apple___Black_rot",
+      "count": 3
+    },
+    {
+      "pair": "Potato___Early_blight -> Potato___Late_blight",
+      "count": 2
+    },
+    {
+      "pair": "Tomato___healthy -> Apple___healthy",
+      "count": 2
+    },
+    {
+      "pair": "Tomato___Early_blight -> Potato___Late_blight",
+      "count": 2
+    },
+    {
+      "pair": "Corn___Northern_Leaf_Blight -> Potato___Late_blight",
+      "count": 2
+    },
+    {
+      "pair": "Potato___healthy -> Tomato___healthy",
+      "count": 2
+    },
+    {
+      "pair": "Potato___healthy -> Apple___healthy",
+      "count": 1
+    }
+  ],
+  "key_findings": [
+    "Blight lesion similarity: Early Blight and Late Blight share dark concentric markings that confuse standard classifiers under uniform scaling.",
+    "Color hue sensitivity: Changes in green leaf pigmentation shift predictions between healthy and diseased states.",
+    "Need for occlusion robustness: Small shadows or single-lesion focus can dominate predictions without multi-scale feature regularization."
+  ],
+  "detailed_errors": [
+    {
+      "sample_index": 19,
+      "filename": "Potato___Early_blight_sample_006.jpg",
+      "processed_path": "processed\\test\\Potato___Early_blight\\Potato___Early_blight_sample_006.jpg",
+      "crop": "Potato",
+      "ground_truth_class": "Potato___Early_blight",
+      "ground_truth_id": 6,
+      "ground_truth_prob": 0.1095,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.2572,
+      "confidence_margin": 0.1478
+    },
+    {
+      "sample_index": 33,
+      "filename": "Tomato___healthy_sample_007.jpg",
+      "processed_path": "processed\\test\\Tomato___healthy\\Tomato___healthy_sample_007.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___healthy",
+      "ground_truth_id": 12,
+      "ground_truth_prob": 0.1356,
+      "predicted_class": "Apple___healthy",
+      "predicted_id": 2,
+      "predicted_confidence": 0.2531,
+      "confidence_margin": 0.1175
+    },
+    {
+      "sample_index": 31,
+      "filename": "Tomato___Early_blight_sample_009.jpg",
+      "processed_path": "processed\\test\\Tomato___Early_blight\\Tomato___Early_blight_sample_009.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Early_blight",
+      "ground_truth_id": 10,
+      "ground_truth_prob": 0.0446,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.2134,
+      "confidence_margin": 0.1687
+    },
+    {
+      "sample_index": 23,
+      "filename": "Potato___healthy_sample_012.jpg",
+      "processed_path": "processed\\test\\Potato___healthy\\Potato___healthy_sample_012.jpg",
+      "crop": "Potato",
+      "ground_truth_class": "Potato___healthy",
+      "ground_truth_id": 8,
+      "ground_truth_prob": 0.1517,
+      "predicted_class": "Apple___healthy",
+      "predicted_id": 2,
+      "predicted_confidence": 0.2124,
+      "confidence_margin": 0.0608
+    },
+    {
+      "sample_index": 16,
+      "filename": "Corn___Northern_Leaf_Blight_sample_004.jpg",
+      "processed_path": "processed\\test\\Corn___Northern_Leaf_Blight\\Corn___Northern_Leaf_Blight_sample_004.jpg",
+      "crop": "Corn",
+      "ground_truth_class": "Corn___Northern_Leaf_Blight",
+      "ground_truth_id": 4,
+      "ground_truth_prob": 0.1534,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.2029,
+      "confidence_margin": 0.0495
+    },
+    {
+      "sample_index": 37,
+      "filename": "Tomato___Late_blight_sample_003.jpg",
+      "processed_path": "processed\\test\\Tomato___Late_blight\\Tomato___Late_blight_sample_003.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Late_blight",
+      "ground_truth_id": 11,
+      "ground_truth_prob": 0.1396,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1906,
+      "confidence_margin": 0.0511
+    },
+    {
+      "sample_index": 38,
+      "filename": "Tomato___Late_blight_sample_012.jpg",
+      "processed_path": "processed\\test\\Tomato___Late_blight\\Tomato___Late_blight_sample_012.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Late_blight",
+      "ground_truth_id": 11,
+      "ground_truth_prob": 0.1115,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1855,
+      "confidence_margin": 0.074
+    },
+    {
+      "sample_index": 32,
+      "filename": "Tomato___Early_blight_sample_012.jpg",
+      "processed_path": "processed\\test\\Tomato___Early_blight\\Tomato___Early_blight_sample_012.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Early_blight",
+      "ground_truth_id": 10,
+      "ground_truth_prob": 0.0619,
+      "predicted_class": "Potato___Early_blight",
+      "predicted_id": 6,
+      "predicted_confidence": 0.1835,
+      "confidence_margin": 0.1216
+    },
+    {
+      "sample_index": 18,
+      "filename": "Potato___Early_blight_sample_004.jpg",
+      "processed_path": "processed\\test\\Potato___Early_blight\\Potato___Early_blight_sample_004.jpg",
+      "crop": "Potato",
+      "ground_truth_class": "Potato___Early_blight",
+      "ground_truth_id": 6,
+      "ground_truth_prob": 0.1275,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1834,
+      "confidence_margin": 0.0558
+    },
+    {
+      "sample_index": 22,
+      "filename": "Potato___healthy_sample_009.jpg",
+      "processed_path": "processed\\test\\Potato___healthy\\Potato___healthy_sample_009.jpg",
+      "crop": "Potato",
+      "ground_truth_class": "Potato___healthy",
+      "ground_truth_id": 8,
+      "ground_truth_prob": 0.1258,
+      "predicted_class": "Tomato___healthy",
+      "predicted_id": 12,
+      "predicted_confidence": 0.1834,
+      "confidence_margin": 0.0576
+    },
+    {
+      "sample_index": 35,
+      "filename": "Tomato___healthy_sample_011.jpg",
+      "processed_path": "processed\\test\\Tomato___healthy\\Tomato___healthy_sample_011.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___healthy",
+      "ground_truth_id": 12,
+      "ground_truth_prob": 0.1317,
+      "predicted_class": "Apple___healthy",
+      "predicted_id": 2,
+      "predicted_confidence": 0.1805,
+      "confidence_margin": 0.0488
+    },
+    {
+      "sample_index": 21,
+      "filename": "Potato___healthy_sample_001.jpg",
+      "processed_path": "processed\\test\\Potato___healthy\\Potato___healthy_sample_001.jpg",
+      "crop": "Potato",
+      "ground_truth_class": "Potato___healthy",
+      "ground_truth_id": 8,
+      "ground_truth_prob": 0.1304,
+      "predicted_class": "Tomato___healthy",
+      "predicted_id": 12,
+      "predicted_confidence": 0.1634,
+      "confidence_margin": 0.033
+    },
+    {
+      "sample_index": 30,
+      "filename": "Tomato___Early_blight_sample_007.jpg",
+      "processed_path": "processed\\test\\Tomato___Early_blight\\Tomato___Early_blight_sample_007.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Early_blight",
+      "ground_truth_id": 10,
+      "ground_truth_prob": 0.0531,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1603,
+      "confidence_margin": 0.1073
+    },
+    {
+      "sample_index": 36,
+      "filename": "Tomato___Late_blight_sample_001.jpg",
+      "processed_path": "processed\\test\\Tomato___Late_blight\\Tomato___Late_blight_sample_001.jpg",
+      "crop": "Tomato",
+      "ground_truth_class": "Tomato___Late_blight",
+      "ground_truth_id": 11,
+      "ground_truth_prob": 0.1473,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1545,
+      "confidence_margin": 0.0072
+    },
+    {
+      "sample_index": 17,
+      "filename": "Corn___Northern_Leaf_Blight_sample_009.jpg",
+      "processed_path": "processed\\test\\Corn___Northern_Leaf_Blight\\Corn___Northern_Leaf_Blight_sample_009.jpg",
+      "crop": "Corn",
+      "ground_truth_class": "Corn___Northern_Leaf_Blight",
+      "ground_truth_id": 4,
+      "ground_truth_prob": 0.1478,
+      "predicted_class": "Potato___Late_blight",
+      "predicted_id": 7,
+      "predicted_confidence": 0.1491,
+      "confidence_margin": 0.0014
+    },
+    {
+      "sample_index": 1,
+      "filename": "Apple___Apple_scab_sample_007.jpg",
+      "processed_path": "processed\\test\\Apple___Apple_scab\\Apple___Apple_scab_sample_007.jpg",
+      "crop": "Apple",
+      "ground_truth_class": "Apple___Apple_scab",
+      "ground_truth_id": 0,
+      "ground_truth_prob": 0.0944,
+      "predicted_class": "Apple___Black_rot",
+      "predicted_id": 1,
+      "predicted_confidence": 0.1453,
+      "confidence_margin": 0.0508
+    },
+    {
+      "sample_index": 0,
+      "filename": "Apple___Apple_scab_sample_004.jpg",
+      "processed_path": "processed\\test\\Apple___Apple_scab\\Apple___Apple_scab_sample_004.jpg",
+      "crop": "Apple",
+      "ground_truth_class": "Apple___Apple_scab",
+      "ground_truth_id": 0,
+      "ground_truth_prob": 0.0793,
+      "predicted_class": "Apple___Black_rot",
+      "predicted_id": 1,
+      "predicted_confidence": 0.1356,
+      "confidence_margin": 0.0563
+    },
+    {
+      "sample_index": 2,
+      "filename": "Apple___Apple_scab_sample_008.jpg",
+      "processed_path": "processed\\test\\Apple___Apple_scab\\Apple___Apple_scab_sample_008.jpg",
+      "crop": "Apple",
+      "ground_truth_class": "Apple___Apple_scab",
+      "ground_truth_id": 0,
+      "ground_truth_prob": 0.0734,
+      "predicted_class": "Apple___Black_rot",
+      "predicted_id": 1,
+      "predicted_confidence": 0.1151,
+      "confidence_margin": 0.0417
+    }
+  ]
+}
