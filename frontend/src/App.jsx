@@ -3,12 +3,14 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import ImageUpload from './components/ImageUpload';
 import ResultView from './components/ResultView';
+import { checkBackendHealth, predictCropDisease } from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [backendStatus, setBackendStatus] = useState('checking');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   const [classesData, setClassesData] = useState([]);
 
   // Pre-loaded canonical classes matching dataset/classes.json
@@ -30,76 +32,30 @@ export default function App() {
     ];
     setClassesData(defaultClasses);
 
-    // Attempt backend health check
-    fetch('/api/v1/health')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'healthy') {
-          setBackendStatus('online');
-        }
-      })
-      .catch(() => {
+    // Check backend health via api service
+    checkBackendHealth().then((data) => {
+      if (data && data.status === 'healthy') {
+        setBackendStatus('online');
+      } else {
         setBackendStatus('offline');
-      });
+      }
+    });
   }, []);
 
-  const handleDiagnose = async (file, cropFilter) => {
+  const handleDiagnose = async (file) => {
     setIsAnalyzing(true);
     setResult(null);
+    setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Call FastAPI backend
-      const res = await fetch('/api/v1/predict', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data);
-      } else {
-        throw new Error('API request failed');
-      }
+      const data = await predictCropDisease(file);
+      setResult(data);
     } catch (err) {
-      // Fallback demo simulation if backend is not currently running
-      setTimeout(() => {
-        // Find matching crop or random class
-        const filtered = cropFilter !== 'All' 
-          ? classesData.filter((c) => c.crop === cropFilter)
-          : classesData;
-        const chosen = filtered[Math.floor(Math.random() * filtered.length)] || classesData[10];
-
-        setResult({
-          success: true,
-          message: 'Analyzed with AI diagnostic model.',
-          disease: chosen.disease,
-          crop: chosen.crop,
-          confidence: '92%',
-          confidence_score: 0.92,
-          status: chosen.status,
-          pathogen: chosen.pathogen,
-          symptoms: chosen.symptoms,
-          precautions: [
-            "Remove affected leaves to reduce spore spread",
-            "Improve air circulation between plants",
-            "Avoid overhead watering"
-          ],
-          treatment: chosen.treatment,
-          top_predictions: [
-            { disease: chosen.disease, crop: chosen.crop, confidence: "92%", confidence_score: 0.92 },
-            { disease: "Tomato Healthy", crop: "Tomato", confidence: "5%", confidence_score: 0.05 },
-            { disease: "Tomato Late Blight", crop: "Tomato", confidence: "3%", confidence_score: 0.03 }
-          ],
-          processing_time_ms: 22.4
-        });
-      }, 900);
+      console.warn('Backend inference failed or offline, checking fallback:', err);
+      // If server returned error or is unreachable, show clean error message
+      setError(err.message || 'AI inference request failed. Please check server connection.');
     } finally {
-      setTimeout(() => {
-        setIsAnalyzing(false);
-      }, 900);
+      setIsAnalyzing(false);
     }
   };
 
@@ -130,7 +86,7 @@ export default function App() {
 
             <div className="workflow-grid">
               <ImageUpload onDiagnose={handleDiagnose} isAnalyzing={isAnalyzing} />
-              <ResultView result={result} isAnalyzing={isAnalyzing} />
+              <ResultView result={result} isAnalyzing={isAnalyzing} error={error} />
             </div>
           </div>
         )}
