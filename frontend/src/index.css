@@ -692,3 +692,514 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-muted);
   border-top: 1px solid var(--border-subtle);
 }
+
+/* ==========================================================================
+   Phase 7 – Weather Intelligence & Agrometeorological Advisory Styles
+   ========================================================================== */
+
+.weather-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.35s ease-out;
+}
+
+.weather-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.weather-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-gps {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-gps:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(59, 130, 246, 0.35));
+  border-color: #34d399;
+  transform: translateY(-1px);
+}
+
+.btn-gps:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Farm Presets Horizontal Bar */
+.presets-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.presets-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.presets-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.preset-chip {
+  padding: 0.4rem 0.85rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.preset-chip:hover {
+  border-color: var(--primary-500);
+  color: #fff;
+}
+
+.preset-chip.active {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: var(--primary-500);
+  color: #34d399;
+  font-weight: 600;
+}
+
+/* Crop Filter Bar */
+.crop-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.crop-filter-chip {
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.crop-filter-chip:hover {
+  border-color: #60a5fa;
+  color: #fff;
+}
+
+.crop-filter-chip.active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #3b82f6;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+/* Weather Loading & Error Boxes */
+.weather-loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  text-align: center;
+}
+
+.error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Weather Hero Grid */
+.weather-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .weather-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.weather-main-card {
+  background: linear-gradient(145deg, rgba(24, 36, 29, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.location-tag {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.temp-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+}
+
+.weather-icon-large {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
+.temp-value {
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  font-family: var(--font-heading);
+}
+
+.condition-label {
+  font-size: 1.15rem;
+  color: #a7f3d0;
+  font-weight: 600;
+}
+
+.telemetry-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  min-width: 170px;
+}
+
+.telemetry-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.telemetry-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.telemetry-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin-top: 0.1rem;
+}
+
+.weather-metric-bars {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.metric-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.metric-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pathogen Risk Radar Card */
+.risk-radar-card {
+  background: linear-gradient(145deg, rgba(24, 30, 26, 0.95), rgba(30, 20, 20, 0.85));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-width: 1px;
+}
+
+.risk-level-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+}
+
+.risk-score-container {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.risk-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.risk-summary {
+  font-size: 0.88rem;
+  color: #f3f4f6;
+  line-height: 1.4;
+}
+
+.pathogen-breakdown-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.pathogen-chip {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.chip-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.chip-score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.contributing-factors-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Advisories Grid & Cards */
+.advisories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.advisory-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.15rem;
+  transition: var(--transition-smooth);
+}
+
+.advisory-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.advisory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.advisory-category {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+.advisory-title {
+  font-size: 0.98rem;
+  color: #fff;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.advisory-action {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  line-height: 1.45;
+  margin-top: 0.75rem;
+}
+
+.advisory-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.badge-critical {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-advisory {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.badge-safe {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* 7-Day Forecast Grid */
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1100px) {
+  .forecast-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}
+
+.forecast-day-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: var(--transition-smooth);
+}
+
+.forecast-day-card:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: var(--bg-surface-elevated);
+}
+
+.forecast-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.forecast-icon {
+  font-size: 1.8rem;
+  margin: 0.25rem 0;
+}
+
+.forecast-cond {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forecast-temps {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+.temp-high {
+  color: #fff;
+}
+
+.temp-low {
+  color: var(--text-muted);
+}
+
+.forecast-rain {
+  font-size: 0.72rem;
+  color: #60a5fa;
+  margin: 0.35rem 0 0.5rem 0;
+}
+
+.forecast-risk-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  width: 100%;
+}
+
+/* ResultView Weather Alert Banner */
+.weather-alert-banner {
+  border-left: 3px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08));
+}

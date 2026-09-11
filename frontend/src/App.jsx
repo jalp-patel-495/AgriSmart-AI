@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import ImageUpload from './components/ImageUpload';
 import ResultView from './components/ResultView';
+import WeatherDashboard from './components/WeatherDashboard';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 
 export default function App() {
@@ -86,9 +87,18 @@ export default function App() {
 
             <div className="workflow-grid">
               <ImageUpload onDiagnose={handleDiagnose} isAnalyzing={isAnalyzing} />
-              <ResultView result={result} isAnalyzing={isAnalyzing} error={error} />
+              <ResultView
+                result={result}
+                isAnalyzing={isAnalyzing}
+                error={error}
+                onNavigateToWeather={() => setActiveTab('weather')}
+              />
             </div>
           </div>
+        )}
+
+        {activeTab === 'weather' && (
+          <WeatherDashboard onNavigateToDiagnose={() => setActiveTab('diagnose')} />
         )}
 
         {activeTab === 'dataset' && (

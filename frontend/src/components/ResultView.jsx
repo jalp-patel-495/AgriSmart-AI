@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ResultView({ result, isAnalyzing, error }) {
+export default function ResultView({ result, isAnalyzing, error, onNavigateToWeather }) {
   const [checkedPrecautions, setCheckedPrecautions] = useState({});
 
   const togglePrecaution = (index) => {
@@ -150,6 +150,32 @@ export default function ResultView({ result, isAnalyzing, error }) {
         <div className="result-section" style={{ borderLeft: '3px solid #3b82f6' }}>
           <div className="section-label" style={{ color: '#93c5fd' }}>💊 Curative Agronomic Treatment</div>
           <div className="section-body" style={{ color: '#dbeafe' }}>{treatment}</div>
+        </div>
+      )}
+
+      {/* Phase 7: Agrometeorological Field Risk Warning */}
+      {!isHealthy && (
+        <div className="result-section weather-alert-banner">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.4rem' }}>🌦️</span>
+              <div>
+                <strong style={{ color: '#fef08a', fontSize: '0.9rem' }}>Weather Alert: High Humidity + Moisture Threat</strong>
+                <p style={{ color: '#fef3c7', fontSize: '0.8rem', margin: '0.15rem 0 0 0' }}>
+                  Sustained relative humidity and rain accelerate spore dispersal. Suspend overhead sprinklers and intensify canopy scouting.
+                </p>
+              </div>
+            </div>
+            {onNavigateToWeather && (
+              <button
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderColor: '#f59e0b', color: '#fef08a' }}
+                onClick={onNavigateToWeather}
+              >
+                View Weather Intelligence →
+              </button>
+            )}
+          </div>
         </div>
       )}
 

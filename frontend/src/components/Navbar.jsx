@@ -22,6 +22,12 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus }) {
           Disease Detector
         </button>
         <button
+          className={`nav-btn ${activeTab === 'weather' ? 'active' : ''}`}
+          onClick={() => setActiveTab('weather')}
+        >
+          🌦️ Weather Intelligence
+        </button>
+        <button
           className={`nav-btn ${activeTab === 'dataset' ? 'active' : ''}`}
           onClick={() => setActiveTab('dataset')}
         >
