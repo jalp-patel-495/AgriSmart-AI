@@ -1,0 +1,16 @@
+# AgriSmart AI – Core Machine Learning Dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
+Pillow>=9.5.0
+matplotlib>=3.7.0
+PyYAML>=6.0
+joblib>=1.3.0
+tqdm>=4.65.0
+
+# Optional gradient boosting dependencies (supported when installed)
+# xgboost>=1.7.0
+# lightgbm>=4.0.0
+# catboost>=1.2.0

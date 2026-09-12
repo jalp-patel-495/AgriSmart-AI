@@ -1,0 +1,30 @@
+{
+    "disease": {
+        "best_model": "EFFICIENTNET_B0",
+        "primary_metric": "macro_f1",
+        "score": 0.9036,
+        "accuracy": 0.9115,
+        "path": "ai/models/disease/best_model.pt",
+        "classes_count": 13,
+        "input_size": 224,
+        "training_date": "2026-09-12 18:27:13"
+    },
+    "crop_recommendation": {
+        "status": "SKIPPED",
+        "best_model": null,
+        "score": null
+    },
+    "irrigation": {
+        "status": "SKIPPED",
+        "best_model": null,
+        "score": null
+    },
+    "stress": {
+        "status": "SKIPPED",
+        "note": "NOT TRAINED \u2013 REAL DATASET REQUIRED (Expected: data/crop_stress.csv)"
+    },
+    "yield": {
+        "status": "SKIPPED",
+        "note": "NOT TRAINED \u2013 REAL DATASET REQUIRED (Expected: data/crop_yield.csv)"
+    }
+}

@@ -40,6 +40,8 @@ def load_classes_metadata():
 
     classes_path = Path(settings.CLASSES_PATH)
     if not classes_path.exists():
+        classes_path = Path(__file__).resolve().parents[5] / "dataset" / "classes.json"
+    if not classes_path.exists():
         classes_path = Path(__file__).resolve().parents[4] / "dataset" / "classes.json"
 
     if classes_path.exists():
@@ -63,7 +65,12 @@ def load_prediction_model(force_reload: bool = False) -> torch.nn.Module:
     num_classes = len(_CLASSES_MAP) if _CLASSES_MAP else 13
 
     # Priority checkpoints
-    project_root = Path(__file__).resolve().parents[4]
+    root_candidates = [
+        Path.cwd(),
+        Path(__file__).resolve().parents[5],
+        Path(__file__).resolve().parents[4],
+    ]
+    project_root = next((r for r in root_candidates if (r / "ai_model" / "models").exists()), Path.cwd())
     checkpoints = [
         project_root / "ai_model" / "models" / "production_model.pth",
         project_root / "ai_model" / "models" / "robust_model.pth",

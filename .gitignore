@@ -47,13 +47,20 @@ ai_model/models/*.pth
 ai_model/models/*.pt
 ai_model/models/*.onnx
 
-# Large raw dataset archives (allow scripts and samples)
-dataset/raw/*.zip
-dataset/raw/*.tar.gz
-dataset/raw/*.tar
-dataset/processed/*.zip
+# Large raw dataset archives and image folders (allow scripts)
+dataset/raw/
+dataset/processed/
+data/
+*.zip
+*.tar.gz
+*.tar
 
-# Node & Frontend
+# Databases and caches
+*.db
+*.sqlite
+*.sqlite3
+.plantvillage_cache/
+dataset/.plantvillage_cache/
 node_modules/
 frontend/node_modules/
 frontend/dist/

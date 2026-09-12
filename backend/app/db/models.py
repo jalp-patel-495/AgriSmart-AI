@@ -56,3 +56,19 @@ class IoTSensorReading(Base):
     electrical_conductivity = Column(Float, nullable=False)
     battery_level = Column(Float, default=98.0)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String(120), nullable=False)
+    email = Column(String(150), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    salt = Column(String(64), nullable=False)
+    farm_name = Column(String(150), nullable=True, default="My Family Farm")
+    farm_location = Column(String(150), nullable=True, default="Punjab, India")
+    preferred_crop = Column(String(80), nullable=True, default="Wheat")
+    role = Column(String(50), default="farmer")  # 'farmer', 'agronomist', 'researcher'
+    created_at = Column(DateTime, default=datetime.utcnow)
+

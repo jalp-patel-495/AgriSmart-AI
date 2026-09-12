@@ -1,10 +1,10 @@
 {
-  "total_images": 156,
+  "total_images": 15014,
   "target_dimensions": "224x224",
   "split_distribution": {
-    "train": 104,
-    "val": 13,
-    "test": 39
+    "train": 10505,
+    "val": 2247,
+    "test": 2262
   },
   "classes_count": 13,
   "class_breakdown": {
@@ -12,118 +12,118 @@
       "class_id": 0,
       "crop": "Apple",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 441,
+      "val_count": 94,
+      "test_count": 95,
+      "total": 630
     },
     "Apple___Black_rot": {
       "class_id": 1,
       "crop": "Apple",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 434,
+      "val_count": 93,
+      "test_count": 94,
+      "total": 621
     },
     "Apple___healthy": {
       "class_id": 2,
       "crop": "Apple",
       "status": "Healthy",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 1151,
+      "val_count": 246,
+      "test_count": 248,
+      "total": 1645
     },
     "Corn___Common_rust": {
       "class_id": 3,
       "crop": "Corn",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 834,
+      "val_count": 178,
+      "test_count": 180,
+      "total": 1192
     },
     "Corn___Northern_Leaf_Blight": {
       "class_id": 4,
       "crop": "Corn",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 689,
+      "val_count": 147,
+      "test_count": 149,
+      "total": 985
     },
     "Corn___healthy": {
       "class_id": 5,
       "crop": "Corn",
       "status": "Healthy",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 813,
+      "val_count": 174,
+      "test_count": 175,
+      "total": 1162
     },
     "Potato___Early_blight": {
       "class_id": 6,
       "crop": "Potato",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 700,
+      "val_count": 150,
+      "test_count": 150,
+      "total": 1000
     },
     "Potato___Late_blight": {
       "class_id": 7,
       "crop": "Potato",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 700,
+      "val_count": 150,
+      "test_count": 150,
+      "total": 1000
     },
     "Potato___healthy": {
       "class_id": 8,
       "crop": "Potato",
       "status": "Healthy",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 106,
+      "val_count": 22,
+      "test_count": 24,
+      "total": 152
     },
     "Tomato___Bacterial_spot": {
       "class_id": 9,
       "crop": "Tomato",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 1488,
+      "val_count": 319,
+      "test_count": 320,
+      "total": 2127
     },
     "Tomato___Early_blight": {
       "class_id": 10,
       "crop": "Tomato",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 700,
+      "val_count": 150,
+      "test_count": 150,
+      "total": 1000
     },
     "Tomato___Late_blight": {
       "class_id": 11,
       "crop": "Tomato",
       "status": "Diseased",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 1336,
+      "val_count": 286,
+      "test_count": 287,
+      "total": 1909
     },
     "Tomato___healthy": {
       "class_id": 12,
       "crop": "Tomato",
       "status": "Healthy",
-      "train_count": 8,
-      "val_count": 1,
-      "test_count": 3,
-      "total": 12
+      "train_count": 1113,
+      "val_count": 238,
+      "test_count": 240,
+      "total": 1591
     }
   }
 }

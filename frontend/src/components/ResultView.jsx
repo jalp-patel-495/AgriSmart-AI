@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 
-export default function ResultView({ result, isAnalyzing, error, onNavigateToWeather }) {
+export default function ResultView({
+  result,
+  isAnalyzing,
+  error,
+  onNavigateToWeather,
+  onNavigateToAssistant
+}) {
   const [checkedPrecautions, setCheckedPrecautions] = useState({});
 
   const togglePrecaution = (index) => {
@@ -202,6 +208,19 @@ export default function ResultView({ result, isAnalyzing, error, onNavigateToWea
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Consult AI Assistant Action */}
+      {onNavigateToAssistant && (
+        <div style={{ marginTop: '1.25rem' }}>
+          <button
+            className="btn-primary"
+            style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)' }}
+            onClick={onNavigateToAssistant}
+          >
+            💬 Ask AI Assistant About This Result
+          </button>
         </div>
       )}
     </div>

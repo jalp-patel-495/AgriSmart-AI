@@ -1,0 +1,80 @@
+{
+    "Apple___Apple_scab": {
+        "precision": 0.8889,
+        "recall": 0.8889,
+        "f1_score": 0.8889,
+        "support": 9
+    },
+    "Apple___Black_rot": {
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1_score": 0.9091,
+        "support": 10
+    },
+    "Apple___healthy": {
+        "precision": 0.9412,
+        "recall": 1.0,
+        "f1_score": 0.9697,
+        "support": 16
+    },
+    "Corn___Common_rust": {
+        "precision": 1.0,
+        "recall": 0.9091,
+        "f1_score": 0.9524,
+        "support": 22
+    },
+    "Corn___healthy": {
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1_score": 0.9091,
+        "support": 15
+    },
+    "Corn___Northern_Leaf_Blight": {
+        "precision": 0.96,
+        "recall": 1.0,
+        "f1_score": 0.9796,
+        "support": 24
+    },
+    "Potato___Early_blight": {
+        "precision": 0.8824,
+        "recall": 1.0,
+        "f1_score": 0.9375,
+        "support": 15
+    },
+    "Potato___healthy": {
+        "precision": 0.6667,
+        "recall": 1.0,
+        "f1_score": 0.8,
+        "support": 2
+    },
+    "Potato___Late_blight": {
+        "precision": 0.92,
+        "recall": 0.9583,
+        "f1_score": 0.9388,
+        "support": 24
+    },
+    "Tomato___Bacterial_spot": {
+        "precision": 1.0,
+        "recall": 0.7812,
+        "f1_score": 0.8772,
+        "support": 32
+    },
+    "Tomato___Early_blight": {
+        "precision": 0.7222,
+        "recall": 0.8667,
+        "f1_score": 0.7879,
+        "support": 15
+    },
+    "Tomato___healthy": {
+        "precision": 0.9459,
+        "recall": 0.9722,
+        "f1_score": 0.9589,
+        "support": 36
+    },
+    "Tomato___Late_blight": {
+        "precision": 0.9118,
+        "recall": 0.775,
+        "f1_score": 0.8378,
+        "support": 40
+    }
+}

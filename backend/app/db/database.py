@@ -35,5 +35,7 @@ def get_db():
 
 def init_db():
     """Initializes schema and tables."""
+    import backend.app.db.models  # ensure models are registered
     Base.metadata.create_all(bind=engine)
     print(f"[*] Database initialized ({DATABASE_URL.split('://')[0].upper()}).")
+
