@@ -1,0 +1,14 @@
+{
+    "module": "crop_yield_prediction",
+    "best_model": "XGBoost",
+    "metrics": {
+        "mae": 11.0826,
+        "rmse": 149.3275,
+        "r2": 0.9687,
+        "mape": 67.55
+    },
+    "dataset": "crop_yield.csv",
+    "dataset_rows": 19689,
+    "training_cutoff_year": 2016,
+    "created_at": "2026-09-12 19:09:36"
+}

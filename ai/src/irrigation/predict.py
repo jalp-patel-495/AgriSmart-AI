@@ -1,82 +1,201 @@
 """
-AgriSmart AI – Smart Irrigation Predictor
-Predicts whether irrigation is required based on telemetry and weather parameters.
+AgriSmart AI – Smart Irrigation Inference Engine
+Loads serialized best_model.pkl and preprocessor.pkl to predict real-time irrigation requirements.
 """
+import json
 from pathlib import Path
-from typing import Dict, Any, Optional
-import joblib
+from typing import Dict, Any, Union, List, Tuple
 import numpy as np
+import pandas as pd
+import joblib
 
-_CACHED_IRRIGATION_MODEL = None
+_CACHED_MODEL = None
+_CACHED_PREPROCESSOR = None
+_CACHED_FEATURE_CONFIG = None
 
 
-def load_irrigation_model(model_path: Optional[str] = None):
-    global _CACHED_IRRIGATION_MODEL
-    if _CACHED_IRRIGATION_MODEL is not None:
-        return _CACHED_IRRIGATION_MODEL
+def get_irrigation_artifacts() -> Tuple[Any, Any, Dict[str, Any]]:
+    """Singleton loader for model, preprocessor, and feature config."""
+    global _CACHED_MODEL, _CACHED_PREPROCESSOR, _CACHED_FEATURE_CONFIG
+    if _CACHED_MODEL is not None and _CACHED_PREPROCESSOR is not None:
+        return _CACHED_MODEL, _CACHED_PREPROCESSOR, _CACHED_FEATURE_CONFIG
 
-    candidates = [
-        Path(model_path) if model_path else None,
-        Path("ai/models/irrigation/best_model.pkl"),
-        Path("models/irrigation/best_model.pkl")
+    ai_root = Path(__file__).resolve().parents[2]
+    workspace_root = ai_root.parent
+
+    candidate_dirs = [
+        workspace_root / "models" / "irrigation",
+        ai_root / "models" / "irrigation"
     ]
-    for c in candidates:
-        if c and c.exists():
+
+    for model_dir in candidate_dirs:
+        model_path = model_dir / "best_model.pkl"
+        scaler_path = model_dir / "preprocessor.pkl"
+        cfg_path = model_dir / "feature_config.json"
+
+        if model_path.exists() and scaler_path.exists():
             try:
-                _CACHED_IRRIGATION_MODEL = joblib.load(c)
-                return _CACHED_IRRIGATION_MODEL
+                _CACHED_MODEL = joblib.load(model_path)
+                _CACHED_PREPROCESSOR = joblib.load(scaler_path)
+                if cfg_path.exists():
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        _CACHED_FEATURE_CONFIG = json.load(f)
+                else:
+                    _CACHED_FEATURE_CONFIG = {
+                        "features": ["soil_moisture", "temperature", "humidity"]
+                    }
+                return _CACHED_MODEL, _CACHED_PREPROCESSOR, _CACHED_FEATURE_CONFIG
             except Exception:
                 pass
-    return None
+
+    return None, None, {}
 
 
-def predict_irrigation(features: Dict[str, float], model_path: Optional[str] = None) -> Dict[str, Any]:
+def calculate_irrigation_priority(prediction_yes: bool, confidence: float) -> str:
     """
-    Evaluates field parameters to recommend irrigation action.
-    features: {"soil_moisture": 25.0, "temperature": 28.0, "humidity": 65.0, "rainfall": 0.0, "rain_prob": 10.0}
+    Transparent Priority Mapping Rule:
+    - Prediction == YES:
+        - High Confidence (>= 0.85) -> HIGH
+        - Medium Confidence (0.65 to 0.84) -> MEDIUM
+        - Low Confidence (< 0.65) -> LOW / REVIEW
+    - Prediction == NO:
+        - Moisture adequate -> NONE
     """
-    model = load_irrigation_model(model_path)
-    if model is None:
-        # Transparent rule-based agronomical fallback
-        sm = float(features.get("soil_moisture", 30.0))
-        rain_prob = float(features.get("rain_prob", 0.0))
-        temp = float(features.get("temperature", 25.0))
+    if not prediction_yes:
+        return "NONE"
 
-        irrigation_needed = bool(sm < 35.0 and rain_prob < 40.0)
+    if confidence >= 0.85:
+        return "HIGH"
+    elif confidence >= 0.65:
+        return "MEDIUM"
+    else:
+        return "LOW / REVIEW"
+
+
+def predict_irrigation(
+    features: Union[Dict[str, Any], List[float], Tuple[float, ...]]
+) -> Dict[str, Any]:
+    """
+    Predicts whether irrigation is required based on IoT soil and environmental telemetry.
+
+    Parameters:
+        features: Dict with keys 'soil_moisture', 'temperature', 'humidity'
+                  (Accepts case-insensitive and alternative sensor aliases, e.g., 'Moisture(%)')
+                  Or List/Tuple in feature order: [soil_moisture, temperature, humidity]
+
+    Returns:
+        JSON-compatible dictionary:
+        {
+            "irrigation_required": bool,
+            "prediction": "YES" | "NO",
+            "confidence": float,
+            "priority": "HIGH" | "MEDIUM" | "LOW / REVIEW" | "NONE",
+            "status": "success"
+        }
+    """
+    model, preprocessor, cfg = get_irrigation_artifacts()
+
+    if model is None or preprocessor is None:
         return {
-            "status": "rule_based_advisory",
-            "message": "ML model not trained yet (Real dataset required). Utilizing agronomical soil telemetry heuristic.",
-            "irrigation_required": irrigation_needed,
-            "confidence": 0.85,
-            "soil_moisture": sm,
-            "reason": "Soil moisture below threshold with low probability of rain." if irrigation_needed else "Sufficient moisture or imminent rainfall."
+            "status": "error",
+            "message": "Irrigation model artifacts not found. Please train model using 'python train_irrigation.py'.",
+            "irrigation_required": None,
+            "prediction": None,
+            "confidence": 0.0,
+            "priority": "UNKNOWN"
         }
 
-    vec = [
-        float(features.get("soil_moisture", 30.0)),
-        float(features.get("temperature", 25.0)),
-        float(features.get("humidity", 60.0)),
-        float(features.get("rainfall", 0.0)),
-        float(features.get("rain_prob", 0.0))
-    ]
-    X = np.array([vec])
+    expected_features = cfg.get("features", ["soil_moisture", "temperature", "humidity"])
+
+    # Extract input values into structured vector
+    if isinstance(features, dict):
+        # Alias map for flexible sensor naming
+        alias_map = {
+            "soil_moisture": ["soil_moisture", "moisture", "moisture(%)", "soilmoist", "soilmiosture", "sm"],
+            "temperature": ["temperature", "temperature(c)", "temp", "ambient_temp", "t"],
+            "humidity": ["humidity", "humidity(%)", "humid", "rh", "h"]
+        }
+
+        feature_values = []
+        for feat in expected_features:
+            val = None
+            # Direct match
+            if feat in features:
+                val = features[feat]
+            else:
+                # Check aliases
+                possible_aliases = alias_map.get(feat, [feat])
+                for alias in possible_aliases:
+                    for k, v in features.items():
+                        if k.lower().replace(" ", "_") == alias:
+                            val = v
+                            break
+                    if val is not None:
+                        break
+
+            if val is None:
+                # Fallback to 0.0 if missing
+                val = 0.0
+            feature_values.append(float(val))
+
+        vector = np.array([feature_values], dtype=float)
+    elif isinstance(features, (list, tuple)):
+        vector = np.array([features[:len(expected_features)]], dtype=float)
+    else:
+        return {
+            "status": "error",
+            "message": f"Unsupported features input type: {type(features)}",
+            "irrigation_required": None,
+            "prediction": None,
+            "confidence": 0.0,
+            "priority": "UNKNOWN"
+        }
+
     try:
-        pred = bool(model.predict(X)[0])
-        conf = 1.0
+        # Scale inputs using preprocessor fitted on training set
+        df_input = pd.DataFrame([feature_values], columns=expected_features)
+        vector_scaled = preprocessor.transform(df_input)
+
+        # Model inference
+        pred_class = int(model.predict(vector_scaled)[0])
+        prediction_str = "YES" if pred_class == 1 else "NO"
+        is_required = bool(pred_class == 1)
+
+        # Calibrated confidence computation via predict_proba
         if hasattr(model, "predict_proba"):
-            probs = model.predict_proba(X)[0]
-            conf = float(np.max(probs))
+            probs = model.predict_proba(vector_scaled)[0]
+            confidence = float(probs[pred_class])
+        else:
+            confidence = 1.0
+
+        priority = calculate_irrigation_priority(is_required, confidence)
 
         return {
-            "status": "success",
-            "irrigation_required": pred,
-            "confidence": round(conf, 4),
-            "inputs": features
+            "irrigation_required": is_required,
+            "prediction": prediction_str,
+            "confidence": round(confidence, 4),
+            "priority": priority,
+            "status": "success"
         }
+
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Irrigation inference failed: {str(e)}",
-            "irrigation_required": False,
-            "confidence": 0.0
+            "message": f"Prediction inference error: {str(e)}",
+            "irrigation_required": None,
+            "prediction": None,
+            "confidence": 0.0,
+            "priority": "UNKNOWN"
         }
+
+
+if __name__ == "__main__":
+    # Test dry soil case
+    dry_test = {"soil_moisture": 25.0, "temperature": 32.0, "humidity": 45.0}
+    res1 = predict_irrigation(dry_test)
+    print("Dry Soil Test Result:", res1)
+
+    # Test moist soil case
+    wet_test = {"soil_moisture": 75.0, "temperature": 24.0, "humidity": 80.0}
+    res2 = predict_irrigation(wet_test)
+    print("Moist Soil Test Result:", res2)

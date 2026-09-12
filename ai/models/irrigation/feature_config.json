@@ -1,0 +1,30 @@
+{
+    "features": [
+        "soil_moisture",
+        "temperature",
+        "humidity"
+    ],
+    "input_types": {
+        "soil_moisture": "float",
+        "temperature": "float",
+        "humidity": "float"
+    },
+    "target": "irrigation_required",
+    "class_mapping": {
+        "0": "NO",
+        "1": "YES"
+    },
+    "scaler_means": {
+        "soil_moisture": 62.61180124223603,
+        "temperature": 26.091614906832298,
+        "humidity": 67.70496894409938
+    },
+    "scaler_scales": {
+        "soil_moisture": 18.563009631231434,
+        "temperature": 2.5956768646857302,
+        "humidity": 7.792728743664022
+    },
+    "training_samples": 644,
+    "validation_samples": 162,
+    "created_at": "2026-09-12 19:04:08"
+}

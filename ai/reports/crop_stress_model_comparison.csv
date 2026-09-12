@@ -1,0 +1,6 @@
+Model,Accuracy,Precision,Recall,Macro-F1,Weighted-F1,Fit Time (s),Latency (ms/sample)
+Logistic Regression,0.5065,0.4999,0.4999,0.4825,0.5269,0.024,0.0001
+Random Forest,0.566,0.5037,0.504,0.5029,0.5734,0.895,0.0026
+Gradient Boosting,0.6982,0.3994,0.4995,0.4115,0.575,29.255,0.001
+XGBoost,0.5306,0.5002,0.5002,0.4921,0.5477,2.152,0.0003
+LightGBM,0.536,0.5038,0.5044,0.4965,0.5526,0.148,0.0007

@@ -10,21 +10,100 @@
         "training_date": "2026-09-12 18:27:13"
     },
     "crop_recommendation": {
-        "status": "SKIPPED",
-        "best_model": null,
-        "score": null
+        "status": "OK",
+        "best_model": "Random Forest",
+        "primary_metric": "macro_f1",
+        "score": 0.9955,
+        "accuracy": 0.9955,
+        "precision": 0.9957,
+        "recall": 0.9955,
+        "path": "models/crop_recommendation/best_model.pkl",
+        "num_classes": 22,
+        "training_date": "2026-09-12 18:44:04"
     },
     "irrigation": {
-        "status": "SKIPPED",
-        "best_model": null,
-        "score": null
+        "status": "OK",
+        "best_model": "Random Forest",
+        "primary_metric": "macro_f1",
+        "score": 0.9748,
+        "accuracy": 0.9753,
+        "precision": 0.9714,
+        "recall": 0.9714,
+        "f1": 0.9714,
+        "path": "models/irrigation/best_model.pkl",
+        "features": [
+            "soil_moisture",
+            "temperature",
+            "humidity"
+        ],
+        "training_date": "2026-09-12 19:04:08"
     },
     "stress": {
-        "status": "SKIPPED",
-        "note": "NOT TRAINED \u2013 REAL DATASET REQUIRED (Expected: data/crop_stress.csv)"
+        "status": "OK",
+        "best_model": "Random Forest",
+        "primary_metric": "macro_f1",
+        "score": 0.5029,
+        "accuracy": 0.566,
+        "precision": 0.5037,
+        "recall": 0.504,
+        "macro_f1": 0.5029,
+        "weighted_f1": 0.5734,
+        "path": "models/crop_stress/best_model.pkl",
+        "classes": [
+            "Unhealthy / Stressed",
+            "Healthy"
+        ],
+        "features": [
+            "High_Resolution_RGB",
+            "Multispectral_Images",
+            "Thermal_Images",
+            "Temporal_Images",
+            "Spatial_Resolution",
+            "Elevation_Data",
+            "Canopy_Coverage",
+            "NDVI",
+            "SAVI",
+            "Chlorophyll_Content",
+            "Leaf_Area_Index",
+            "Temperature",
+            "Humidity",
+            "Rainfall",
+            "Wind_Speed",
+            "Soil_Moisture",
+            "Soil_pH",
+            "Organic_Matter",
+            "Pest_Hotspots",
+            "Weed_Coverage",
+            "Pest_Damage",
+            "Expected_Yield",
+            "Water_Flow",
+            "Drainage_Features",
+            "Crop_Type",
+            "Crop_Growth_Stage",
+            "Field_Boundaries"
+        ],
+        "training_date": "2026-09-12 19:19:37"
     },
     "yield": {
-        "status": "SKIPPED",
-        "note": "NOT TRAINED \u2013 REAL DATASET REQUIRED (Expected: data/crop_yield.csv)"
+        "status": "OK",
+        "best_model": "XGBoost",
+        "primary_metric": "rmse",
+        "score": 149.3275,
+        "mae": 11.0826,
+        "rmse": 149.3275,
+        "r2": 0.9687,
+        "mape": 67.55,
+        "path": "models/yield/best_model.pkl",
+        "features": [
+            "Crop",
+            "Season",
+            "State",
+            "Area",
+            "Annual_Rainfall",
+            "Fertilizer",
+            "Pesticide"
+        ],
+        "unit": "Tonnes/Ha",
+        "training_date": "2026-09-12 19:09:38"
     }
 }

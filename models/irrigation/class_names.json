@@ -1,0 +1,10 @@
+{
+    "classes": [
+        "NO",
+        "YES"
+    ],
+    "descriptions": {
+        "NO": "Irrigation Not Required (Soil moisture adequate / pump OFF)",
+        "YES": "Irrigation Required (Soil moisture depleted / pump ON)"
+    }
+}

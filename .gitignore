@@ -54,6 +54,12 @@ data/
 *.zip
 *.tar.gz
 *.tar
+dataset/crop_health_stress.csv
+data/crop_health_stress.csv
+ai/data/crop_health_stress.csv
+models/crop_stress/*.pkl
+ai/models/crop_stress/*.pkl
+
 
 # Databases and caches
 *.db

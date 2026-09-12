@@ -372,7 +372,7 @@ def main():
         "irrigation": {
             "status": irrigation_res["status"],
             "best_model": irrigation_res.get("best_model"),
-            "score": irrigation_res.get("metrics", {}).get("f1") if irrigation_res.get("metrics") else None
+            "score": irrigation_res.get("metrics", {}).get("macro_f1", irrigation_res.get("metrics", {}).get("f1")) if irrigation_res.get("metrics") else None
         },
         "stress": {
             "status": stress_res["status"],
@@ -380,7 +380,15 @@ def main():
         },
         "yield": {
             "status": yield_res["status"],
-            "note": yield_res.get("reason")
+            "best_model": yield_res.get("best_model"),
+            "primary_metric": "rmse",
+            "score": yield_res.get("metrics", {}).get("rmse") if yield_res.get("metrics") else None,
+            "mae": yield_res.get("metrics", {}).get("mae") if yield_res.get("metrics") else None,
+            "rmse": yield_res.get("metrics", {}).get("rmse") if yield_res.get("metrics") else None,
+            "r2": yield_res.get("metrics", {}).get("r2") if yield_res.get("metrics") else None,
+            "mape": yield_res.get("metrics", {}).get("mape") if yield_res.get("metrics") else None,
+            "path": "models/yield/best_model.pkl",
+            "unit": "Tonnes/Ha"
         }
     }
     with open(ai_root / "models" / "model_registry.json", "w", encoding="utf-8") as f:

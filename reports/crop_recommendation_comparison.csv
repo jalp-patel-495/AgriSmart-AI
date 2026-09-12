@@ -1,0 +1,5 @@
+Model,Macro F1,Accuracy,Macro Precision,Macro Recall,Weighted F1,Inference Latency (ms),Training Time (s)
+Random Forest,0.9955,0.9955,0.9957,0.9955,0.9955,0.15,0.224
+LightGBM,0.9886,0.9886,0.9891,0.9886,0.9886,0.02,0.52
+Gradient Boosting,0.9863,0.9864,0.987,0.9864,0.9863,0.06,9.553
+XGBoost,0.9862,0.9864,0.9874,0.9864,0.9862,0.01,2.244
