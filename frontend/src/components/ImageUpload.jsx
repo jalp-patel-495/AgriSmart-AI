@@ -123,57 +123,6 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
     onDiagnose(selectedFile);
   };
 
-  // Quick field samples
-  const loadSample = (crop, disease) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 300;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#18241d';
-    ctx.fillRect(0, 0, 300, 300);
-
-    // Leaf contour
-    ctx.beginPath();
-    ctx.ellipse(150, 150, 75, 115, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#2e8b57';
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#1b5e20';
-    ctx.stroke();
-
-    // Central vein
-    ctx.beginPath();
-    ctx.moveTo(150, 260);
-    ctx.lineTo(150, 40);
-    ctx.strokeStyle = '#4ade80';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Disease pathology simulation
-    if (disease !== 'Healthy') {
-      ctx.fillStyle = '#92400e';
-      for (let i = 0; i < 9; i++) {
-        const x = 110 + Math.random() * 80;
-        const y = 80 + Math.random() * 130;
-        const r = 7 + Math.random() * 9;
-        ctx.beginPath();
-        ctx.arc(x, y, r + 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#fef08a'; // Chlorotic halo
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#78350f'; // Necrotic lesion
-        ctx.fill();
-      }
-    }
-
-    canvas.toBlob((blob) => {
-      const file = new File([blob], `${crop}_${disease.replace(/\s+/g, '_')}.jpg`, { type: 'image/jpeg' });
-      processFile(file);
-    }, 'image/jpeg', 0.92);
-  };
-
   return (
     <div className="panel-card">
       <div className="panel-header">
@@ -236,25 +185,6 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
         >
           {isAnalyzing ? '🔬 Running PyTorch Neural Diagnostics...' : '🔍 Analyze Leaf Condition'}
         </button>
-      </div>
-
-      {/* Quick Test Samples */}
-      <div className="samples-row">
-        <div className="samples-label">Quick Test Field Samples:</div>
-        <div className="sample-buttons">
-          <button className="sample-chip" onClick={() => loadSample('Tomato', 'Early Blight')}>
-            🍅 Tomato Early Blight
-          </button>
-          <button className="sample-chip" onClick={() => loadSample('Potato', 'Late Blight')}>
-            🥔 Potato Late Blight
-          </button>
-          <button className="sample-chip" onClick={() => loadSample('Corn', 'Common Rust')}>
-            🌽 Corn Rust
-          </button>
-          <button className="sample-chip" onClick={() => loadSample('Apple', 'Healthy')}>
-            🍏 Apple Healthy
-          </button>
-        </div>
       </div>
 
       {/* Camera Modal Viewfinder */}
