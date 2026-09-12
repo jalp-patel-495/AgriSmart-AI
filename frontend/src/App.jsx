@@ -158,7 +158,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className={`main-content ${!currentUser && activeTab === 'home' ? 'main-content-full' : ''}`}>
         {/* Tab: Home Page (Only shown before login) */}
         {!currentUser && activeTab === 'home' && (
           <HomePage

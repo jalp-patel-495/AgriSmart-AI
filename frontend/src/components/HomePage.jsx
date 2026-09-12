@@ -1,4 +1,5 @@
 import React from 'react';
+import droneScannerHq from '../assets/smart_drone_scanner_ultra_hq.png';
 
 export default function HomePage({
   onExploreDashboard,
@@ -58,46 +59,52 @@ export default function HomePage({
       <div className="home-ambient-glow" />
       <div className="home-ambient-glow-secondary" />
 
-      {/* Hero Section matching the user's reference image */}
+      {/* Hero Section matching Image 1 */}
       <section className="home-hero">
-        <div className="hero-center-container">
-          {/* Centered seedling badge */}
-          <div className="hero-icon-badge">
-            <span className="hero-seedling-icon">🌱</span>
+        <div className="hero-split-container">
+          {/* Left Column: Typography and CTAs */}
+          <div className="hero-left-content">
+            <div className="hero-badge">
+              <span className="hero-badge-text">NEXT-GEN SMART FARMING</span>
+            </div>
+
+            <h1 className="hero-heading">
+              AI-Powered Smart<br />Farming for a Healthier<br />Harvest
+            </h1>
+
+            <p className="hero-description">
+              Detect crop diseases, optimize irrigation, understand weather risks, and get AI-powered farming recommendations — all in one intelligent platform.
+            </p>
+
+            <div className="hero-cta-group">
+              <button
+                className="hero-btn-primary"
+                onClick={onExploreDashboard}
+                id="hero-explore-btn"
+              >
+                Explore Dashboard
+              </button>
+
+              <button
+                className="hero-btn-secondary"
+                onClick={scrollToFeatures}
+                id="hero-see-works-btn"
+              >
+                See How It Works
+              </button>
+            </div>
           </div>
 
-          {/* Glowing Brand Title */}
-          <h1 className="hero-title">
-            AgriSmart <span className="hero-title-accent">AI</span>
-          </h1>
-
-          {/* Subtitle from reference */}
-          <p className="hero-subtitle">
-            The intelligent solution for modern plant care, powered by IoT and AI technology
-          </p>
-
-          {/* Action Buttons from reference */}
-          <div className="hero-cta-group">
-            <button
-              className="hero-btn-primary"
-              onClick={onExploreDashboard}
-            >
-              <span>Explore Dashboard</span>
-              <span className="hero-btn-arrow">→</span>
-            </button>
-
-            <button
-              className="hero-btn-secondary"
-              onClick={scrollToFeatures}
-            >
-              <span>Learn More</span>
-              <span className="hero-btn-chevron">⌄</span>
-            </button>
-          </div>
-
-          {/* Scroll down indicator arrow */}
-          <div className="hero-scroll-indicator" onClick={scrollToFeatures} role="button" tabIndex={0}>
-            <span className="scroll-chevron">⌄</span>
+          {/* Right Column: High-Quality Smart Farming AI Drone Scanner Visual */}
+          <div className="hero-right-visual">
+            <div className="hero-drone-card">
+              <img
+                src={droneScannerHq}
+                alt="AI-Powered Smart Farming Drone Scanning Crops"
+                className="hero-drone-image"
+              />
+              <div className="drone-glow-accent" />
+            </div>
           </div>
         </div>
       </section>
