@@ -8,8 +8,6 @@ import WeatherDashboard from './components/WeatherDashboard';
 import SmartFarmingDashboard from './components/SmartFarmingDashboard';
 import GenAIAssistant from './components/GenAIAssistant';
 import AuthModal from './components/AuthModal';
-import EditProfileModal from './components/EditProfileModal';
-import ChangePasswordModal from './components/ChangePasswordModal';
 import FloatingChatbotButton from './components/FloatingChatbotButton';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
@@ -26,8 +24,6 @@ export default function App() {
   const [classesData, setClassesData] = useState([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -159,8 +155,6 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
-        onOpenEditProfile={() => setIsEditProfileOpen(true)}
-        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -267,27 +261,6 @@ export default function App() {
         initialMode={authMode}
         onClose={() => setAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
-      />
-
-      {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={isEditProfileOpen}
-        onClose={() => setIsEditProfileOpen(false)}
-        currentUser={currentUser}
-        onProfileUpdated={(updatedUser) => {
-          setCurrentUser(updatedUser);
-          showToast(`Profile updated successfully! Welcome, ${updatedUser.full_name}. 🌱`);
-        }}
-      />
-
-      {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
-        currentUser={currentUser}
-        onPasswordChanged={() => {
-          showToast('Password updated successfully! Keep your credentials secure. 🔒');
-        }}
       />
 
       {/* Footer (Rendered when not on Home Page which has its own footer) */}

@@ -6,9 +6,7 @@ export default function Navbar({
   backendStatus,
   currentUser,
   onOpenAuth,
-  onLogout,
-  onOpenEditProfile,
-  onOpenChangePassword
+  onLogout
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -133,40 +131,6 @@ export default function Navbar({
                   <div className="dropdown-divider" />
 
                   <div className="dropdown-actions-list">
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        onOpenEditProfile();
-                      }}
-                      id="dropdown-edit-profile-btn"
-                      role="menuitem"
-                    >
-                      <span className="dropdown-item-icon">✏️</span>
-                      <div className="dropdown-item-text">
-                        <span className="dropdown-item-title">Edit Profile</span>
-                        <span className="dropdown-item-desc">Update farm name & region</span>
-                      </div>
-                    </button>
-
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        onOpenChangePassword();
-                      }}
-                      id="dropdown-change-pwd-btn"
-                      role="menuitem"
-                    >
-                      <span className="dropdown-item-icon">🔑</span>
-                      <div className="dropdown-item-text">
-                        <span className="dropdown-item-title">Change Password</span>
-                        <span className="dropdown-item-desc">Update security credentials</span>
-                      </div>
-                    </button>
-
-                    <div className="dropdown-divider" />
-
                     <button
                       className="dropdown-item dropdown-logout-item"
                       onClick={() => {
