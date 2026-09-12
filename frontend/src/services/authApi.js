@@ -94,4 +94,49 @@ export const authApi = {
     this.saveUser(data);
     return data;
   },
+
+  /**
+   * Updates user profile (full_name, farm_name, farm_location, preferred_crop).
+   */
+  async updateProfile(profileData) {
+    const res = await fetch(`${API_BASE}/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileData),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to update profile.');
+    }
+
+    // Update stored user details while preserving token
+    const currentUser = this.getCurrentUser() || {};
+    const updatedUser = { ...currentUser, ...data };
+    this.saveUser(updatedUser);
+    return updatedUser;
+  },
+
+  /**
+   * Changes user password.
+   */
+  async changePassword(email, currentPassword, newPassword) {
+    const res = await fetch(`${API_BASE}/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to change password.');
+    }
+
+    return data;
+  },
 };
+

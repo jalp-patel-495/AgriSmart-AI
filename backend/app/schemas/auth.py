@@ -49,6 +49,20 @@ class DemoLoginRequest(BaseModel):
     role: Optional[str] = "farmer"  # 'farmer' or 'agronomist'
 
 
+class UpdateProfileRequest(BaseModel):
+    email: str
+    full_name: str
+    farm_name: Optional[str] = "Family Homestead Farm"
+    farm_location: Optional[str] = "Punjab, India"
+    preferred_crop: Optional[str] = "Wheat"
+
+
+class ChangePasswordRequest(BaseModel):
+    email: str
+    current_password: str
+    new_password: str
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
