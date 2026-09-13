@@ -4,11 +4,13 @@ FastAPI Endpoints for Phase 8: Smart Irrigation and Crop Recommendation
 import json
 import os
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from backend.app.db.database import get_db, init_db
 from backend.app.db.models import IrrigationLog, CropRecommendationRecord, IoTSensorReading
+from backend.app.api.deps import extract_token_from_request
+from backend.app.services.auth_service import verify_session_token_and_get_user
 from backend.app.schemas.smart_farming import (
     IrrigationRequest,
     IrrigationAdvisoryResponse,
@@ -38,6 +40,7 @@ load_recommender_model()
 @router.post("/irrigation-advisory", response_model=IrrigationAdvisoryResponse)
 def get_irrigation_advisory(
     req: IrrigationRequest,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -46,9 +49,20 @@ def get_irrigation_advisory(
     """
     advisory = calculate_smart_irrigation(req)
 
+    farmer_id = None
+    try:
+        token = extract_token_from_request(request)
+        if token:
+            user = verify_session_token_and_get_user(token, db)
+            if user:
+                farmer_id = user.id
+    except Exception:
+        pass
+
     # Persist log to DB
     try:
         log_entry = IrrigationLog(
+            farmer_id=farmer_id,
             crop_name=req.crop,
             soil_type=req.soil_type,
             field_size_hectares=req.field_size_hectares,
@@ -84,6 +98,7 @@ def get_iot_telemetry(
 @router.post("/recommend-crop", response_model=CropRecommendationResponse)
 def get_crop_recommendations(
     req: CropRecommendationRequest,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -91,6 +106,16 @@ def get_crop_recommendations(
     using the trained Random Forest Classifier. Persists record to the database.
     """
     recommendations = predict_top_crops(req)
+
+    farmer_id = None
+    try:
+        token = extract_token_from_request(request)
+        if token:
+            user = verify_session_token_and_get_user(token, db)
+            if user:
+                farmer_id = user.id
+    except Exception:
+        pass
 
     # Persist log to DB
     try:
@@ -102,6 +127,7 @@ def get_crop_recommendations(
         conf3 = recommendations.top_recommendations[2].confidence_score if len(recommendations.top_recommendations) > 2 else None
 
         rec_entry = CropRecommendationRecord(
+            farmer_id=farmer_id,
             nitrogen=req.nitrogen,
             phosphorus=req.phosphorus,
             potassium=req.potassium,

@@ -89,6 +89,18 @@ export default function Navbar({
                   📊 Stakeholder Dashboard
                 </button>
                 <button
+                  className={`nav-btn ${activeTab === 'stakeholder-farmers' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('stakeholder-farmers')}
+                  style={{
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    background: activeTab === 'stakeholder-farmers' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.12)',
+                    color: '#6ee7b7',
+                    fontWeight: 600,
+                  }}
+                >
+                  👨‍🌾 Connected Farmers
+                </button>
+                <button
                   className={`nav-btn ${activeTab === 'crop-recommendation' ? 'active' : ''}`}
                   onClick={() => setActiveTab('crop-recommendation')}
                 >
@@ -174,6 +186,17 @@ export default function Navbar({
                 onClick={() => setActiveTab('weather')}
               >
                 Weather
+              </button>
+              <button
+                className={`nav-btn ${activeTab === 'organizations' ? 'active' : ''}`}
+                onClick={() => setActiveTab('organizations')}
+                style={{
+                  border: '1px solid rgba(14, 165, 233, 0.4)',
+                  background: activeTab === 'organizations' ? 'rgba(14, 165, 233, 0.25)' : 'transparent',
+                  color: activeTab === 'organizations' ? '#38bdf8' : '#cbd5e1',
+                }}
+              >
+                🏢 Organizations
               </button>
               <button
                 className={`nav-btn ${activeTab === 'assistant' ? 'active' : ''}`}

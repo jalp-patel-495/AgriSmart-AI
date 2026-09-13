@@ -124,3 +124,84 @@ class StakeholderCopilotResponse(BaseModel):
     grounded_sources: List[str]
     suggested_followups: List[str]
     telemetry_grounding: Dict[str, Any]
+
+
+class ConnectedFarmerItem(BaseModel):
+    farmer_id: int
+    relationship_id: int
+    full_name: str
+    farm_name: Optional[str] = None
+    farm_location: Optional[str] = None
+    primary_crop: Optional[str] = None
+    connection_status: str
+    connected_since: Optional[str] = None
+    last_active_date: Optional[str] = None
+    latest_health_status: str
+    latest_irrigation_status: str
+    risk_level: str
+
+
+class ConnectedFarmersResponse(BaseModel):
+    status: str
+    total_connected: int
+    farmers: List[ConnectedFarmerItem]
+    empty_state_message: Optional[str] = None
+
+
+class PendingConnectionItem(BaseModel):
+    relationship_id: int
+    farmer_id: int
+    farmer_name: str
+    farmer_email: str
+    farm_name: Optional[str] = None
+    farm_location: Optional[str] = None
+    preferred_crop: Optional[str] = None
+    requested_at: str
+    notes: Optional[str] = None
+
+
+class PendingConnectionsResponse(BaseModel):
+    status: str
+    total_pending: int
+    pending_requests: List[PendingConnectionItem]
+    empty_state_message: Optional[str] = None
+
+
+class FarmerAgriculturalProfileResponse(BaseModel):
+    status: str
+    farmer_id: int
+    farm_profile: Dict[str, Any]
+    crop_health: Dict[str, Any]
+    irrigation: Dict[str, Any]
+    weather: Dict[str, Any]
+    sustainability: Dict[str, Any]
+    yield_prediction: Dict[str, Any]
+
+
+class ConnectionActionRequest(BaseModel):
+    notes: Optional[str] = None
+
+
+class CreateConnectionRequest(BaseModel):
+    stakeholder_id: int
+    notes: Optional[str] = None
+
+
+class FarmerConnectionItem(BaseModel):
+    relationship_id: int
+    stakeholder_id: int
+    organization_name: str
+    stakeholder_name: str
+    stakeholder_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    status: str
+    created_at: str
+    updated_at: Optional[str] = None
+
+
+class FarmerConnectionsResponse(BaseModel):
+    status: str
+    connections: List[FarmerConnectionItem]
+    available_stakeholders: List[Dict[str, Any]]
+

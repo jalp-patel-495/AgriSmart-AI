@@ -13,6 +13,7 @@ import ExpertReviewView from './components/ExpertReviewView';
 import UserManagementView from './components/UserManagementView';
 import SystemMonitoringView from './components/SystemMonitoringView';
 import StakeholderDashboard from './components/StakeholderDashboard';
+import FarmerStakeholdersView from './components/FarmerStakeholdersView';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
 import { resolveCrop, CANONICAL_CLASSES } from './utils/cropDiseaseResolver';
@@ -301,6 +302,7 @@ export default function App() {
           <>
             {/* Tab: Agricultural Stakeholder Modules */}
             {(activeTab === 'stakeholder-dashboard' ||
+              activeTab === 'stakeholder-farmers' ||
               activeTab === 'stakeholder-risks' ||
               activeTab === 'stakeholder-copilot' ||
               activeTab === 'regional-intelligence' ||
@@ -445,6 +447,13 @@ export default function App() {
             {/* Tab: Farmer Advisor / Kisan AI Co-Pilot */}
             {activeTab === 'assistant' && (
               <GenAIAssistant farmContext={farmContext} />
+            )}
+
+            {/* Tab: 🏢 Connected Organizations (Federated Partnerships) */}
+            {activeTab === 'organizations' && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['FARMER', 'ADMIN']}>
+                <FarmerStakeholdersView currentUser={currentUser} onShowToast={showToast} />
+              </RoleProtectedRoute>
             )}
 
             {/* Tab: Agentic Advisor (Module G) */}

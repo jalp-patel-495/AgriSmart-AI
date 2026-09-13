@@ -28,10 +28,20 @@ AgriSmart AI enforces a cryptographically verified, four-tier Role-Based Access 
 | **Sustainability Score** | ✅ | ✅ | ❌ | ✅ | Authenticated |
 | **Farmer Advisor / Kisan AI Co-Pilot** | ✅ | ✅ | ❌ | ✅ | Authenticated |
 | **Agentic Advisor (Multi-Module Synthesizer)**| ✅ | ✅ | ❌ | ✅ | Authenticated |
+| **🏢 Connected Organizations View** | ✅ | ❌ | ❌ | ✅ | `require_role('FARMER', 'ADMIN')` |
+| **`GET /api/v1/farmer/stakeholder-connections`** | ✅ | ❌ (403) | ❌ (403) | ✅ | HTTP 403 Forbidden |
+| **`POST /api/v1/farmer/stakeholder-connections`** | ✅ | ❌ (403) | ❌ (403) | ✅ | HTTP 403 Forbidden |
+| **`DELETE /api/v1/farmer/stakeholder-connections/{id}`** | ✅ | ❌ (403) | ❌ (403) | ✅ | HTTP 403 Forbidden |
 | **👨‍🔬 Expert Review Page** | ❌ (403) | ✅ | ❌ (403) | ✅ | `require_role('AGRICULTURAL_EXPERT', 'ADMIN')` |
 | **`GET /api/v1/expert/review-data`** | ❌ (403) | ✅ | ❌ (403) | ✅ | HTTP 403 Forbidden |
 | **🌐 Stakeholder Command Center** | ❌ (403) | ❌ (403) | ✅ | ✅ | `require_role('AGRICULTURAL_STAKEHOLDER', 'ADMIN')` |
 | **`GET /api/v1/stakeholder/dashboard`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
+| **`GET /api/v1/stakeholder/farmers`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
+| **`GET /api/v1/stakeholder/farmers/{farmer_id}`** | ❌ (403) | ❌ (403) | ✅ (Active Conn Only) | ✅ | HTTP 403 (Enforces Active Conn) |
+| **`GET /api/v1/stakeholder/pending-requests`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
+| **`POST /api/v1/stakeholder/connections/{id}/approve`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
+| **`POST /api/v1/stakeholder/connections/{id}/reject`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
+| **`DELETE /api/v1/stakeholder/connections/{id}`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
 | **`GET /api/v1/stakeholder/crop-intelligence`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
 | **`GET /api/v1/stakeholder/disease-intelligence`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
 | **`GET /api/v1/stakeholder/risks`** | ❌ (403) | ❌ (403) | ✅ | ✅ | HTTP 403 Forbidden |
@@ -110,20 +120,26 @@ def get_stakeholder_dashboard(
 - **Strict Compliance Safeguards**: Read-only verification interface. Experts cannot modify farmer inputs, alter model weights, or change system configurations.
 - **Integrity Rule**: If telemetry has not yet been recorded, the field displays `"Data unavailable"`. No synthetic or simulated results are generated.
 
-### 5.2 🌐 Agricultural Stakeholder Command Center
+### 5.2 🌐 Agricultural Stakeholder Command Center & Farmer Ecosystem
 - **Target Persona**: Agricultural Stakeholders (Agribusinesses, FPO leaders, agro-processors, crop insurers, ag lenders, input suppliers, policy makers) and Administrators.
-- **Functionality**: Macro-level, regional, and supply-chain intelligence dashboard structured along the `DATA → INSIGHT → RISK → ACTION` pipeline:
-  1. **Interactive Filter Bar**: Filter real telemetry by Region (e.g., Punjab, Maharashtra, Karnataka, Andhra Pradesh), Crop (Wheat, Rice, Maize, Tomato, Cotton), and Time Window (7d, 30d, 90d, 1y).
-  2. **Macro KPIs**: Active Farms Monitored, Hectares Represented, Crop Health Index, Regional Water Stress Index, Aggregate ESG Sustainability Score, Active Early Warnings.
-  3. **Crop Intelligence & Acreage Distribution**: Aggregates verified recommendation records, soil NPK distributions, and climatic envelopes.
-  4. **Phytosanitary & Disease Risk**: Regional incidence matrix, high-risk pathogen alerts, quarantine watchlists, and diagnostic confidence tracking.
-  5. **Smart Irrigation & Water Stress Index**: Basin-wide moisture profiling, irrigation demand trends, volumetric stress distributions.
-  6. **Weather Intelligence & Climate Risk**: Extreme weather exposure, 7-day multi-tier risk projections, drought/flood exposure indices.
-  7. **ESG & Sustainability Intelligence**: Aggregated 3-pillar sustainability scores, water efficiency ratings, N-P-K nutrient stewardship indices.
-  8. **Early Warning Alerts**: Prioritized action warnings (CRITICAL, HIGH, MEDIUM, LOW) across disease outbreaks, water deficits, and weather shocks.
-  9. **AI Policy & Procurement Copilot**: Natural language analytical query engine synthesizing regional telemetry for procurement, underwriting, and policy decisions.
-  10. **Honest Empty States & Traceability**: Strictly enforces Rule 3 (Zero Fabricated Data). If sensor or crop telemetry is absent, displays honest informational states (`"No recorded observations"`, `"Regional data unavailable"`).
-- **Security Rule**: Strictly isolated from Farmer operations and Admin configuration utilities.
+- **Relational Architecture & Data Privacy Guarantee**:
+  1. **Relational Model (`stakeholder_farmer_relationships`)**: Telemetry is never fabricated or global mock data. A stakeholder can ONLY view agricultural data from farmers who have an `ACTIVE` relationship record with their organization (`status: PENDING | ACTIVE | REJECTED | REMOVED`).
+  2. **Data Ownership & Isolation**: Visual disease diagnostics (`disease_diagnosis_records`), smart irrigation logs (`irrigation_logs`), and crop recommendation evaluations (`crop_recommendations`) are permanently persisted with foreign key ownership (`farmer_id`).
+  3. **Privacy Barrier (HTTP 403 Forbidden)**: If a stakeholder queries the dedicated profile of a farmer with whom they do not possess an `ACTIVE` relationship (`GET /api/v1/stakeholder/farmers/{farmer_id}`), the backend immediately rejects the request with HTTP 403 Forbidden.
+  4. **Federation Workflow**:
+     - **Inbound Requests**: Farmers discover verified organizations via their `🏢 Connected Organizations` tab (`/organizations`) and submit connection requests.
+     - **Stakeholder Approval**: Stakeholders inspect incoming requests via `GET /api/v1/stakeholder/pending-requests` and can approve (`POST /connections/{id}/approve`) or decline (`POST /connections/{id}/reject`).
+     - **Revocation / Data Sovereignty**: Either party can sever the relationship at any time (`DELETE /connections/{id}`), immediately revoking telemetry access.
+- **Command Center Capabilities**:
+  1. **Macro KPI Ribbon**: Connected Farmers Count, Monitored Acreage (sum of real logged field zones), Monitored Crops Count, Active Critical Risks, and Indicative Network Health Score.
+  2. **Connected Farmers Directory**: Interactive card and table view with filters by name, location, crop, and risk level. Direct access to comprehensive agricultural profiles.
+  3. **Crop Intelligence**: Real variety distribution and acreage breakdown across active network farms.
+  4. **Phytosanitary & Disease Outbreak Surveillance**: Real visual disease detections among connected farmers, pathogen categorization (fungal, bacterial, viral), and outbreak severity tracking.
+  5. **Water Stress Index**: Network-wide soil moisture aggregation and irrigation urgency distribution.
+  6. **Micro-Climate & Weather Risk**: Regionally mapped Open-Meteo meteorological telemetry for connected farm coordinates.
+  7. **Grounded Risk & Early Warning Center**: 5-point alert cards (WHAT, WHY, ACTION, FARM/FARMER, SOURCE) synthesizing multi-signal farm risks.
+  8. **Grounded Agri Intelligence Copilot**: Natural language analytical assistant with telemetry grounding evidence inspection.
+  9. **Zero Fabricated Data Guarantee**: When no farmers are connected or telemetry is unobserved, honest informational empty states are returned.
 
 ### 5.3 🛠️ User Management
 - **Target Persona**: Administrators only.

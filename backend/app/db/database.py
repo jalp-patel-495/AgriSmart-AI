@@ -63,6 +63,20 @@ def init_db():
                 conn.execute(text("UPDATE users SET role = 'AGRICULTURAL_STAKEHOLDER' WHERE LOWER(role) IN ('stakeholder', 'agricultural_stakeholder', 'agribusiness', 'agri_stakeholder')"))
                 conn.execute(text("UPDATE users SET role = 'ADMIN' WHERE LOWER(role) = 'admin'"))
                 conn.commit()
+
+        if "irrigation_logs" in insp.get_table_names():
+            irr_columns = [c["name"] for c in insp.get_columns("irrigation_logs")]
+            with engine.connect() as conn:
+                if "farmer_id" not in irr_columns:
+                    conn.execute(text("ALTER TABLE irrigation_logs ADD COLUMN farmer_id INTEGER REFERENCES users(id)"))
+                    conn.commit()
+
+        if "crop_recommendations" in insp.get_table_names():
+            rec_columns = [c["name"] for c in insp.get_columns("crop_recommendations")]
+            with engine.connect() as conn:
+                if "farmer_id" not in rec_columns:
+                    conn.execute(text("ALTER TABLE crop_recommendations ADD COLUMN farmer_id INTEGER REFERENCES users(id)"))
+                    conn.commit()
     except Exception as e:
         print(f"[!] DB migration notice: {e}")
 

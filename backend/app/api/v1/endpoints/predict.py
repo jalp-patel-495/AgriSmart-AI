@@ -25,9 +25,14 @@ except ImportError:
     _TORCH_AVAILABLE = False
     _DEVICE = "cpu"
     _NORMALIZE = None
-from fastapi import APIRouter, UploadFile, File, Form, Query, Request, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, Query, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 from backend.app.core.config import settings
+from backend.app.db.database import get_db
+from backend.app.api.deps import extract_token_from_request
+from backend.app.services.auth_service import verify_session_token_and_get_user
+from backend.app.db.models import DiseaseDiagnosisRecord
 
 from backend.app.schemas.prediction import (
     PredictionResponse,
@@ -171,8 +176,10 @@ def preprocess_image_with_opencv(image_bytes: bytes, target_size: int = 224) -> 
 
 @router.post("/predict", tags=["Prediction"])
 async def predict_crop_disease(
+    request: Request,
     file: UploadFile = File(...),
-    format: Optional[str] = Query(None)
+    format: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
 ):
     """
     Live AI inference and crop disease diagnosis endpoint:
@@ -250,6 +257,35 @@ async def predict_crop_disease(
 
     duration_ms = round((time.time() - start_time) * 1000, 2)
     confidence_str = f"{int(round(raw_confidence * 100))}%"
+
+    # Persist genuine disease observation if requested by authenticated farmer
+    try:
+        token = extract_token_from_request(request)
+        if token:
+            farmer_user = verify_session_token_and_get_user(token, db)
+            if farmer_user:
+                diag_crop = meta.get("crop", "Undetermined") if raw_confidence >= 0.65 else "Undetermined"
+                diag_disease = meta.get("disease", "Low Confidence") if raw_confidence >= 0.65 else "Low Confidence — Further Inspection Needed"
+                diag_status = "Low Confidence" if raw_confidence < 0.65 else meta.get("status", "Diseased")
+                treatment_text = ", ".join(meta.get("precautions", [])) if raw_confidence < 0.65 else meta.get("treatment")
+
+                diag_rec = DiseaseDiagnosisRecord(
+                    farmer_id=farmer_user.id,
+                    crop=diag_crop,
+                    disease=diag_disease,
+                    confidence=round(raw_confidence, 4),
+                    confidence_str=confidence_str,
+                    status=diag_status,
+                    pathogen=meta.get("pathogen") if raw_confidence >= 0.65 else None,
+                    symptoms=meta.get("symptoms", "Foliar assessment"),
+                    treatment=treatment_text,
+                    image_filename=file.filename or "leaf_upload.jpg"
+                )
+                db.add(diag_rec)
+                db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[!] Warning: Failed to persist disease diagnosis: {e}")
 
     # Model Safety Rule: Confidence < 65% triggers inspection warning & suppresses treatments
     if raw_confidence < 0.65:

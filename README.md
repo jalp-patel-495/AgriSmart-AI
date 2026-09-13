@@ -66,20 +66,22 @@ AgriSmart AI is an end-to-end intelligent agricultural diagnosis and advisory sy
 - **Arbitration Levels**: `CRITICAL` > `HIGH` > `MEDIUM` > `LOW` > `DATA INSUFFICIENT`.
 - **Traceability**: Every generated recommendation strictly includes `Action`, `Reason`, and `Source` (e.g., *Source: Smart Irrigation*, *Reason: The irrigation model predicts irrigation is required.*).
 
-### 9. Enterprise Security: 4-Tier Role-Based Access Control (RBAC)
+### 9. Enterprise Security: 4-Tier Role-Based Access Control & Farmer ↔ Stakeholder Federation
 - **Role Hierarchy**: Strict 4-tier access structure:
-  1. `FARMER` (Default): Access to all 9 farming AI operational modules. Zero duplicate or new pages.
+  1. `FARMER` (Default): Access to all 9 farming AI operational modules + `🏢 Connected Organizations` tab to manage data sharing partnerships with verified agribusinesses, cooperatives, insurers, and researchers.
   2. `AGRICULTURAL_EXPERT`: Access to all farming features + `👨‍🔬 Expert Review` (read-only audit of multi-subsystem field telemetries).
   3. `AGRICULTURAL_STAKEHOLDER`: Dedicated macro-level agricultural intelligence command center for agribusinesses, FPOs, processors, insurers, banks, and policy makers:
-     - **Macro KPIs**: Monitored farms, represented hectares, health index, water stress, aggregate ESG score, active early warnings.
-     - **Crop Intelligence**: Variety adoption distributions, regional NPK soil profiles, yield forecasts.
-     - **Phytosanitary & Disease Risk**: District-level infection tracking, high-risk pathogen clusters, quarantine watchlists.
-     - **Water Stress Index**: Basin-wide moisture profiling, irrigation demand trends.
-     - **Weather & Climate Risk**: Extreme weather exposure, 7-day risk projections, drought/flood exposure indices.
-     - **ESG & Sustainability**: 3-pillar sustainability scores, water efficiency ratings, N-P-K nutrient stewardship indices.
-     - **Early Warning Alerts**: Prioritized action warnings across disease outbreaks, water deficits, and weather shocks.
-     - **AI Policy & Procurement Copilot**: Natural language analytical assistant synthesizing regional telemetry.
-     - **Zero Fabricated Data Guarantee**: All figures originate from verified database records and live services; honest empty states ("No recorded observations") when telemetry is unobserved.
+     - **Federated Farmer Telemetry**: Zero mock data. Telemetry is strictly aggregated from farmers who possess an `ACTIVE` connection record (`stakeholder_farmer_relationships`).
+     - **Data Ownership**: Disease diagnoses (`disease_diagnosis_records`), smart irrigation logs (`irrigation_logs`), and crop suitability evaluations (`crop_recommendations`) are permanently bound to `farmer_id`.
+     - **Connected Farmers Directory**: Filterable directory (by crop, risk, search) displaying farm holdings, recent disease observations, and soil moisture telemetry. Includes a comprehensive `FarmerDetailModal` for deep inspection.
+     - **Connection Lifecycle Management**: Stakeholders review inbound requests (`GET /pending-requests`) with one-click Approve / Decline capabilities.
+     - **Privacy & Security Barrier**: Attempting to view an unconnected farmer's telemetry returns `HTTP 403 Forbidden`. Revoking a connection immediately cuts off telemetry access.
+     - **Phytosanitary & Disease Outbreak Surveillance**: Real visual disease detections among connected farmers, pathogen categorization, and outbreak severity tracking.
+     - **Water Stress Index**: Network-wide soil moisture aggregation and irrigation urgency distribution.
+     - **Micro-Climate & Weather Risk**: Regionally mapped Open-Meteo meteorological telemetry for connected farm coordinates.
+     - **Grounded Risk & Early Warning Center**: 5-point alert cards (WHAT, WHY, ACTION, FARM/FARMER, SOURCE) synthesizing multi-signal farm risks.
+     - **Grounded Agri Intelligence Copilot**: Natural language analytical assistant with telemetry grounding evidence inspection.
+     - **Zero Fabricated Data Guarantee**: When no farmers are connected or telemetry is unobserved, honest informational empty states are returned.
   4. `ADMIN`: Full system access + `🛠️ User Management` (assign roles across all 4 tiers, toggle active status) and `🛠️ System Monitoring` (real-time model artifacts & service health).
 - **Security Guarantee**: Cryptographic HMAC-SHA256 session tokens with backend dependency authorization (`require_role`). Frontend manipulation cannot bypass access (401 unauthenticated, 403 forbidden).
 - **Documentation**: Full architectural specification available in [docs/role_based_access_control.md](docs/role_based_access_control.md).
@@ -159,9 +161,37 @@ Access the application in your browser at `http://localhost:5173`.
 
 ### 4. Running Automated Tests
 ```bash
-# Run complete test suite (73 tests)
-python -m pytest tests/
+# Run complete test suite (65 comprehensive tests)
+py -3.13 -m unittest tests/test_farmer_stakeholder_ecosystem.py tests/test_stakeholder_rbac.py tests/test_rbac.py
 ```
+
+---
+
+## 👥 Pre-Seeded Demo Accounts & Live SIH Evaluation
+
+The platform automatically provisions pre-configured demo personas with a seeded relational ecosystem:
+
+| Persona | Email | Password | Primary Role & Capabilities |
+| :--- | :--- | :--- | :--- |
+| **Demo Farmer** | `farmer@agrismart.ai` | `Farmer@123` | 👨‍🌾 Punjab Family Farm (Ludhiana), 4.5 ha. Pre-seeded with Tomato Early Blight diagnosis, 24.5% soil moisture log, and crop recommendation. |
+| **Demo Stakeholder** | `stakeholder@agrismart.ai` | `Stakeholder@123` | 🌐 Punjab AgriCorp (Agribusiness/Procurement). Pre-linked to Demo Farmer with active telemetry federation. |
+| **Demo Expert** | `expert@agrismart.ai` | `Expert@123` | 👨‍🔬 ICAR Extension Agronomist. Read-only multi-subsystem audit view (`Expert Review`). |
+| **Demo Admin** | `admin@agrismart.ai` | `Admin@123` | 🛠️ System Administrator. User management and system diagnostics. |
+
+### 🧪 Live SIH Demonstration Workflow:
+1. **Log in as Demo Farmer (`farmer@agrismart.ai`)**:
+   - Go to **Disease Detection**: upload a leaf or inspect current health.
+   - Go to **Smart Irrigation**: view in-situ soil moisture sensor reading (24.5%).
+   - Click **🏢 Organizations**: view **Punjab AgriCorp** as an active connected partner. Notice the button to revoke access.
+2. **Log in as Demo Stakeholder (`stakeholder@agrismart.ai`)**:
+   - The **Stakeholder Dashboard** opens automatically.
+   - **Macro KPIs**: Monitored Acreage reflects real farm acreage (`4.5 ha`), Connected Farmers shows `1`, Monitored Crops shows `Tomato`.
+   - Click **👨‍🌾 Connected Farmers**: inspect Ramesh Patel's holding in grid/table view. Click **Inspect Farm Profile & Telemetry** to view the `FarmerDetailModal` displaying the real Early Blight diagnosis, irrigation history, and live weather.
+   - Click **⚠️ Risk & Alerts Center**: view the grounded 5-point alert regarding the Tomato Early Blight detection.
+   - Click **🤖 Agri Intelligence Copilot**: ask *"Summarize crop health risks across all connected farms"* and inspect the Telemetry Grounding Evidence.
+3. **Verify Data Sovereignty & Privacy Barrier**:
+   - Disconnect the farmer either from the farmer's **🏢 Organizations** tab or the stakeholder's directory.
+   - Immediate effect: Stakeholder dashboard switches to honest empty states with 0 connected farmers. Attempting to query the disconnected farmer's profile returns `403 Forbidden`.
 
 ---
 

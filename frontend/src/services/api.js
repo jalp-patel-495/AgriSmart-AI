@@ -42,9 +42,21 @@ export async function predictCropDisease(file) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout for field connectivity
 
+  const headers = {};
+  try {
+    const rawUser = localStorage.getItem('agrismart_user');
+    if (rawUser) {
+      const parsed = JSON.parse(rawUser);
+      if (parsed && parsed.token) {
+        headers['Authorization'] = `Bearer ${parsed.token}`;
+      }
+    }
+  } catch (_) {}
+
   try {
     const response = await fetch(`${BASE_URL}/api/v1/predict`, {
       method: 'POST',
+      headers,
       body: formData,
       signal: controller.signal,
     });

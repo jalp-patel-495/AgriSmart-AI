@@ -31,13 +31,27 @@ export async function predictRealIrrigation({ soil_moisture, temperature, humidi
   return data.irrigation;
 }
 
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    const raw = localStorage.getItem('agrismart_user');
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (user && user.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
+    }
+  } catch (_) {}
+  return headers;
+}
+
 /**
  * Fetch smart irrigation calculation and recommendation (Legacy compatibility)
  */
 export async function getIrrigationAdvisory(payload) {
   const res = await fetch(`${BASE_URL}/api/v1/smart-farming/irrigation-advisory`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -68,7 +82,7 @@ export async function getIoTTelemetry(scenario = 'normal') {
 export async function getCropRecommendation(payload) {
   const res = await fetch(`${BASE_URL}/api/v1/smart-farming/recommend-crop`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

@@ -345,6 +345,163 @@ export const authApi = {
     }
     return data;
   },
+
+  /**
+   * Stakeholder API: List actively connected farmers with genuine agricultural telemetry.
+   */
+  async getConnectedFarmers(search = '', crop = '', risk = '') {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (crop) params.append('crop', crop);
+    if (risk) params.append('risk', risk);
+    const url = `/api/v1/stakeholder/farmers${params.toString() ? `?${params.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch connected farmers.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetch dedicated agricultural profile for a connected farmer.
+   */
+  async getFarmerAgriculturalProfile(farmerId) {
+    const res = await fetch(`/api/v1/stakeholder/farmers/${farmerId}`, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch farmer agricultural profile.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: List pending farmer connection requests.
+   */
+  async getPendingConnectionRequests() {
+    const res = await fetch('/api/v1/stakeholder/pending-requests', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch pending connection requests.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Approve a pending farmer connection request.
+   */
+  async approveConnectionRequest(connectionId, notes = '') {
+    const res = await fetch(`/api/v1/stakeholder/connections/${connectionId}/approve`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ notes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to approve connection request.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Reject a pending farmer connection request.
+   */
+  async rejectConnectionRequest(connectionId, notes = '') {
+    const res = await fetch(`/api/v1/stakeholder/connections/${connectionId}/reject`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ notes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to reject connection request.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Disconnect an active farmer from organization network.
+   */
+  async removeFarmerConnection(connectionId) {
+    const res = await fetch(`/api/v1/stakeholder/connections/${connectionId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to remove farmer connection.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Farmer API: Fetch connected organizations and discoverable stakeholders.
+   */
+  async getFarmerStakeholderConnections() {
+    const res = await fetch('/api/v1/farmer/stakeholder-connections', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch connected organizations.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Farmer API: Submit a connection request to an agricultural organization.
+   */
+  async createFarmerStakeholderConnection(stakeholderId, notes = '') {
+    const res = await fetch('/api/v1/farmer/stakeholder-connections', {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ stakeholder_id: stakeholderId, notes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to submit connection request.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Farmer API: Disconnect from an agricultural organization or cancel pending request.
+   */
+  async cancelFarmerConnection(relationshipId) {
+    const res = await fetch(`/api/v1/farmer/stakeholder-connections/${relationshipId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to cancel connection.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
 };
 
 
