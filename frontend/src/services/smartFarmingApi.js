@@ -6,7 +6,33 @@
 const BASE_URL = '';
 
 /**
- * Fetch smart irrigation calculation and recommendation
+ * Predict irrigation need using the real 3-feature trained ML model
+ * Input features: soil_moisture, temperature, humidity
+ */
+export async function predictRealIrrigation({ soil_moisture, temperature, humidity }) {
+  const res = await fetch(`${BASE_URL}/api/v1/predict/advisory`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      soil_moisture: Number(soil_moisture),
+      temperature: Number(temperature),
+      humidity: Number(humidity),
+    }),
+  });
+  if (!res.ok) {
+    let msg = `Irrigation prediction failed with HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.detail) msg = err.detail;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.irrigation;
+}
+
+/**
+ * Fetch smart irrigation calculation and recommendation (Legacy compatibility)
  */
 export async function getIrrigationAdvisory(payload) {
   const res = await fetch(`${BASE_URL}/api/v1/smart-farming/irrigation-advisory`, {
@@ -97,3 +123,18 @@ export async function getAdvisoryHistory() {
     return { irrigation_logs: [], crop_recommendations: [] };
   }
 }
+
+/**
+ * Fetch dynamic 95 global crop classes catalog and literature profiles
+ */
+export async function getCropsCatalog() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/smart-farming/crops-catalog`);
+    if (!res.ok) throw new Error('Failed to fetch crops catalog');
+    return await res.json();
+  } catch (err) {
+    console.warn('Crops catalog fetch error:', err);
+    return [];
+  }
+}
+

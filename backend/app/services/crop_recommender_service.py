@@ -1,10 +1,12 @@
 """
 AgriSmart AI – Crop Recommendation Machine Learning Service
-Loads the trained Random Forest classifier and provides multi-crop ranked recommendations.
+Provides 95-crop multi-recommendation modeling using trained ensemble classifier
+and rich agronomic metadata from global_crops dataset.
 """
 import os
 import json
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import joblib
@@ -15,10 +17,15 @@ from backend.app.schemas.smart_farming import (
     RecommendedCropItem,
     SoilPreset,
 )
+from ai.src.crop_recommendation.predict import (
+    predict_crop,
+    get_crop_profile_metadata,
+    _load_global_crop_profiles_and_aliases,
+)
 
-# Global in-memory model cache
-_MODEL_PIPELINE = None
-_AGRONOMY_METADATA: Dict[str, Dict] = {}
+def load_recommender_model():
+    """Compatibility shim for legacy callers."""
+    pass
 
 # Major Agro-Climatic Soil Presets for one-click testing
 SOIL_PRESETS: List[SoilPreset] = [
@@ -26,7 +33,7 @@ SOIL_PRESETS: List[SoilPreset] = [
         name="Indo-Gangetic Alluvial Plain",
         region="Punjab / Haryana / UP",
         description="Deep fertile alluvial loam with balanced organic matter, moderate rainfall and strong tubewell irrigation.",
-        typical_crops=["Rice", "Maize", "Wheat", "Cotton"],
+        typical_crops=["Rice", "Maize / Corn", "Wheat", "Cotton"],
         default_n=85.0,
         default_p=48.0,
         default_k=42.0,
@@ -39,7 +46,7 @@ SOIL_PRESETS: List[SoilPreset] = [
         name="Deccan Plateau Black Cotton (Vertisols)",
         region="Maharashtra / Gujarat / MP",
         description="High clay content with high moisture retention, high potassium, ideal for cotton, pulses, and pomegranate.",
-        typical_crops=["Cotton", "Pigeonpeas", "Blackgram", "Pomegranate"],
+        typical_crops=["Cotton", "Pigeon Pea", "Black Gram", "Pomegranate"],
         default_n=115.0,
         default_p=45.0,
         default_k=30.0,
@@ -52,7 +59,7 @@ SOIL_PRESETS: List[SoilPreset] = [
         name="Temperate Himalayan Foothills",
         region="Himachal Pradesh / J&K",
         description="Mountain loam with acidic-to-neutral pH, cold chilling hours, suitable for temperate fruit orchards.",
-        typical_crops=["Apple", "Kidneybeans", "Maize"],
+        typical_crops=["Apple", "Kidney Bean", "Maize / Corn", "Peach"],
         default_n=22.0,
         default_p=130.0,
         default_k=195.0,
@@ -77,37 +84,12 @@ SOIL_PRESETS: List[SoilPreset] = [
 ]
 
 
-def load_recommender_model():
-    """Loads the serialized model pipeline into memory."""
-    global _MODEL_PIPELINE, _AGRONOMY_METADATA
-    model_path = "ai_model/models/crop_recommender.joblib"
-    meta_path = "ai_model/models/crop_agronomy.json"
-
-    if os.path.exists(model_path):
-        try:
-            _MODEL_PIPELINE = joblib.load(model_path)
-            print(f"[*] Loaded Crop Recommendation ML Pipeline from {model_path}")
-        except Exception as e:
-            print(f"[!] Error loading crop recommender: {e}")
-
-    if os.path.exists(meta_path):
-        try:
-            with open(meta_path, "r", encoding="utf-8") as f:
-                _AGRONOMY_METADATA = json.load(f)
-            print(f"[*] Loaded Agronomic Metadata for {len(_AGRONOMY_METADATA)} crops.")
-        except Exception as e:
-            print(f"[!] Error loading agronomy metadata: {e}")
-
-
 def predict_top_crops(req: CropRecommendationRequest) -> CropRecommendationResponse:
     """
-    Predicts the top 3 best-suited crops using the Random Forest classifier.
+    Predicts the top 3 best-suited crops using the 95-class ensemble classifier,
+    enriched with real model probability scores and literature crop profiles.
     """
-    global _MODEL_PIPELINE, _AGRONOMY_METADATA
-    if _MODEL_PIPELINE is None:
-        load_recommender_model()
-
-    input_df = pd.DataFrame([{
+    input_payload = {
         "N": req.nitrogen,
         "P": req.phosphorus,
         "K": req.potassium,
@@ -115,48 +97,61 @@ def predict_top_crops(req: CropRecommendationRequest) -> CropRecommendationRespo
         "humidity": req.humidity,
         "ph": req.ph,
         "rainfall": req.rainfall,
-    }])
+    }
 
-    if _MODEL_PIPELINE is not None:
-        probs = _MODEL_PIPELINE.predict_proba(input_df)[0]
-        classes = _MODEL_PIPELINE.classes_
-        # Sort descending by probability
-        top_indices = np.argsort(probs)[::-1][:3]
-        results: List[Tuple[str, float]] = [(classes[idx], float(probs[idx])) for idx in top_indices]
-    else:
-        # Fallback heuristic if model file isn't loaded
-        results = [("Rice", 0.75), ("Maize", 0.18), ("Banana", 0.07)]
+    pred_res = predict_crop(input_payload, model_version="95class")
+
+    top_3_items = pred_res.get("top_3", [])
+    if not top_3_items and pred_res.get("recommended_crop"):
+        top_3_items = [{"crop": pred_res["recommended_crop"], "confidence": pred_res.get("confidence", 0.75), "rank": 1}]
 
     recommendations: List[RecommendedCropItem] = []
-    for crop_name, conf in results:
-        meta = _AGRONOMY_METADATA.get(crop_name, {
-            "water_need": "Moderate (600-800 mm)",
-            "duration_days": "100-120 days",
-            "season": "Seasonal",
-            "soil_pref": "Well-drained agricultural soil."
-        })
+    for item in top_3_items:
+        crop_name = item.get("crop", "Rice")
+        conf = float(item.get("confidence", 0.0))
 
-        # Economic potential rating based on crop type
-        if crop_name in ["Grapes", "Apple", "Pomegranate", "Coffee", "Cotton"]:
-            econ = "High Commercial Value (Cash Crop)"
-        elif crop_name in ["Banana", "Orange", "Papaya", "Watermelon"]:
+        meta = get_crop_profile_metadata(crop_name)
+
+        # Economic potential category
+        cat = meta.get("crop_category", "")
+        if "Commercial" in cat or "Plantation" in cat or "Spice" in cat or crop_name in ["Grape", "Apple", "Pomegranate", "Coffee (Arabica)", "Cotton", "Saffron", "Cardamom"]:
+            econ = "High Commercial Value (Cash Crop / Export)"
+        elif "Fruit" in cat or crop_name in ["Banana", "Orange", "Papaya", "Watermelon", "Mango"]:
             econ = "High Yield Horticultural Return"
+        elif "Medicinal" in cat:
+            econ = "High Value Ayurvedic & Herbal Market"
         else:
             econ = "Stable Food Security & High Market Liquidity"
 
-        # Tailored agronomic advice
-        advice = f"Ensure soil is pre-tilled to {meta['soil_pref']}. Recommended N-P-K target: {req.nitrogen:.0f}-{req.phosphorus:.0f}-{req.potassium:.0f} kg/ha."
+        # Tailored agronomic advice based on user inputs
+        water_req = meta.get("water_requirement", "Moderate")
+        ph_range = meta.get("preferred_ph", "6.0 - 7.5")
+        season = meta.get("growing_season", "Seasonal")
+
+        advice = (
+            f"Pre-till soil to {meta.get('soil_types', 'well-drained loam')}. "
+            f"Growing season: {season}. Preferred pH: {ph_range}. "
+            f"Water requirement: {water_req}. Recommended N-P-K target: "
+            f"{req.nitrogen:.0f}-{req.phosphorus:.0f}-{req.potassium:.0f} kg/ha."
+        )
 
         recommendations.append(RecommendedCropItem(
             crop=crop_name,
-            confidence_score=round(conf, 3),
+            confidence_score=round(conf, 4),
             match_percentage=f"{conf * 100:.1f}%",
-            water_requirement=meta["water_need"],
-            growth_duration=meta["duration_days"],
-            growing_season=meta["season"],
-            soil_suitability=meta["soil_pref"],
+            water_requirement=water_req,
+            growth_duration=season,
+            growing_season=season,
+            soil_suitability=meta.get("soil_types", "Well-drained agricultural soil"),
             economic_potential=econ,
-            agronomic_advice=advice
+            agronomic_advice=advice,
+            scientific_name=meta.get("scientific_name"),
+            crop_category=meta.get("crop_category"),
+            hindi_name=meta.get("hindi_name"),
+            gujarati_name=meta.get("gujarati_name"),
+            temperature_range=meta.get("temperature_range"),
+            rainfall_range=meta.get("rainfall_range"),
+            preferred_ph=ph_range,
         ))
 
     # Soil summary analysis
@@ -171,9 +166,47 @@ def predict_top_crops(req: CropRecommendationRequest) -> CropRecommendationRespo
     ph_desc = "Neutral" if 6.0 <= req.ph <= 7.5 else ("Acidic" if req.ph < 6.0 else "Alkaline")
     summary = f"Soil Profile: {', '.join(npk_status)} with {ph_desc} reaction (pH {req.ph:.1f}) and {req.rainfall:.0f}mm rainfall."
 
-    from datetime import datetime
     return CropRecommendationResponse(
         top_recommendations=recommendations,
         soil_summary=summary,
         created_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     )
+
+
+def get_crops_catalog_service() -> List[Dict[str, Any]]:
+    """
+    Returns the complete list of 95 crops with literature metadata for dynamic frontend UI.
+    """
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    csv_path = os.path.join(base_dir, "data", "global_crops.csv")
+
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            catalog = []
+            for _, row in df.iterrows():
+                catalog.append({
+                    "crop_id": str(row.get("crop_id", "")),
+                    "crop_name": str(row.get("crop_name", "")),
+                    "scientific_name": str(row.get("scientific_name", "")),
+                    "crop_category": str(row.get("crop_category", "")),
+                    "sub_category": str(row.get("sub_category", "")),
+                    "growing_season": str(row.get("growing_season", "")),
+                    "ph_min": float(row.get("ph_min", 6.0)),
+                    "ph_max": float(row.get("ph_max", 7.5)),
+                    "temperature_min_c": float(row.get("temperature_min_c", 15.0)),
+                    "temperature_max_c": float(row.get("temperature_max_c", 35.0)),
+                    "rainfall_min_mm": float(row.get("rainfall_min_mm", 400.0)),
+                    "rainfall_max_mm": float(row.get("rainfall_max_mm", 1200.0)),
+                    "water_requirement": str(row.get("water_requirement", "Moderate")),
+                    "hindi_name": str(row.get("hindi_name", "")),
+                    "gujarati_name": str(row.get("gujarati_name", "")),
+                    "data_confidence": str(row.get("data_confidence", "approximate_literature_typical")),
+                })
+            return catalog
+        except Exception as e:
+            print(f"[!] Error reading global_crops.csv: {e}")
+
+    # Fallback to in-memory profile keys
+    profiles, _ = _load_global_crop_profiles_and_aliases()
+    return list(profiles.values()) if profiles else []

@@ -11,12 +11,15 @@ import AuthModal from './components/AuthModal';
 import FloatingChatbotButton from './components/FloatingChatbotButton';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
+import { resolveCrop, CANONICAL_CLASSES } from './utils/cropDiseaseResolver';
+import { fetchWeatherIntelligence } from './services/weatherIntelligenceService';
 
 export default function App() {
   // Authentication state
   const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
   // Navigation: before login defaults to 'home', after login defaults to 'dashboard'
   const [activeTab, setActiveTab] = useState(() => (authApi.getCurrentUser() ? 'dashboard' : 'home'));
+  const [smartFarmingSubTab, setSmartFarmingSubTab] = useState('irrigation');
   const [backendStatus, setBackendStatus] = useState('checking');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
@@ -26,6 +29,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [pendingTab, setPendingTab] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [liveWeather, setLiveWeather] = useState(null);
 
   const getTabTitle = (tab) => {
     switch (tab) {
@@ -75,40 +79,55 @@ export default function App() {
     showToast('You have signed out successfully.');
   };
 
+  // Scientific safety checks for farm context
+  const isLowConf = Boolean(
+    result && (
+      (typeof result.confidence_score === 'number' && result.confidence_score < 0.65) ||
+      (typeof result.confidence === 'string' && parseFloat(result.confidence) < 65)
+    )
+  );
+  const resolvedCrop = result ? resolveCrop(result) : null;
+
   // Dynamic context synchronized across all farm modules
   const farmContext = {
-    crop: result?.crop || currentUser?.preferred_crop || 'Tomato',
-    disease: result?.disease || 'Early Blight',
-    confidence: result?.confidence || '92%',
-    pathogen: result?.pathogen || 'Alternaria solani (Fungus)',
-    temperature: 28.0,
-    humidity: 78.0,
-    rain_forecast_mm: 1.5,
-    irrigation_status: 'Immediate Deficit (820,000 L/ha)',
-    soil_type: 'Clay Loam',
+    crop: isLowConf
+      ? (resolvedCrop ? `Possible Crop: ${resolvedCrop}` : 'Undetermined')
+      : (resolvedCrop || result?.crop || currentUser?.preferred_crop || 'Tomato'),
+    disease: isLowConf
+      ? 'Not confidently identified'
+      : (result?.disease || (liveWeather?.weather_risk === 'HIGH' ? 'Foliar Risk Alert' : 'Healthy Field')),
+    confidence: result?.confidence || (result ? '90%' : 'High'),
+    pathogen: isLowConf ? 'None' : (result?.pathogen || (result ? 'Detected Pathogen' : 'None')),
+    farmer_note: isLowConf
+      ? 'The model was unable to confidently identify the disease. Please upload a clearer image.'
+      : undefined,
+    temperature: liveWeather?.weather?.temperature ?? 28.0,
+    humidity: liveWeather?.weather?.humidity ?? 70.0,
+    rain_forecast_mm: liveWeather?.weather?.forecast_precipitation ?? 0.0,
+    irrigation_status: liveWeather?.irrigation_prediction === 'YES'
+      ? 'Irrigation Required (Low Soil Moisture)'
+      : (liveWeather?.irrigation_prediction === 'NO' ? 'Soil Moisture Adequate' : 'Optimal Hydration'),
+    soil_type: currentUser?.soil_type || 'Clay Loam',
     n_p_k: '85-48-42 kg/ha',
     farmer_name: currentUser?.full_name || 'Farmer',
     farm_name: currentUser?.farm_name || 'Family Farm',
+    weather_risk: liveWeather?.weather_risk || 'LOW',
+    weather_condition: liveWeather?.weather?.weather_condition || 'Clear Sky',
+    weather_recommendation: liveWeather?.recommendation || 'Normal field operations.',
   };
 
-  // Pre-loaded canonical classes matching dataset/classes.json
+  // Pre-load canonical 19 classes matching dataset/classes.json and best trained model
   useEffect(() => {
-    const defaultClasses = [
-      { id: 0, name: "Apple___Apple_scab", crop: "Apple", disease: "Apple Scab", status: "Diseased", pathogen: "Venturia inaequalis (Fungus)", symptoms: "Dull olive-green or brown velvety spots on leaves.", treatment: "Apply sulfur or copper fungicides during early bud break." },
-      { id: 1, name: "Apple___Black_rot", crop: "Apple", disease: "Black Rot", status: "Diseased", pathogen: "Botryosphaeria obtusa (Fungus)", symptoms: "Frog-eye circular leaf spots with purple margins.", treatment: "Prune dead wood. Apply captan or mancozeb sprays." },
-      { id: 2, name: "Apple___healthy", crop: "Apple", disease: "None (Healthy)", status: "Healthy", pathogen: "None", symptoms: "Vibrant emerald green leaves, unblemished foliage.", treatment: "Maintain regular irrigation and balanced organic fertilizers." },
-      { id: 3, name: "Corn___Common_rust", crop: "Corn", disease: "Common Rust", status: "Diseased", pathogen: "Puccinia sorghi (Fungus)", symptoms: "Cinnamon-brown oval powdery pustules on leaves.", treatment: "Deploy rust-resistant hybrids. Apply triazole fungicides if severe." },
-      { id: 4, name: "Corn___Northern_Leaf_Blight", crop: "Corn", disease: "Northern Leaf Blight", status: "Diseased", pathogen: "Exserohilum turcicum (Fungus)", symptoms: "Long elliptical grayish-green cigar-shaped lesions.", treatment: "Crop rotation and early foliar fungicide applications." },
-      { id: 5, name: "Corn___healthy", crop: "Corn", disease: "None (Healthy)", status: "Healthy", pathogen: "None", symptoms: "Uniform deep green leaves, no fungal lesions.", treatment: "Ensure nitrogen supply and monitor soil drainage." },
-      { id: 6, name: "Potato___Early_blight", crop: "Potato", disease: "Early Blight", status: "Diseased", pathogen: "Alternaria solani (Fungus)", symptoms: "Target-board concentric rings with yellow chlorosis.", treatment: "Apply chlorothalonil or copper-based sprays every 7-10 days." },
-      { id: 7, name: "Potato___Late_blight", crop: "Potato", disease: "Late Blight", status: "Diseased", pathogen: "Phytophthora infestans (Oomycete)", symptoms: "Rapidly spreading water-soaked black lesions with white sporulation.", treatment: "Use certified disease-free tubers; apply cymoxanil or metalaxyl." },
-      { id: 8, name: "Potato___healthy", crop: "Potato", disease: "None (Healthy)", status: "Healthy", pathogen: "None", symptoms: "Lush dark-green compound leaves without lesions.", treatment: "Hill soil properly and rotate with non-solanaceous crops." },
-      { id: 9, name: "Tomato___Bacterial_spot", crop: "Tomato", disease: "Bacterial Spot", status: "Diseased", pathogen: "Xanthomonas perforans (Bacteria)", symptoms: "Small water-soaked dark circular lesions with yellow halos.", treatment: "Spray fixed copper mixed with mancozeb. Avoid overhead sprinklers." },
-      { id: 10, name: "Tomato___Early_blight", crop: "Tomato", disease: "Early Blight", status: "Diseased", pathogen: "Alternaria solani (Fungus)", symptoms: "Dark brown target-like rings on lower foliage and progressive defoliation.", treatment: "Mulch base, prune lower leaves, and apply copper fungicide." },
-      { id: 11, name: "Tomato___Late_blight", crop: "Tomato", disease: "Late Blight", status: "Diseased", pathogen: "Phytophthora infestans (Oomycete)", symptoms: "Large greasy brown necrotic patches with stem rot in humid conditions.", treatment: "Remove heavily infected foliage. Apply protective copper soap sprays." },
-      { id: 12, name: "Tomato___healthy", crop: "Tomato", disease: "None (Healthy)", status: "Healthy", pathogen: "None", symptoms: "Crisp emerald foliage with vigorous green growth.", treatment: "Maintain consistent drip hydration and calcium-rich fertile soil." }
-    ];
-    setClassesData(defaultClasses);
+    setClassesData(CANONICAL_CLASSES);
+
+    // Initial weather intelligence load
+    fetchWeatherIntelligence()
+      .then((data) => {
+        if (data && data.status === 'success') {
+          setLiveWeather(data);
+        }
+      })
+      .catch((err) => console.warn('Weather auto-fetch deferred:', err));
 
     // Check backend health via api service
     checkBackendHealth().then((data) => {
@@ -128,6 +147,29 @@ export default function App() {
     try {
       const data = await predictCropDisease(file);
       setResult(data);
+      try {
+        const existing = JSON.parse(localStorage.getItem('agrismart_recent_analyses') || '[]');
+        const isLowConfEntry = (typeof data.confidence_score === 'number' && data.confidence_score < 0.65) ||
+                               (typeof data.confidence === 'string' && parseFloat(data.confidence) < 65);
+        const entryCrop = resolveCrop(data);
+        const newEntry = {
+          id: Date.now(),
+          date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          crop: isLowConfEntry
+            ? (entryCrop ? `Possible Crop: ${entryCrop}` : 'Undetermined')
+            : (entryCrop || data.crop || 'Crop'),
+          disease: isLowConfEntry ? 'Not confidently identified' : (data.disease || 'Condition'),
+          confidence: data.confidence || '0%',
+          confidence_score: data.confidence_score,
+          status: isLowConfEntry ? 'Low Confidence' : (data.status || 'Analyzed'),
+          pathogen: isLowConfEntry ? null : (data.pathogen || null),
+          treatment: isLowConfEntry ? null : (data.treatment || null),
+          imageName: file?.name || 'leaf_photo.jpg'
+        };
+        localStorage.setItem('agrismart_recent_analyses', JSON.stringify([newEntry, ...existing.slice(0, 9)]));
+      } catch (storageErr) {
+        console.warn('Could not cache recent analysis:', storageErr);
+      }
     } catch (err) {
       console.warn('Backend inference failed or offline, checking fallback:', err);
       setError(err.message || 'AI inference request failed. Please check server connection.');
@@ -203,7 +245,14 @@ export default function App() {
             {(activeTab === 'dashboard' || activeTab === 'home') && (
               <Dashboard
                 onStartDiagnose={() => setActiveTab('diagnose')}
+                onNavigateTab={(tab, subTab = 'irrigation') => {
+                  if (subTab) setSmartFarmingSubTab(subTab);
+                  setActiveTab(tab);
+                }}
+                latestResult={result}
+                currentUser={currentUser}
                 classesData={classesData}
+                onWeatherUpdate={setLiveWeather}
               />
             )}
 
@@ -211,11 +260,47 @@ export default function App() {
             {activeTab === 'diagnose' && (
               <div>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <h2 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>Disease Detection Studio</h2>
-                  <p style={{ color: 'var(--text-secondary)' }}>
-                    Field-ready visual diagnostic tool trained on 15,014 verified plant leaf specimens.
-                    Upload or capture high-resolution leaf photos to detect pathologies.
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>Disease Detection Studio</h2>
+                      <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.92rem' }}>
+                        Field-ready visual diagnostic tool validated on <strong>21,749 verified specimens</strong> across <strong>19 classes</strong> and <strong>7 crop species</strong>.
+                      </p>
+                    </div>
+
+                    {/* Supported Crops compact info section */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      padding: '0.4rem 0.85rem',
+                      borderRadius: '999px',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Supported Crops:
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                        {['Apple', 'Corn', 'Potato', 'Tomato', 'Grape', 'Bell Pepper', 'Peach'].map((c) => (
+                          <span
+                            key={c}
+                            style={{
+                              fontSize: '0.78rem',
+                              color: '#a7f3d0',
+                              fontWeight: 500,
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="workflow-grid">
@@ -224,6 +309,7 @@ export default function App() {
                     result={result}
                     isAnalyzing={isAnalyzing}
                     error={error}
+                    weatherData={liveWeather}
                     onNavigateToWeather={() => setActiveTab('weather')}
                     onNavigateToAssistant={() => setActiveTab('assistant')}
                   />
@@ -233,12 +319,15 @@ export default function App() {
 
             {/* Tab: Weather Intelligence */}
             {activeTab === 'weather' && (
-              <WeatherDashboard onNavigateToDiagnose={() => setActiveTab('diagnose')} />
+              <WeatherDashboard
+                onNavigateToDiagnose={() => setActiveTab('diagnose')}
+                onWeatherUpdate={setLiveWeather}
+              />
             )}
 
             {/* Tab: Smart Farming & Precision Irrigation */}
             {activeTab === 'smart-farming' && (
-              <SmartFarmingDashboard />
+              <SmartFarmingDashboard initialSubTab={smartFarmingSubTab} />
             )}
 
             {/* Tab: Kisan GenAI Assistant */}

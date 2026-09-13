@@ -1,8 +1,8 @@
 {
     "best_architecture": "efficientnet_b0",
-    "num_classes": 13,
+    "num_classes": 19,
     "image_size": 224,
-    "confidence_threshold": 0.6,
+    "confidence_threshold": 0.65,
     "normalization": {
         "mean": [
             0.485,
@@ -16,11 +16,13 @@
         ]
     },
     "primary_metric": "macro_f1",
-    "score": 0.9036,
+    "score": 0.919,
+    "accuracy": 0.9368,
     "improvements": [
         "targeted_leaf_augmentation",
-        "label_smoothing_0.08",
+        "label_smoothing_0.05",
         "smoothed_class_weights",
-        "deep_unfreeze_top4"
+        "deep_unfreeze_top4",
+        "19_class_extension"
     ]
 }

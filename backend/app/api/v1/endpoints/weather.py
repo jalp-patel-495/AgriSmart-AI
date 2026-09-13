@@ -10,10 +10,17 @@ from backend.app.schemas.weather import (
     FarmLocationPreset,
     AgriculturalAdvisory,
 )
+from backend.app.schemas.weather_intelligence import (
+    WeatherIntelligenceRequest as ModCWeatherRequest,
+    WeatherIntelligenceResponse as ModCWeatherResponse,
+)
 from backend.app.services.weather_service import (
     get_weather_intelligence,
     generate_agricultural_advisories,
     FARM_PRESETS,
+)
+from backend.app.services.weather_intelligence_service import (
+    evaluate_weather_intelligence,
 )
 
 router = APIRouter(prefix="/weather", tags=["Weather Intelligence"])
@@ -61,3 +68,13 @@ def get_custom_recommendations(payload: WeatherRecommendationRequest):
         disease=payload.disease
     )
     return weather_intel.advisories
+
+
+@router.post("/weather-intelligence", response_model=ModCWeatherResponse)
+def get_weather_intelligence_alias(req: ModCWeatherRequest):
+    """
+    Direct alias for Bonus Module C weather-intelligence endpoint.
+    """
+    return evaluate_weather_intelligence(req)
+
+

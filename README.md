@@ -9,10 +9,10 @@ AgriSmart AI is an end-to-end intelligent agricultural diagnosis and advisory sy
 - **Phase 1: Project Setup & Dataset Preparation** *(Current)*
   - Modular project structure (Frontend, Backend, AI Model, Dataset, Docs)
   - Python AI development environment setup
-  - Disease ontology definition (15+ key crop-disease classes)
-  - Dataset ingestion, validation, and preprocessing pipeline (OpenCV, Pandas)
-  - Data augmentation and transformations (Albumentations)
-  - Stratified Train/Val/Test partitioning and PyTorch Dataset integration
+  - Disease ontology definition (19 key crop-disease classes across 7 crops: Apple, Corn, Potato, Tomato, Grape, Bell Pepper, Peach)
+  - Dataset ingestion, validation, and preprocessing pipeline (PlantVillage CC-BY-SA-3.0, OpenCV, Pandas)
+  - Data augmentation and transformations (Torchvision / Albumentations)
+  - Stratified Train/Val/Test partitioning (fixed seed 42) and PyTorch Dataset integration
   - Git repository versioning and documentation
 - **Phase 2: Deep Learning Model Architecture & Training**
   - Convolutional Neural Network (CNN) / Vision Transformer (ViT) model implementation
@@ -101,3 +101,23 @@ python scripts/verify_dataset.py
 | **Backend** | FastAPI, Uvicorn, Pydantic |
 | **Frontend** | React.js, JavaScript, HTML5, Vanilla CSS |
 | **Tools & Version Control**| VS Code, Git, GitHub |
+
+---
+
+## 📚 Dataset Attribution & License
+
+- **Dataset Source**: PlantVillage Open Access Repository (21,749 curated foliar specimens).
+- **License**: Creative Commons Attribution-ShareAlike 3.0 Unported (CC-BY-SA-3.0).
+- **Academic Citation**:
+  ```bibtex
+  @article{Mohanty_Hughes_Salathe_2016,
+      title   = {Using deep learning for image-based plant disease detection},
+      volume  = {7},
+      DOI     = {10.3389/fpls.2016.01419},
+      journal = {Frontiers in Plant Science},
+      author  = {Mohanty, Sharada P. and Hughes, David P. and Salathé, Marcel},
+      year    = {2016}
+  }
+  ```
+- **Partitioning**: Stratified 80/20 train/validation split with fixed seed 42. Zero data leakage verified. The SIH held-out field-test dataset is strictly quarantined and excluded from all model training and validation.
+

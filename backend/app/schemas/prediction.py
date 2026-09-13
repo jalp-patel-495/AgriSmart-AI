@@ -25,7 +25,7 @@ class PredictionResponse(BaseModel):
     pathogen: Optional[str] = Field(None, description="Identified causal pathogen and organism type")
     symptoms: str = Field(..., description="Observable field symptoms (e.g. Brown spots on leaves)")
     precautions: List[str] = Field(..., description="Step-by-step preventative precautions for farmers")
-    treatment: str = Field(..., description="Curative organic and chemical agronomic recommendations")
+    treatment: Optional[str] = Field(None, description="Curative organic and chemical agronomic recommendations")
     top_predictions: List[TopPredictionItem] = Field(default_factory=list, description="Top 3 ranked disease predictions")
     processing_time_ms: float = Field(..., description="Inference latency in milliseconds")
 

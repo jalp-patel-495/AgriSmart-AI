@@ -205,6 +205,103 @@
         "Scout weekly under leaf undersides for aphid and whitefly vectors"
       ],
       "treatment": "Maintain optimal staking, consistent drip hydration, calcium-rich soil, and regular scouting."
+    },
+    {
+      "id": 13,
+      "name": "Grape_Black_Rot",
+      "crop": "Grape",
+      "disease": "Black Rot",
+      "status": "Diseased",
+      "pathogen": "Guignardia bidwellii (Fungus)",
+      "symptoms": "Small reddish-brown circular spots on foliage with dark margins and tiny black pycnidia; shriveled black mummified fruit berries.",
+      "precautions": [
+        "Prune dormant grapevines to remove mummified berries, infected canes, and tendrils",
+        "Maintain open vine canopy architecture to maximize sunlight and ensure rapid leaf drying",
+        "Avoid overhead sprinkler irrigation in vineyard rows; use drip emitters",
+        "Destroy wild grapevines in nearby hedgerows that serve as disease reservoirs"
+      ],
+      "treatment": "Apply preventative captan, mancozeb, or myclobutanil sprays starting from early shoot development (1-3 inches) through 4 weeks post-bloom."
+    },
+    {
+      "id": 14,
+      "name": "Grape_Healthy",
+      "crop": "Grape",
+      "disease": "Grape Healthy",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Broad, deep-green lobed leaves with healthy veins, clean margins, and vigorous shoot growth without foliar lesions.",
+      "precautions": [
+        "Monitor vine vigor and balance cluster load through sensible summer shoot thinning",
+        "Conduct periodic petiole analysis to balance potassium and magnesium nutrition",
+        "Maintain regulated deficit irrigation (RDI) for optimal berry quality and canopy balance",
+        "Continue routine integrated pest management (IPM) scouting for leafhopper vectors"
+      ],
+      "treatment": "Maintain trellising, balanced drip fertigation, and preventative scouting."
+    },
+    {
+      "id": 15,
+      "name": "Bell_Pepper_Bacterial_Spot",
+      "crop": "Bell Pepper",
+      "disease": "Bacterial Spot",
+      "status": "Diseased",
+      "pathogen": "Xanthomonas campestris pv. vesicatoria (Bacteria)",
+      "symptoms": "Small, water-soaked, yellowish-green to brown lesions on leaves, often surrounded by yellow halos; premature defoliation and blistered fruit lesions.",
+      "precautions": [
+        "Plant certified pathogen-free pepper seeds and disease-resistant bell pepper cultivars",
+        "Avoid handling or working in pepper rows while foliage is wet with dew or irrigation",
+        "Practice at least a 2-year crop rotation away from peppers, tomatoes, and solanaceous plants",
+        "Employ ground drip irrigation to prevent water splashing and bacterial dispersal"
+      ],
+      "treatment": "Apply fixed copper bactericides combined with mancozeb upon initial symptoms. Prune severely infected lower foliage."
+    },
+    {
+      "id": 16,
+      "name": "Bell_Pepper_Healthy",
+      "crop": "Bell Pepper",
+      "disease": "Bell Pepper Healthy",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Glossy, dark-green leaves with smooth margins, sturdy stems, and robust vegetative growth with no spots or curling.",
+      "precautions": [
+        "Maintain consistent soil moisture to prevent blossom end rot and foliar droop",
+        "Stake or cage pepper plants to support heavy fruit load and prevent ground contact",
+        "Apply balanced organic fertilizer avoiding excessive nitrogen which reduces fruit set",
+        "Scout weekly under leaf surfaces for aphid, thrip, and mite vector populations"
+      ],
+      "treatment": "Maintain balanced organic nutrition, consistent soil moisture, and regular pest scouting."
+    },
+    {
+      "id": 17,
+      "name": "Peach_Bacterial_Spot",
+      "crop": "Peach",
+      "disease": "Bacterial Spot",
+      "status": "Diseased",
+      "pathogen": "Xanthomonas arboricola pv. pruni (Bacteria)",
+      "symptoms": "Water-soaked angular purple-brown spots on leaf undersides, 'shot-hole' effect as dead tissue drops out; sunken pitted lesions on fruit.",
+      "precautions": [
+        "Select resistant peach cultivars adapted to local climate and well-drained sandy loam soil",
+        "Avoid excessive nitrogen fertilization that promotes lush, highly susceptible autumn growth",
+        "Establish orchard windbreaks to mitigate windblown rain and sand abrasion on foliage",
+        "Prune trees during winter dormancy to maintain open-center vases for sunlight and air drying"
+      ],
+      "treatment": "Apply preventative copper bactericide sprays at autumn leaf drop and early spring bud swell. Apply oxytetracycline sprays during shuck split if disease pressure is high."
+    },
+    {
+      "id": 18,
+      "name": "Peach_Healthy",
+      "crop": "Peach",
+      "disease": "Peach Healthy",
+      "status": "Healthy",
+      "pathogen": "None",
+      "symptoms": "Lush, lanceolate emerald leaves with finely serrated margins, flexible reddish twigs, and vigorous canopy without lesions or shot-holes.",
+      "precautions": [
+        "Maintain clean orchard floor with regular under-tree mowing and organic mulching",
+        "Apply balanced post-harvest fertilizers based on annual foliar tissue analysis",
+        "Apply dormant horticultural spray oils to suppress overwintering scale and mite pests",
+        "Monitor orchard soil moisture during fruit swell and stone hardening stages"
+      ],
+      "treatment": "Maintain orchard sanitation, dormant sprays, and balanced tree nutrition."
     }
   ]
 }
+

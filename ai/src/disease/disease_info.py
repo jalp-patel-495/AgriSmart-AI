@@ -61,13 +61,40 @@ DISEASE_KNOWLEDGE_BASE: Dict[str, Dict[str, Any]] = {
         "farmer_advice": "Late Blight spreads extremely fast in cool, wet conditions (15-20°C). Inspect fields daily after continuous rains."
     },
     "Bacterial Spot": {
-        "crop": "Tomato / Pepper",
+        "crop": "Tomato / Bell Pepper / Peach",
         "disease": "Bacterial Spot",
-        "pathogen": "Xanthomonas perforans (Bacteria)",
-        "symptoms": "Small, angular dark water-soaked spots on foliage, often with yellow halos; leaves may turn brown and drop.",
+        "pathogen": "Xanthomonas spp. (Bacteria)",
+        "symptoms": "Small, angular dark water-soaked spots on foliage, often with yellow halos; leaves may turn brown, drop, or develop shot-holes.",
         "prevention": "Use certified pathogen-free seeds; avoid working in fields when plants are wet.",
-        "management": "Apply copper-mancozeb tank mixes preventatively; sanitize stakes and field tools.",
+        "management": "Apply copper-mancozeb tank mixes preventatively; sanitize stakes, pruning shears, and field tools.",
         "farmer_advice": "Bacteria enter through stomata and wounds. Do not prune or cultivate while foliage is wet from dew or rain."
+    },
+    "Grape Black Rot": {
+        "crop": "Grape",
+        "disease": "Black Rot",
+        "pathogen": "Guignardia bidwellii (Fungus)",
+        "symptoms": "Reddish-brown circular spots on foliage with dark margins and tiny black pycnidia; shriveled black mummified berries on clusters.",
+        "prevention": "Prune dormant vines to remove mummies and infected canes. Ensure an open trellis canopy for rapid leaf drying.",
+        "management": "Apply preventative captan, mancozeb, or myclobutanil sprays from early shoot emergence until 4 weeks after bloom.",
+        "farmer_advice": "Mummified berries hanging on vines are the primary overwintering source of infection. Prune out and destroy them before bud break."
+    },
+    "Bell Pepper Bacterial Spot": {
+        "crop": "Bell Pepper",
+        "disease": "Bacterial Spot",
+        "pathogen": "Xanthomonas campestris pv. vesicatoria (Bacteria)",
+        "symptoms": "Small water-soaked yellowish-green to brown lesions on leaves, surrounded by yellow halos; premature defoliation and blistered fruit lesions.",
+        "prevention": "Use certified pathogen-free seed; practice 2-year crop rotation; use drip irrigation instead of overhead sprinklers.",
+        "management": "Apply fixed copper bactericide combined with mancozeb upon first symptom appearance. Prune severely affected lower leaves.",
+        "farmer_advice": "Avoid touching or cultivating pepper rows while dew is on foliage. Drip irrigation prevents splash spread."
+    },
+    "Peach Bacterial Spot": {
+        "crop": "Peach",
+        "disease": "Bacterial Spot",
+        "pathogen": "Xanthomonas arboricola pv. pruni (Bacteria)",
+        "symptoms": "Water-soaked angular purple-brown spots on leaf undersides, 'shot-hole' effect as dead centers fall out; pitting on fruit.",
+        "prevention": "Plant resistant cultivars in well-drained sandy loam soil. Avoid excessive late nitrogen fertilizer.",
+        "management": "Apply preventative copper sprays at autumn leaf drop and early spring bud swell. Oxytetracycline during shuck split if pressure is high.",
+        "farmer_advice": "Prune peach trees to maintain an open-center vase for maximum sunlight penetration and rapid air drying."
     },
     "Healthy": {
         "crop": "Multiple Crops",

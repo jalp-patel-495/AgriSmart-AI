@@ -7,7 +7,7 @@ AgriSmart AI features a **Unified Crop + Disease Detection** engine built on top
 
 ## Benchmarked Vision Architectures
 Five ImageNet-pretrained transfer learning backbones were systematically trained and evaluated:
-1. **EfficientNet-B0** (Selected Winner – Macro-F1: 0.8175)
+1. **EfficientNet-B0** (Selected Winner – 19-Class Macro-F1: 0.9190, Accuracy: 0.9368)
 2. **ResNet50**
 3. **DenseNet121**
 4. **MobileNetV3**

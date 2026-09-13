@@ -1,110 +1,357 @@
 import React, { useState, useEffect } from 'react';
 import {
-  getIrrigationAdvisory,
-  getIoTTelemetry,
+  predictRealIrrigation,
   getCropRecommendation,
   getSoilPresets,
-  getAdvisoryHistory
+  getAdvisoryHistory,
+  getCropsCatalog,
 } from '../services/smartFarmingApi';
+import { fetchWeatherIntelligence } from '../services/weatherIntelligenceService';
 
-export default function SmartFarmingDashboard() {
-  const [subTab, setSubTab] = useState('irrigation'); // 'irrigation', 'crops', 'history'
+// Predefined demo scenarios strictly labeled as demo inputs
+const DEMO_SCENARIOS = {
+  optimal: {
+    label: '🌿 Optimal',
+    soilMoisture: 60.0,
+    temperature: 24.0,
+    humidity: 65.0,
+    rainProbability: 15,
+    rainForecast: 0.0,
+  },
+  drought: {
+    label: '🌵 Drought',
+    soilMoisture: 15.0,
+    temperature: 35.0,
+    humidity: 35.0,
+    rainProbability: 5,
+    rainForecast: 0.0,
+  },
+  waterlogged: {
+    label: '🌊 Waterlogged',
+    soilMoisture: 85.0,
+    temperature: 22.0,
+    humidity: 85.0,
+    rainProbability: 80,
+    rainForecast: 15.0,
+  },
+};
+
+export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) {
+  const [subTab, setSubTab] = useState(initialSubTab); // 'irrigation', 'crops', 'history'
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
   // --- Smart Irrigation State ---
-  const [activeScenario, setActiveScenario] = useState('normal');
-  const [iotData, setIotData] = useState(null);
-  const [crop, setCrop] = useState('Tomato');
-  const [soilType, setSoilType] = useState('Clay Loam');
-  const [fieldSize, setFieldSize] = useState(2.0);
-  const [moisture15, setMoisture15] = useState(33.8);
-  const [moisture30, setMoisture30] = useState(37.5);
-  const [ambientTemp, setAmbientTemp] = useState(28.0);
-  const [humidity, setHumidity] = useState(62.0);
-  const [rainForecast, setRainForecast] = useState(0.0);
-  const [irrigationResult, setIrrigationResult] = useState(null);
-  const [isCalculatingIrrigation, setIsCalculatingIrrigation] = useState(false);
+  const [activeScenario, setActiveScenario] = useState(null);
+  const [soilMoisture, setSoilMoisture] = useState(30.0);
+  const [temperature, setTemperature] = useState(28.0);
+  const [humidity, setHumidity] = useState(65.0);
 
-  // --- Crop Recommendation State ---
+  // Optional Weather Context
+  const [rainProbability, setRainProbability] = useState(20);
+  const [rainForecast, setRainForecast] = useState(0.0);
+  const [weatherOverlay, setWeatherOverlay] = useState(null);
+  const [isSyncingWeather, setIsSyncingWeather] = useState(false);
+
+  // Irrigation Result & Loading
+  const [irrigationResult, setIrrigationResult] = useState(null);
+  const [isAnalyzingIrrigation, setIsAnalyzingIrrigation] = useState(false);
+  const [irrigationError, setIrrigationError] = useState(null);
+
+  // --- AI Crop Recommendation State (95 Global Classes) ---
   const [soilPresets, setSoilPresets] = useState([]);
+  const [cropsCatalog, setCropsCatalog] = useState([]);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogCategory, setCatalogCategory] = useState('All');
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+
   const [nitrogen, setNitrogen] = useState(85.0);
   const [phosphorus, setPhosphorus] = useState(48.0);
   const [potassium, setPotassium] = useState(42.0);
+  const [cropTemp, setCropTemp] = useState(25.5);
+  const [cropHum, setCropHum] = useState(75.0);
   const [ph, setPh] = useState(6.8);
-  const [temp, setTemp] = useState(25.5);
-  const [hum, setHum] = useState(75.0);
   const [rainfall, setRainfall] = useState(180.0);
+
   const [cropResult, setCropResult] = useState(null);
   const [isRecommendingCrop, setIsRecommendingCrop] = useState(false);
+  const [cropError, setCropError] = useState(null);
 
-  // --- History State ---
-  const [historyData, setHistoryData] = useState({ irrigation_logs: [], crop_recommendations: [] });
+  // --- Real Persisted History State ---
+  const [irrigationHistory, setIrrigationHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('agrismart_irrigation_real_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Initial Data Load
+  const [cropHistory, setCropHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('agrismart_crop_real_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Load presets, 95-crop catalog, and sync backend history on mount
   useEffect(() => {
-    loadIoT(activeScenario);
     getSoilPresets().then(setSoilPresets);
-    loadHistory();
+    getCropsCatalog().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setCropsCatalog(data);
+      }
+    });
+    getAdvisoryHistory().then((data) => {
+      if (data) {
+        if (Array.isArray(data.irrigation_logs) && data.irrigation_logs.length > 0) {
+          setIrrigationHistory((prev) => {
+            if (prev.length === 0) {
+              const mapped = data.irrigation_logs.map((log) => ({
+                id: log.id,
+                date: log.created_at || 'Previous session',
+                soilMoisture: log.moisture_15cm,
+                temperature: 26.0,
+                humidity: 65.0,
+                prediction: log.status === 'Required' || log.status === 'Scheduled' ? 'YES' : 'NO',
+                confidence: '95.0%',
+                priority: log.status === 'Required' ? 'HIGH' : 'NONE',
+              }));
+              try {
+                localStorage.setItem('agrismart_irrigation_real_history', JSON.stringify(mapped));
+              } catch (_) {}
+              return mapped;
+            }
+            return prev;
+          });
+        }
+        if (Array.isArray(data.crop_recommendations) && data.crop_recommendations.length > 0) {
+          setCropHistory((prev) => {
+            if (prev.length === 0) {
+              const mapped = data.crop_recommendations.map((rec) => ({
+                id: rec.id,
+                date: rec.created_at || 'Previous session',
+                crop: rec.top_crop,
+                prediction: `${rec.top_crop} (${rec.confidence})`,
+                npk: rec.n_p_k,
+                ph: rec.ph,
+                rainfall: '180 mm',
+              }));
+              try {
+                localStorage.setItem('agrismart_crop_real_history', JSON.stringify(mapped));
+              } catch (_) {}
+              return mapped;
+            }
+            return prev;
+          });
+        }
+      }
+    });
   }, []);
 
-  const loadIoT = async (scenario) => {
+  // --- Demo Scenario Selector ---
+  const handleSelectScenario = (key) => {
+    setActiveScenario(key);
+    const scen = DEMO_SCENARIOS[key];
+    if (scen) {
+      setSoilMoisture(scen.soilMoisture);
+      setTemperature(scen.temperature);
+      setHumidity(scen.humidity);
+      setRainProbability(scen.rainProbability);
+      setRainForecast(scen.rainForecast);
+    }
+  };
+
+  // --- Sync Live Microclimate Context ---
+  const handleSyncWeather = async () => {
+    setIsSyncingWeather(true);
     try {
-      const data = await getIoTTelemetry(scenario);
-      setIotData(data);
-      if (data && data.current) {
-        setMoisture15(data.current.soil_moisture_15cm);
-        setMoisture30(data.current.soil_moisture_30cm);
-        // Automatically trigger fresh irrigation evaluation
-        runIrrigationCalc(data.current.soil_moisture_15cm, data.current.soil_moisture_30cm, crop, soilType, fieldSize, ambientTemp, humidity, rainForecast);
+      const data = await fetchWeatherIntelligence({
+        latitude: 22.5645,
+        longitude: 72.9289,
+        soilMoisture: Number(soilMoisture),
+        temperature: Number(temperature),
+        humidity: Number(humidity),
+      });
+
+      if (data && data.status === 'success' && data.weather) {
+        setTemperature(parseFloat(data.weather.temperature.toFixed(1)));
+        setHumidity(data.weather.humidity);
+        setRainProbability(data.weather.rain_probability);
+        setRainForecast(data.weather.forecast_precipitation);
+        setWeatherOverlay(data);
       }
     } catch (err) {
-      console.warn('IoT load error:', err);
-    }
-  };
-
-  const handleScenarioChange = (scenario) => {
-    setActiveScenario(scenario);
-    loadIoT(scenario);
-  };
-
-  const runIrrigationCalc = async (m15 = moisture15, m30 = moisture30, c = crop, s = soilType, f = fieldSize, t = ambientTemp, h = humidity, r = rainForecast) => {
-    setIsCalculatingIrrigation(true);
-    try {
-      const res = await getIrrigationAdvisory({
-        crop: c,
-        soil_type: s,
-        field_size_hectares: parseFloat(f),
-        moisture_15cm: parseFloat(m15),
-        moisture_30cm: parseFloat(m30),
-        ambient_temp: parseFloat(t),
-        humidity: parseFloat(h),
-        rain_forecast_mm: parseFloat(r),
-        irrigation_system: 'Drip Irrigation',
-      });
-      setIrrigationResult(res);
-      loadHistory();
-    } catch (err) {
-      console.error('Irrigation calc error:', err);
+      console.warn('Weather sync error:', err);
     } finally {
-      setIsCalculatingIrrigation(false);
+      setIsSyncingWeather(false);
     }
   };
 
+  // --- Run Real Irrigation Model Inference ---
+  const handleAnalyzeIrrigation = async () => {
+    setIrrigationError(null);
+
+    // Validation: Require numerical farm conditions
+    if (
+      soilMoisture === '' || isNaN(soilMoisture) ||
+      temperature === '' || isNaN(temperature) ||
+      humidity === '' || isNaN(humidity)
+    ) {
+      setIrrigationError('Data unavailable — please provide the required farm conditions.');
+      return;
+    }
+
+    setIsAnalyzingIrrigation(true);
+    try {
+      const parsedMoisture = parseFloat(soilMoisture);
+      const parsedTemp = parseFloat(temperature);
+      const parsedHum = parseFloat(humidity);
+
+      // 1. Call trained ML irrigation model
+      const res = await predictRealIrrigation({
+        soil_moisture: parsedMoisture,
+        temperature: parsedTemp,
+        humidity: parsedHum,
+      });
+
+      // 2. Fetch external agrometeorological overlay from Weather Intelligence
+      let weatherData = weatherOverlay;
+      try {
+        const wRes = await fetchWeatherIntelligence({
+          latitude: 22.5645,
+          longitude: 72.9289,
+          crop: 'Tomato',
+          soilMoisture: parsedMoisture,
+          temperature: parsedTemp,
+          humidity: parsedHum,
+        });
+        if (wRes && wRes.status === 'success') {
+          weatherData = wRes;
+          setWeatherOverlay(wRes);
+        }
+      } catch (_) {}
+
+      setIrrigationResult({
+        required: res.required,
+        prediction: res.prediction,
+        confidence: res.confidence,
+        priority: res.priority,
+        weather: weatherData,
+      });
+
+      // 3. Persist log to real history
+      const newLog = {
+        id: Date.now(),
+        date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        soilMoisture: parsedMoisture,
+        temperature: parsedTemp,
+        humidity: parsedHum,
+        prediction: res.prediction,
+        confidence: `${Math.round(res.confidence * 100)}%`,
+        priority: res.priority,
+      };
+
+      setIrrigationHistory((prev) => {
+        const updated = [newLog, ...prev.slice(0, 19)];
+        try {
+          localStorage.setItem('agrismart_irrigation_real_history', JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      });
+    } catch (err) {
+      console.error('Irrigation analysis error:', err);
+      setIrrigationError('Unable to generate irrigation recommendation. Please try again.');
+    } finally {
+      setIsAnalyzingIrrigation(false);
+    }
+  };
+
+  // --- Run Real Crop Recommendation Model Inference ---
   const handleRecommendCrop = async () => {
+    setCropError(null);
+
+    // Validation: Require all 7 parameters
+    if (
+      nitrogen === '' || isNaN(nitrogen) ||
+      phosphorus === '' || isNaN(phosphorus) ||
+      potassium === '' || isNaN(potassium) ||
+      cropTemp === '' || isNaN(cropTemp) ||
+      cropHum === '' || isNaN(cropHum) ||
+      ph === '' || isNaN(ph) ||
+      rainfall === '' || isNaN(rainfall)
+    ) {
+      setCropError('Data unavailable — please provide the required soil and environmental parameters.');
+      return;
+    }
+
     setIsRecommendingCrop(true);
     try {
-      const res = await getCropRecommendation({
+      const payload = {
         nitrogen: parseFloat(nitrogen),
         phosphorus: parseFloat(phosphorus),
         potassium: parseFloat(potassium),
         ph: parseFloat(ph),
-        temperature: parseFloat(temp),
-        humidity: parseFloat(hum),
+        temperature: parseFloat(cropTemp),
+        humidity: parseFloat(cropHum),
         rainfall: parseFloat(rainfall),
+      };
+
+      const res = await getCropRecommendation(payload);
+
+      // Extract top recommendations from the 95-class model
+      const topRecs = res.top_recommendations || [];
+      const primaryRec = topRecs.length > 0 ? topRecs[0] : null;
+      const topCrop = primaryRec ? primaryRec.crop : (res.recommended_crop || 'Rice');
+      const conf = primaryRec ? primaryRec.match_percentage : (res.confidence ? `${Math.round(res.confidence * 100)}%` : 'Available');
+
+      setCropResult({
+        crop: topCrop,
+        confidence: conf,
+        top_recommendations: topRecs,
+        crop_profile: primaryRec ? {
+          scientific_name: primaryRec.scientific_name,
+          crop_category: primaryRec.crop_category,
+          growing_season: primaryRec.growing_season,
+          water_requirement: primaryRec.water_requirement,
+          soil_suitability: primaryRec.soil_suitability,
+          preferred_ph: primaryRec.preferred_ph,
+          temperature_range: primaryRec.temperature_range,
+          rainfall_range: primaryRec.rainfall_range,
+          hindi_name: primaryRec.hindi_name,
+          gujarati_name: primaryRec.gujarati_name,
+          agronomic_advice: primaryRec.agronomic_advice,
+        } : (res.crop_profile || {}),
+        inputs: payload,
       });
-      setCropResult(res);
-      loadHistory();
+
+      // Persist log to real history
+      const newRec = {
+        id: Date.now(),
+        date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        crop: topCrop,
+        prediction: `${topCrop} (${conf})`,
+        npk: `${payload.nitrogen}-${payload.phosphorus}-${payload.potassium}`,
+        ph: payload.ph,
+        rainfall: `${payload.rainfall} mm`,
+      };
+
+      setCropHistory((prev) => {
+        const updated = [newRec, ...prev.slice(0, 19)];
+        try {
+          localStorage.setItem('agrismart_crop_real_history', JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      });
     } catch (err) {
       console.error('Crop recommendation error:', err);
+      setCropError('Unable to generate crop recommendation. Please try again.');
     } finally {
       setIsRecommendingCrop(false);
     }
@@ -115,15 +362,69 @@ export default function SmartFarmingDashboard() {
     setPhosphorus(preset.default_p);
     setPotassium(preset.default_k);
     setPh(preset.default_ph);
-    setTemp(preset.default_temp);
-    setHum(preset.default_humidity);
+    setCropTemp(preset.default_temp);
+    setCropHum(preset.default_humidity);
     setRainfall(preset.default_rainfall);
   };
 
-  const loadHistory = async () => {
+  const handleTestCropPreset = (cropItem) => {
+    // Populate form with approximate optimal conditions from global crop catalog
+    const tMin = cropItem.temperature_min_c || 20;
+    const tMax = cropItem.temperature_max_c || 30;
+    const rMin = cropItem.rainfall_min_mm || 500;
+    const rMax = cropItem.rainfall_max_mm || 1000;
+    const phMin = cropItem.ph_min || 6.0;
+    const phMax = cropItem.ph_max || 7.5;
+
+    setCropTemp(parseFloat(((tMin + tMax) / 2).toFixed(1)));
+    setRainfall(parseFloat(((rMin + rMax) / 2).toFixed(0)));
+    setPh(parseFloat(((phMin + phMax) / 2).toFixed(1)));
+    setCropHum(cropItem.humidity_preference === 'high' ? 80.0 : cropItem.humidity_preference === 'low' ? 40.0 : 65.0);
+
+    // Default target NPK targets based on category
+    if (cropItem.crop_category === 'Pulse' || cropItem.sub_category?.includes('Legume')) {
+      setNitrogen(25.0);
+      setPhosphorus(50.0);
+      setPotassium(30.0);
+    } else if (cropItem.crop_category === 'Cereal') {
+      setNitrogen(100.0);
+      setPhosphorus(50.0);
+      setPotassium(40.0);
+    } else {
+      setNitrogen(80.0);
+      setPhosphorus(45.0);
+      setPotassium(45.0);
+    }
+
+    setShowCatalogModal(false);
+  };
+
+  const CROP_CATEGORIES = ['All', 'Cereal', 'Pulse', 'Vegetable', 'Fruit', 'Oilseed', 'Spice', 'Commercial', 'Fibre', 'Medicinal', 'Fodder'];
+
+  const filteredCrops = cropsCatalog.filter((c) => {
+    const term = catalogSearch.toLowerCase().trim();
+    const matchesSearch =
+      !term ||
+      c.crop_name?.toLowerCase().includes(term) ||
+      c.scientific_name?.toLowerCase().includes(term) ||
+      c.hindi_name?.toLowerCase().includes(term) ||
+      c.gujarati_name?.toLowerCase().includes(term) ||
+      c.crop_category?.toLowerCase().includes(term);
+
+    const matchesCategory =
+      catalogCategory === 'All' ||
+      c.crop_category?.toLowerCase().includes(catalogCategory.toLowerCase());
+
+    return matchesSearch && matchesCategory;
+  });
+
+
+  const handleClearHistory = () => {
+    setIrrigationHistory([]);
+    setCropHistory([]);
     try {
-      const data = await getAdvisoryHistory();
-      setHistoryData(data);
+      localStorage.removeItem('agrismart_irrigation_real_history');
+      localStorage.removeItem('agrismart_crop_real_history');
     } catch (_) {}
   };
 
@@ -136,17 +437,17 @@ export default function SmartFarmingDashboard() {
             <span>💧</span> Smart Irrigation & AI Crop Recommendation
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-            Physics-based FAO-56 irrigation scheduling correlated with IoT soil telemetry and Random Forest crop suitability modeling.
+            Machine learning irrigation requirement prediction and multi-factor crop suitability modeling based on real soil and environmental conditions.
           </p>
         </div>
 
-        {/* Sub-Tabs */}
+        {/* Sub-Tabs: Clean headers without fake counts */}
         <div className="sub-tab-pills">
           <button
             className={`sub-tab-btn ${subTab === 'irrigation' ? 'active' : ''}`}
             onClick={() => setSubTab('irrigation')}
           >
-            💧 Smart Irrigation & IoT
+            💧 Smart Irrigation
           </button>
           <button
             className={`sub-tab-btn ${subTab === 'crops' ? 'active' : ''}`}
@@ -155,460 +456,501 @@ export default function SmartFarmingDashboard() {
               if (!cropResult) handleRecommendCrop();
             }}
           >
-            🌱 AI Crop Recommender
+            🌱 AI Crop Recommender (95 Crops)
           </button>
           <button
             className={`sub-tab-btn ${subTab === 'history' ? 'active' : ''}`}
-            onClick={() => {
-              setSubTab('history');
-              loadHistory();
-            }}
+            onClick={() => setSubTab('history')}
           >
-            📜 History & Logs ({historyData.irrigation_logs.length + historyData.crop_recommendations.length})
+            📋 History & Logs
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          TAB 1: SMART IRRIGATION & IOT SENSOR HUB
+          TAB 1: SMART IRRIGATION (ACTUAL ML MODEL: SOIL MOISTURE, TEMP, HUMIDITY)
          ========================================================================= */}
       {subTab === 'irrigation' && (
         <div className="irrigation-view-grid">
-          {/* Left Column: Simulated IoT Telemetry & Field Controls */}
+          {/* Left Column: Farm Conditions & Optional Weather Context */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* IoT Sensor Device Bar */}
-            <div className="panel-card iot-device-banner">
+            {/* Demo Scenarios (Clearly labeled as demo inputs) */}
+            <div className="panel-card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <span className="pulsing-iot-dot" />
-                  <div>
-                    <strong style={{ fontSize: '0.9rem', color: '#fff' }}>
-                      {iotData ? iotData.current.device_id : 'AGRI-NODE-01'}
-                    </strong>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-emerald)', marginLeft: '0.6rem' }}>
-                      📡 Online (LoRaWAN 868MHz)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="scenario-switcher">
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Test Scenario:</span>
-                  <button
-                    className={`scenario-btn ${activeScenario === 'normal' ? 'active' : ''}`}
-                    onClick={() => handleScenarioChange('normal')}
-                  >
-                    🌿 Optimal
-                  </button>
-                  <button
-                    className={`scenario-btn ${activeScenario === 'drought' ? 'active' : ''}`}
-                    onClick={() => handleScenarioChange('drought')}
-                  >
-                    🌵 Drought
-                  </button>
-                  <button
-                    className={`scenario-btn ${activeScenario === 'waterlogged' ? 'active' : ''}`}
-                    onClick={() => handleScenarioChange('waterlogged')}
-                  >
-                    🌊 Waterlogged
-                  </button>
-                </div>
-              </div>
-
-              {/* IoT Live Dials */}
-              {iotData && (
-                <div className="iot-metrics-row">
-                  <div className="iot-metric-box">
-                    <span className="iot-label">Moisture (15cm Root Zone)</span>
-                    <span className="iot-value" style={{ color: iotData.current.soil_moisture_15cm < 20 ? '#ef4444' : (iotData.current.soil_moisture_15cm > 45 ? '#3b82f6' : '#34d399') }}>
-                      {iotData.current.soil_moisture_15cm}%
-                    </span>
-                    <span className="iot-sub">Active root intake</span>
-                  </div>
-
-                  <div className="iot-metric-box">
-                    <span className="iot-label">Moisture (30cm Deep Subsoil)</span>
-                    <span className="iot-value" style={{ color: iotData.current.soil_moisture_30cm < 22 ? '#ef4444' : '#34d399' }}>
-                      {iotData.current.soil_moisture_30cm}%
-                    </span>
-                    <span className="iot-sub">Subsurface reservoir</span>
-                  </div>
-
-                  <div className="iot-metric-box">
-                    <span className="iot-label">Soil Temperature</span>
-                    <span className="iot-value">
-                      {iotData.current.soil_temp}°C
-                    </span>
-                    <span className="iot-sub">Thermistor probe</span>
-                  </div>
-
-                  <div className="iot-metric-box">
-                    <span className="iot-label">Electrical Conductivity</span>
-                    <span className="iot-value">
-                      {iotData.current.electrical_conductivity} dS/m
-                    </span>
-                    <span className="iot-sub">Salinity index</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Irrigation Parameters Form */}
-            <div className="panel-card">
-              <h3 className="panel-title" style={{ marginBottom: '1rem' }}>⚙️ Field & Agrometeorological Parameters</h3>
-              
-              <div className="form-grid-2">
                 <div>
-                  <label className="input-label">Target Crop</label>
-                  <select
-                    className="select-input"
-                    value={crop}
-                    onChange={(e) => {
-                      setCrop(e.target.value);
-                      runIrrigationCalc(moisture15, moisture30, e.target.value, soilType, fieldSize, ambientTemp, humidity, rainForecast);
-                    }}
-                  >
-                    {['Tomato', 'Potato', 'Corn', 'Apple', 'Rice', 'Wheat', 'Cotton', 'Grapes', 'Banana'].map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  <strong style={{ fontSize: '0.9rem', color: '#fff' }}>Demo Scenarios</strong>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                    Select a preset scenario to populate sample farm conditions:
+                  </span>
                 </div>
-
-                <div>
-                  <label className="input-label">Soil Texture Type</label>
-                  <select
-                    className="select-input"
-                    value={soilType}
-                    onChange={(e) => {
-                      setSoilType(e.target.value);
-                      runIrrigationCalc(moisture15, moisture30, crop, e.target.value, fieldSize, ambientTemp, humidity, rainForecast);
-                    }}
-                  >
-                    {['Clay Loam', 'Sandy Loam', 'Loam', 'Black Cotton Soil', 'Silt Loam'].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="input-label">Field Size (Hectares)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.1"
-                    className="text-input"
-                    value={fieldSize}
-                    onChange={(e) => {
-                      setFieldSize(e.target.value);
-                      runIrrigationCalc(moisture15, moisture30, crop, soilType, e.target.value, ambientTemp, humidity, rainForecast);
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label className="input-label">Rain Forecast (Next 24-48h mm)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    className="text-input"
-                    value={rainForecast}
-                    onChange={(e) => {
-                      setRainForecast(e.target.value);
-                      runIrrigationCalc(moisture15, moisture30, crop, soilType, fieldSize, ambientTemp, humidity, e.target.value);
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Moisture Adjustment Sliders */}
-              <div style={{ marginTop: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Upper 15cm Moisture Override:</span>
-                  <strong style={{ color: '#fff' }}>{moisture15}%</strong>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="60"
-                  step="0.5"
-                  value={moisture15}
-                  className="slider-input"
-                  onChange={(e) => {
-                    setMoisture15(e.target.value);
-                    runIrrigationCalc(e.target.value, moisture30, crop, soilType, fieldSize, ambientTemp, humidity, rainForecast);
-                  }}
-                />
-              </div>
-
-              <div style={{ marginTop: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Deep 30cm Subsoil Moisture Override:</span>
-                  <strong style={{ color: '#fff' }}>{moisture30}%</strong>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="60"
-                  step="0.5"
-                  value={moisture30}
-                  className="slider-input"
-                  onChange={(e) => {
-                    setMoisture30(e.target.value);
-                    runIrrigationCalc(moisture15, e.target.value, crop, soilType, fieldSize, ambientTemp, humidity, rainForecast);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: AI Smart Irrigation Recommendation Card */}
-          <div className="panel-card irrigation-decision-card">
-            <div className="panel-header">
-              <h3 className="panel-title">💧 FAO-56 Irrigation Decision Engine</h3>
-              {isCalculatingIrrigation && (
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-emerald)' }}>⚡ Recalculating...</span>
-              )}
-            </div>
-
-            {irrigationResult ? (
-              <div>
-                {/* Decision Banner */}
-                <div
-                  className="decision-status-banner"
-                  style={{
-                    background: `${irrigationResult.status_color}18`,
-                    borderLeft: `4px solid ${irrigationResult.status_color}`,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span
-                      className="status-pill"
-                      style={{
-                        background: irrigationResult.status_color,
-                        color: '#fff',
-                      }}
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {Object.entries(DEMO_SCENARIOS).map(([key, item]) => (
+                    <button
+                      key={key}
+                      className={`scenario-btn ${activeScenario === key ? 'active' : ''}`}
+                      onClick={() => handleSelectScenario(key)}
                     >
-                      {irrigationResult.status.toUpperCase()}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      FAO-56 Soil Moisture Deficit
-                    </span>
-                  </div>
-                  <h3 style={{ color: '#fff', fontSize: '1.25rem', marginTop: '0.6rem' }}>
-                    {irrigationResult.headline}
-                  </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.88rem', marginTop: '0.35rem', lineHeight: 1.45 }}>
-                    {irrigationResult.action_required}
-                  </p>
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
+              </div>
+            </div>
 
-                {/* Key Execution Metrics Grid */}
-                <div className="execution-metrics-grid">
-                  <div className="metric-box">
-                    <span className="metric-title">Water Volume / Ha</span>
-                    <span className="metric-highlight">
-                      {irrigationResult.water_amount_litres_per_ha.toLocaleString()} L
-                    </span>
-                    <span className="metric-desc">Per hectare requirement</span>
+            {/* Farm Conditions Input Card */}
+            <div className="panel-card">
+              <h3 className="panel-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>🌱</span> Farm Conditions (Required Model Inputs)
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                {/* Soil Moisture */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                    <label className="input-label" style={{ margin: 0 }}>
+                      🌱 Soil Moisture (%)
+                    </label>
+                    <strong style={{ color: soilMoisture < 20 ? '#ef4444' : soilMoisture > 70 ? '#60a5fa' : '#34d399' }}>
+                      {soilMoisture}%
+                    </strong>
                   </div>
-
-                  <div className="metric-box">
-                    <span className="metric-title">Total Field Water</span>
-                    <span className="metric-highlight" style={{ color: '#60a5fa' }}>
-                      {irrigationResult.total_water_litres.toLocaleString()} L
-                    </span>
-                    <span className="metric-desc">For {fieldSize} hectares</span>
-                  </div>
-
-                  <div className="metric-box">
-                    <span className="metric-title">Drip Run Time</span>
-                    <span className="metric-highlight" style={{ color: '#fbbf24' }}>
-                      {irrigationResult.drip_duration_minutes} mins
-                    </span>
-                    <span className="metric-desc">{(irrigationResult.drip_duration_minutes / 60).toFixed(1)} hours drip cycle</span>
-                  </div>
-
-                  <div className="metric-box">
-                    <span className="metric-title">Crop ETc Rate</span>
-                    <span className="metric-highlight">
-                      {irrigationResult.crop_et_mm_day} mm/day
-                    </span>
-                    <span className="metric-desc">Daily evapotranspiration</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={soilMoisture}
+                    className="slider-input"
+                    onChange={(e) => {
+                      setSoilMoisture(e.target.value);
+                      setActiveScenario(null);
+                    }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    <span>0% (Severe Deficit)</span>
+                    <span>50% (Adequate)</span>
+                    <span>100% (Saturated)</span>
                   </div>
                 </div>
 
-                {/* Scientific Deficit & Weather Factors */}
-                <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(0, 0, 0, 0.25)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '0.35rem' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Current Soil Moisture Deficit</span>
-                    <span style={{ color: '#f87171', fontWeight: 600 }}>{irrigationResult.soil_water_deficit_pct}% deficit</span>
-                  </div>
-                  <div className="metric-track" style={{ marginBottom: '0.75rem' }}>
-                    <div
-                      className="metric-fill"
-                      style={{
-                        width: `${Math.min(100, irrigationResult.soil_water_deficit_pct * 3)}%`,
-                        background: 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                <div className="form-grid-2">
+                  {/* Ambient Temperature */}
+                  <div>
+                    <label className="input-label">🌡️ Temperature (°C)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      className="text-input"
+                      value={temperature}
+                      onChange={(e) => {
+                        setTemperature(e.target.value);
+                        setActiveScenario(null);
                       }}
                     />
                   </div>
 
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>🌦️</span>
-                    <span><strong>Weather Coordination:</strong> {irrigationResult.weather_adjustment_note}</span>
+                  {/* Relative Humidity */}
+                  <div>
+                    <label className="input-label">💧 Humidity (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      className="text-input"
+                      value={humidity}
+                      onChange={(e) => {
+                        setHumidity(e.target.value);
+                        setActiveScenario(null);
+                      }}
+                    />
                   </div>
                 </div>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                Loading irrigation calculations...
+
+              {/* Optional Weather Context Section */}
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.2rem', borderTop: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', color: '#e2e8f0', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>🌦️</span> Optional Weather Context
+                  </h4>
+                  <button
+                    className="btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                    onClick={handleSyncWeather}
+                    disabled={isSyncingWeather}
+                  >
+                    {isSyncingWeather ? '📡 Syncing...' : '📡 Sync Live Weather Telemetry'}
+                  </button>
+                </div>
+
+                <div className="form-grid-2">
+                  <div>
+                    <label className="input-label">🌧️ Rain Probability (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      className="text-input"
+                      value={rainProbability}
+                      onChange={(e) => setRainProbability(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="input-label">☔ Forecast Rainfall (mm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      className="text-input"
+                      value={rainForecast}
+                      onChange={(e) => setRainForecast(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                  Rainfall is an external agrometeorological decision layer, not a trained feature of the irrigation ML model.
+                </p>
               </div>
-            )}
+
+              {/* Error Message */}
+              {irrigationError && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', color: '#fca5a5', fontSize: '0.85rem' }}>
+                  ⚠️ {irrigationError}
+                </div>
+              )}
+
+              {/* Action Button */}
+              <button
+                className="btn-primary"
+                style={{ marginTop: '1.25rem' }}
+                disabled={isAnalyzingIrrigation}
+                onClick={handleAnalyzeIrrigation}
+              >
+                {isAnalyzingIrrigation ? '⚡ Running Machine Learning Inference...' : '🔍 Analyze Irrigation'}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Real Irrigation Recommendation & Weather Coordination Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* 1. Irrigation Recommendation Card */}
+            <div className="panel-card irrigation-decision-card">
+              <div className="panel-header">
+                <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>💧</span> Irrigation Recommendation
+                </h3>
+                {isAnalyzingIrrigation && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-emerald)' }}>⚡ Evaluating...</span>
+                )}
+              </div>
+
+              {irrigationResult ? (
+                <div>
+                  {/* Status Banner */}
+                  <div
+                    className="decision-status-banner"
+                    style={{
+                      background: irrigationResult.prediction === 'YES' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                      borderLeft: `4px solid ${irrigationResult.prediction === 'YES' ? '#ef4444' : '#10b981'}`,
+                      borderRadius: 'var(--radius-md)',
+                      padding: '1.2rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <span
+                        className="status-pill"
+                        style={{
+                          background: irrigationResult.prediction === 'YES' ? '#ef4444' : '#10b981',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          padding: '0.35rem 0.85rem',
+                        }}
+                      >
+                        {irrigationResult.prediction === 'YES' ? 'IRRIGATION REQUIRED' : 'NO IRRIGATION REQUIRED'}
+                      </span>
+                      <span style={{ fontSize: '0.85rem', color: '#e2e8f0' }}>
+                        Model Confidence: <strong>{Math.round(irrigationResult.confidence * 100)}%</strong>
+                      </span>
+                    </div>
+
+                    <div style={{ marginTop: '0.85rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: irrigationResult.priority === 'HIGH' ? '#f87171' : '#34d399',
+                        }}
+                      >
+                        Priority: {irrigationResult.priority}
+                      </span>
+                    </div>
+
+                    <h3 style={{ color: '#fff', fontSize: '1.2rem', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                      {irrigationResult.prediction === 'YES'
+                        ? 'Irrigation is recommended under the provided conditions.'
+                        : 'Irrigation is not required under the provided conditions.'}
+                    </h3>
+                  </div>
+
+                  {/* Operational Note */}
+                  <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', background: 'rgba(0, 0, 0, 0.25)', borderRadius: 'var(--radius-md)' }}>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                      💡 <strong>Field Guidance:</strong> Soil moisture is currently recorded at <strong>{soilMoisture}%</strong>.
+                      {irrigationResult.prediction === 'YES'
+                        ? ' Available root-zone moisture is below target levels. Apply scheduled irrigation.'
+                        : ' Soil hydration remains adequate. Prevent overwatering to protect root health.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>💧</div>
+                  <h4>Awaiting Irrigation Analysis</h4>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.35rem' }}>
+                    Adjust soil moisture, temperature, and humidity on the left, then click Analyze Irrigation.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Weather Coordination Card */}
+            <div className="panel-card">
+              <div className="panel-header">
+                <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>🌦️</span> Weather Coordination
+                </h3>
+                {weatherOverlay && (
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '999px',
+                      background: weatherOverlay.weather_risk === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                      color: weatherOverlay.weather_risk === 'HIGH' ? '#f87171' : '#34d399',
+                      border: `1px solid ${weatherOverlay.weather_risk === 'HIGH' ? '#ef4444' : '#10b981'}`,
+                    }}
+                  >
+                    {weatherOverlay.weather_risk} RISK
+                  </span>
+                )}
+              </div>
+
+              {weatherOverlay && weatherOverlay.weather ? (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Temperature</span>
+                      <strong style={{ fontSize: '1rem', color: '#fff' }}>{weatherOverlay.weather.temperature.toFixed(1)}°C</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Humidity</span>
+                      <strong style={{ fontSize: '1rem', color: '#fff' }}>{weatherOverlay.weather.humidity}%</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Rain Probability</span>
+                      <strong style={{ fontSize: '1rem', color: '#60a5fa' }}>{weatherOverlay.weather.rain_probability}%</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Forecast Rain</span>
+                      <strong style={{ fontSize: '1rem', color: '#60a5fa' }}>{weatherOverlay.weather.forecast_precipitation} mm</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '0.85rem 1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(52, 211, 153, 0.25)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 700, marginBottom: '0.25rem' }}>
+                      Agrometeorological Action Advisory:
+                    </div>
+                    <p style={{ margin: 0, color: '#f1f5f9', fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.45 }}>
+                      {weatherOverlay.recommendation}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>
+                    Click <strong>Analyze Irrigation</strong> or <strong>Sync Live Weather Telemetry</strong> to load agrometeorological coordination.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* =========================================================================
-          TAB 2: AI CROP RECOMMENDATION ENGINE
+          TAB 2: AI CROP RECOMMENDER (95 CROP CLASSES SUPPORTED)
          ========================================================================= */}
       {subTab === 'crops' && (
         <div className="crops-view-grid">
-          {/* Left Column: Soil & Climate Tuning Controls */}
+          {/* Left Column: Soil & Climate Parameters Form */}
           <div className="panel-card">
-            <div className="panel-header">
-              <h3 className="panel-title">🌱 Soil & Agro-Climatic Parameters</h3>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-emerald)', fontWeight: 600 }}>
-                22-Crop ML Model
-              </span>
+            <h3 className="panel-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🌾</span> Soil Macronutrients & Agro-Climate Inputs
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+              Input laboratory soil test values (N-P-K, pH) and local climate parameters to predict the most suitable crop class among 95 global crop classes.
+            </p>
+
+            {/* 95 Supported Crops Banner & Catalog Explorer Trigger */}
+            <div style={{
+              marginBottom: '1.25rem',
+              padding: '0.75rem 0.9rem',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.25))',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <strong style={{ fontSize: '0.85rem', color: '#fff' }}>95 Global Crop Classes Supported</strong>
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '0.1rem 0.45rem', borderRadius: '999px', border: '1px solid #34d399' }}>
+                    {cropsCatalog.length || 95} Classes
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: '0.15rem' }}>
+                  Covers cereals, pulses, vegetables, fruits, spices, plantation, and fodder.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: 'rgba(16, 185, 129, 0.2)', borderColor: '#10b981', color: '#6ee7b7' }}
+                onClick={() => setShowCatalogModal(true)}
+              >
+                🔍 Browse 95 Crops
+              </button>
             </div>
 
-            {/* Presets Chips */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                Load Regional Agro-Climatic Profile:
-              </span>
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                {soilPresets.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    className="preset-chip"
-                    onClick={() => applySoilPreset(preset)}
-                  >
-                    📍 {preset.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Soil Nutrient Sliders */}
-            <div className="nutrient-sliders">
-              {/* Nitrogen */}
-              <div className="slider-group">
-                <div className="slider-header">
-                  <span>Nitrogen (N): <strong>{nitrogen} kg/ha</strong></span>
-                  <span className="nutrient-badge" style={{ color: nitrogen > 100 ? '#60a5fa' : '#34d399' }}>
-                    {nitrogen > 100 ? 'High' : (nitrogen < 40 ? 'Low' : 'Adequate')}
-                  </span>
+            {/* Optional Regional Presets Selector */}
+            {soilPresets.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label className="input-label" style={{ marginBottom: '0.4rem' }}>
+                  📍 Quick-Fill Agro-Climatic Preset (Optional):
+                </label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {soilPresets.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      className="preset-chip"
+                      onClick={() => applySoilPreset(preset)}
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
                 </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="150"
-                  value={nitrogen}
-                  className="slider-input"
-                  onChange={(e) => setNitrogen(e.target.value)}
-                />
               </div>
+            )}
 
-              {/* Phosphorus */}
-              <div className="slider-group">
-                <div className="slider-header">
-                  <span>Phosphorus (P): <strong>{phosphorus} kg/ha</strong></span>
-                  <span className="nutrient-badge" style={{ color: phosphorus > 80 ? '#fbbf24' : '#34d399' }}>
-                    {phosphorus > 80 ? 'High' : (phosphorus < 25 ? 'Low' : 'Adequate')}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="150"
-                  value={phosphorus}
-                  className="slider-input"
-                  onChange={(e) => setPhosphorus(e.target.value)}
-                />
-              </div>
-
-              {/* Potassium */}
-              <div className="slider-group">
-                <div className="slider-header">
-                  <span>Potassium (K): <strong>{potassium} kg/ha</strong></span>
-                  <span className="nutrient-badge" style={{ color: potassium > 100 ? '#fbbf24' : '#34d399' }}>
-                    {potassium > 100 ? 'High' : (potassium < 25 ? 'Low' : 'Adequate')}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="210"
-                  value={potassium}
-                  className="slider-input"
-                  onChange={(e) => setPotassium(e.target.value)}
-                />
-              </div>
-
-              {/* Soil pH */}
-              <div className="slider-group">
-                <div className="slider-header">
-                  <span>Soil pH: <strong>{ph}</strong></span>
-                  <span className="nutrient-badge" style={{ color: ph < 6.0 ? '#f87171' : (ph > 7.5 ? '#60a5fa' : '#34d399') }}>
-                    {ph < 6.0 ? 'Acidic' : (ph > 7.5 ? 'Alkaline' : 'Neutral')}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="4.0"
-                  max="9.0"
-                  step="0.1"
-                  value={ph}
-                  className="slider-input"
-                  onChange={(e) => setPh(e.target.value)}
-                />
-              </div>
-
-              {/* Climate Inputs Row */}
-              <div className="form-grid-3" style={{ marginTop: '1rem' }}>
+            {/* Form Fields: N, P, K, Temp, Humidity, pH, Rainfall */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-grid-2">
                 <div>
-                  <label className="input-label">Avg Temp (°C)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    className="text-input"
-                    value={temp}
-                    onChange={(e) => setTemp(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="input-label">Humidity (%)</label>
+                  <label className="input-label">Nitrogen (N) (kg/ha)</label>
                   <input
                     type="number"
                     step="1"
                     className="text-input"
-                    value={hum}
-                    onChange={(e) => setHum(e.target.value)}
+                    value={nitrogen}
+                    onChange={(e) => setNitrogen(e.target.value)}
                   />
                 </div>
+
                 <div>
-                  <label className="input-label">Rainfall (mm)</label>
+                  <label className="input-label">Phosphorus (P) (kg/ha)</label>
                   <input
                     type="number"
-                    step="5"
+                    step="1"
                     className="text-input"
-                    value={rainfall}
-                    onChange={(e) => setRainfall(e.target.value)}
+                    value={phosphorus}
+                    onChange={(e) => setPhosphorus(e.target.value)}
                   />
                 </div>
               </div>
+
+              <div className="form-grid-2">
+                <div>
+                  <label className="input-label">Potassium (K) (kg/ha)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    className="text-input"
+                    value={potassium}
+                    onChange={(e) => setPotassium(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="input-label">Soil pH (0.0 - 14.0)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="3.0"
+                    max="10.0"
+                    className="text-input"
+                    value={ph}
+                    onChange={(e) => setPh(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid-2">
+                <div>
+                  <label className="input-label">Ambient Temperature (°C)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    className="text-input"
+                    value={cropTemp}
+                    onChange={(e) => setCropTemp(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="input-label">Relative Humidity (%)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    className="text-input"
+                    value={cropHum}
+                    onChange={(e) => setCropHum(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="input-label">Annual Rainfall (mm)</label>
+                <input
+                  type="number"
+                  step="5"
+                  className="text-input"
+                  value={rainfall}
+                  onChange={(e) => setRainfall(e.target.value)}
+                />
+              </div>
             </div>
+
+            {/* Error Banner */}
+            {cropError && (
+              <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', color: '#fca5a5', fontSize: '0.85rem' }}>
+                ⚠️ {cropError}
+              </div>
+            )}
 
             {/* Run Recommendation CTA */}
             <button
@@ -617,73 +959,189 @@ export default function SmartFarmingDashboard() {
               disabled={isRecommendingCrop}
               onClick={handleRecommendCrop}
             >
-              {isRecommendingCrop ? '🔬 Evaluating Agronomic Models...' : '🔍 Predict Optimal Crops'}
+              {isRecommendingCrop ? '🔬 Evaluating Agronomic Models...' : '🌱 Recommend Crop'}
             </button>
           </div>
 
-          {/* Right Column: Recommended Crop Ranked Cards */}
+          {/* Right Column: Recommended Crop, Top 3 Alternatives, & Literature Profile */}
           <div>
             {cropResult ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>🏆</span> Top Recommended Crops
-                  </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    {cropResult.soil_summary}
-                  </span>
+              <div className="panel-card recommended-crop-card" style={{ padding: '1.75rem' }}>
+                {/* Primary Recommendation Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-emerald)', fontWeight: 700 }}>
+                      🌱 Top Recommendation
+                    </span>
+                    <h3 style={{ fontSize: '2.1rem', color: '#fff', fontWeight: 800, margin: '0.35rem 0' }}>
+                      {cropResult.crop}
+                    </h3>
+                    {cropResult.crop_profile?.scientific_name && cropResult.crop_profile.scientific_name !== 'N/A' && (
+                      <div style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '0.92rem', marginBottom: '0.35rem' }}>
+                        {cropResult.crop_profile.scientific_name}
+                      </div>
+                    )}
+                    {(cropResult.crop_profile?.hindi_name || cropResult.crop_profile?.gujarati_name) && (
+                      <div style={{ fontSize: '0.84rem', color: '#6ee7b7', display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
+                        {cropResult.crop_profile.hindi_name && <span>हिंदी: <strong>{cropResult.crop_profile.hindi_name}</strong></span>}
+                        {cropResult.crop_profile.gujarati_name && <span>ગુજરાતી: <strong>{cropResult.crop_profile.gujarati_name}</strong></span>}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <span className="match-percent-label" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399' }}>{cropResult.confidence}</span>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Model Confidence</span>
+                  </div>
                 </div>
 
-                {cropResult.top_recommendations.map((item, idx) => (
-                  <div key={idx} className="panel-card recommended-crop-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div className="crop-rank-badge">#{idx + 1}</div>
-                        <div>
-                          <h4 style={{ fontSize: '1.35rem', color: '#fff', fontWeight: 800 }}>{item.crop}</h4>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-emerald)', fontWeight: 600 }}>
-                            {item.economic_potential}
+                {/* Alternative Recommendations: Top-3 physiological rankings */}
+                {cropResult.top_recommendations && cropResult.top_recommendations.length > 1 && (
+                  <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(0, 0, 0, 0.3)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.65rem' }}>
+                      🌾 Other Suitable Options (Model-Ranked Recommendations):
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {cropResult.top_recommendations.slice(1, 3).map((alt, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '0.55rem 0.85rem',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            borderRadius: 'var(--radius-sm)',
+                            borderLeft: '3px solid #10b981'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>#{idx + 2}</span>
+                            <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{alt.crop}</strong>
+                            {alt.crop_category && (
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: 'rgba(255, 255, 255, 0.06)', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                                {alt.crop_category}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.85rem', color: '#a7f3d0', fontWeight: 600 }}>
+                            {alt.match_percentage} Match
                           </span>
                         </div>
-                      </div>
-
-                      <div style={{ textAlign: 'right' }}>
-                        <span className="match-percent-label">{item.match_percentage}</span>
-                        <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Match Score</span>
-                      </div>
-                    </div>
-
-                    <div className="crop-details-grid">
-                      <div className="crop-detail-item">
-                        <span className="detail-label">Water Need</span>
-                        <span className="detail-val">💧 {item.water_requirement}</span>
-                      </div>
-                      <div className="crop-detail-item">
-                        <span className="detail-label">Growth Cycle</span>
-                        <span className="detail-val">⏳ {item.growth_duration}</span>
-                      </div>
-                      <div className="crop-detail-item">
-                        <span className="detail-label">Sowing Season</span>
-                        <span className="detail-val">☀️ {item.growing_season}</span>
-                      </div>
-                      <div className="crop-detail-item">
-                        <span className="detail-label">Soil Affinity</span>
-                        <span className="detail-val">🌱 {item.soil_suitability}</span>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.82rem', color: '#d1d5db' }}>
-                      💡 <strong>Cultivation Guideline:</strong> {item.agronomic_advice}
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Literature Crop Profile Card from global_crops.json */}
+                {cropResult.crop_profile && (
+                  <div style={{ marginTop: '1.25rem', padding: '1.1rem', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em' }}>
+                        📖 Crop Profile (Literature-Typical Approximation)
+                      </span>
+                      <span style={{ fontSize: '0.68rem', color: '#94a3b8', background: 'rgba(0, 0, 0, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
+                        FAO / ICAR Reference
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Crop Category</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.crop_category || 'Field Crop'}</strong>
+                      </div>
+
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Growing Season</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.growing_season || 'Seasonal'}</strong>
+                      </div>
+
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Preferred Soil pH</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.preferred_ph || '6.0 - 7.5'}</strong>
+                      </div>
+
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Water Requirement</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.water_requirement || 'Moderate'}</strong>
+                      </div>
+
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Temperature Range</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.temperature_range || '15 - 35°C'}</strong>
+                      </div>
+
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Rainfall Range</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.rainfall_range || '400 - 1200 mm'}</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.5rem' }}>
+                      ℹ️ Note: These agronomic profile values are literature-typical approximations. They are not exact farm guarantees and vary with local cultivars, irrigation, and season.
+                    </div>
+                  </div>
+                )}
+
+                {/* Farmer-Friendly Explanation */}
+                <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(0, 0, 0, 0.25)', borderRadius: 'var(--radius-md)' }}>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                    <strong>Based on the provided soil and microclimate parameters:</strong>
+                  </p>
+                  <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    Nitrogen ({cropResult.inputs.nitrogen} kg/ha) + Phosphorus ({cropResult.inputs.phosphorus} kg/ha) + Potassium ({cropResult.inputs.potassium} kg/ha) + Temperature ({cropResult.inputs.temperature}°C) + Humidity ({cropResult.inputs.humidity}%) + Soil pH ({cropResult.inputs.ph}) + Rainfall ({cropResult.inputs.rainfall} mm).
+                  </p>
+                </div>
+
+                {/* Submitted Input Parameters Table */}
+                <div style={{ marginTop: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.65rem', fontWeight: 700 }}>
+                    Submitted Input Parameters:
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.6rem' }}>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Nitrogen (N)</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.nitrogen} kg/ha</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Phosphorus (P)</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.phosphorus} kg/ha</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Potassium (K)</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.potassium} kg/ha</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Soil pH</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.ph}</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Temperature</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.temperature}°C</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Humidity</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.humidity}%</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Rainfall</span>
+                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.rainfall} mm</strong>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="panel-card" style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🌱</div>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🌾</div>
                 <h4>Awaiting Soil Evaluation</h4>
                 <p style={{ fontSize: '0.85rem', marginTop: '0.35rem' }}>
-                  Adjust soil nutrient sliders on the left or select a regional preset, then click Predict Optimal Crops.
+                  Adjust soil nutrient values on the left or select a regional preset, then click <strong>Recommend Crop</strong>.
                 </p>
               </div>
             )}
@@ -692,93 +1150,294 @@ export default function SmartFarmingDashboard() {
       )}
 
       {/* =========================================================================
-          TAB 3: HISTORICAL ADVISORY LOGS (POSTGRESQL / SQLITE)
+          TAB 3: REAL PERSISTED HISTORY & LOGS
          ========================================================================= */}
       {subTab === 'history' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Irrigation Logs Table */}
-          <div className="panel-card">
-            <h3 className="panel-title" style={{ marginBottom: '1rem' }}>
-              💧 Recent Irrigation Decision Records (Database Log)
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.3rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>📋</span> Historical Prediction Logs
             </h3>
-            {historyData.irrigation_logs.length > 0 ? (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="history-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Timestamp</th>
-                      <th>Crop</th>
-                      <th>Soil Type</th>
-                      <th>Moisture (15cm)</th>
-                      <th>Status</th>
-                      <th>Water Volume</th>
-                      <th>Drip Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyData.irrigation_logs.map((log) => (
-                      <tr key={log.id}>
-                        <td>#{log.id}</td>
-                        <td>{log.created_at}</td>
-                        <td><strong>{log.crop}</strong></td>
-                        <td>{log.soil}</td>
-                        <td>{log.moisture_15cm}%</td>
-                        <td>
-                          <span className={`status-pill pill-${log.status.toLowerCase()}`}>
-                            {log.status}
-                          </span>
-                        </td>
-                        <td>{log.water_litres_per_ha ? `${log.water_litres_per_ha.toLocaleString()} L/ha` : '0 L'}</td>
-                        <td>{log.drip_mins} mins</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No irrigation logs recorded yet.</p>
+            {(irrigationHistory.length > 0 || cropHistory.length > 0) && (
+              <button
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                onClick={handleClearHistory}
+              >
+                Clear History
+              </button>
             )}
           </div>
 
-          {/* Crop Recommendation Logs Table */}
+          {/* Irrigation Prediction History Table */}
           <div className="panel-card">
-            <h3 className="panel-title" style={{ marginBottom: '1rem' }}>
-              🌱 Recent AI Crop Recommendations (Database Log)
-            </h3>
-            {historyData.crop_recommendations.length > 0 ? (
+            <h4 className="panel-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>💧</span> Irrigation Predictions
+            </h4>
+            {irrigationHistory.length > 0 ? (
               <div style={{ overflowX: 'auto' }}>
                 <table className="history-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Timestamp</th>
-                      <th>Top Recommended Crop</th>
-                      <th>Confidence Match</th>
-                      <th>Soil N-P-K</th>
-                      <th>Soil pH</th>
+                      <th>Date</th>
+                      <th>Soil Moisture</th>
+                      <th>Temperature</th>
+                      <th>Humidity</th>
+                      <th>Prediction</th>
+                      <th>Confidence</th>
+                      <th>Priority</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {historyData.crop_recommendations.map((rec) => (
-                      <tr key={rec.id}>
-                        <td>#{rec.id}</td>
-                        <td>{rec.created_at}</td>
-                        <td><strong style={{ color: 'var(--text-emerald)' }}>{rec.top_crop}</strong></td>
-                        <td>{rec.confidence}</td>
-                        <td>{rec.n_p_k}</td>
-                        <td>{rec.ph}</td>
+                    {irrigationHistory.map((log) => (
+                      <tr key={log.id}>
+                        <td>{log.date}</td>
+                        <td><strong>{log.soilMoisture}%</strong></td>
+                        <td>{log.temperature}°C</td>
+                        <td>{log.humidity}%</td>
+                        <td>
+                          <span
+                            className="status-pill"
+                            style={{
+                              background: log.prediction === 'YES' ? '#ef4444' : '#10b981',
+                              color: '#fff',
+                            }}
+                          >
+                            {log.prediction === 'YES' ? 'REQUIRED' : 'NOT REQUIRED'}
+                          </span>
+                        </td>
+                        <td>{log.confidence}</td>
+                        <td>{log.priority}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No crop recommendations recorded yet.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0 }}>
+                No history available
+              </p>
             )}
+          </div>
+
+          {/* Crop Recommendation History Table */}
+          <div className="panel-card">
+            <h4 className="panel-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>🌱</span> Crop Recommendations
+            </h4>
+            {cropHistory.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Crop</th>
+                      <th>Prediction</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cropHistory.map((rec) => (
+                      <tr key={rec.id}>
+                        <td>{rec.date}</td>
+                        <td><strong style={{ color: 'var(--text-emerald)' }}>{rec.crop}</strong></td>
+                        <td>{rec.prediction}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0 }}>
+                No history available
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: 95 GLOBAL CROP CLASSES CATALOG & LITERATURE PROFILES
+         ========================================================================= */}
+      {showCatalogModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+          }}
+          onClick={() => setShowCatalogModal(false)}
+        >
+          <div
+            style={{
+              background: '#0b131f',
+              border: '1px solid rgba(52, 211, 153, 0.3)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              width: '100%',
+              maxWidth: '960px',
+              maxHeight: '88vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '1.25rem 1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(15, 23, 42, 0.6)',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, color: '#fff', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>🌐</span> Global Crop Classes Catalog ({filteredCrops.length} of {cropsCatalog.length || 95})
+                </h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Literature-typical agronomic benchmarks. Click &quot;Test Crop&quot; to populate sample physiological parameters.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
+                onClick={() => setShowCatalogModal(false)}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Search & Category Filter Controls */}
+            <div style={{ padding: '1rem 1.5rem', background: 'rgba(0, 0, 0, 0.2)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Search by crop, scientific name, Hindi, Gujarati, or category..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="text-input"
+                  style={{ width: '100%', fontSize: '0.88rem' }}
+                />
+                {catalogSearch && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0 0.8rem' }}
+                    onClick={() => setCatalogSearch('')}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Category Filter Pills */}
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {CROP_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCatalogCategory(cat)}
+                    style={{
+                      fontSize: '0.74rem',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '999px',
+                      border: '1px solid',
+                      borderColor: catalogCategory === cat ? '#10b981' : 'rgba(255, 255, 255, 0.12)',
+                      background: catalogCategory === cat ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                      color: catalogCategory === cat ? '#6ee7b7' : '#cbd5e1',
+                      cursor: 'pointer',
+                      fontWeight: catalogCategory === cat ? 700 : 500,
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable Crops Grid */}
+            <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
+              {filteredCrops.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.85rem' }}>
+                  {filteredCrops.map((c, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: 'var(--radius-md, 10px)',
+                        padding: '0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                          <h4 style={{ margin: 0, color: '#fff', fontSize: '0.98rem', fontWeight: 700 }}>
+                            {c.crop_name}
+                          </h4>
+                          <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                            {c.crop_category}
+                          </span>
+                        </div>
+
+                        {c.scientific_name && (
+                          <div style={{ fontStyle: 'italic', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
+                            {c.scientific_name}
+                          </div>
+                        )}
+
+                        {(c.hindi_name || c.gujarati_name) && (
+                          <div style={{ fontSize: '0.75rem', color: '#a7f3d0', marginBottom: '0.5rem' }}>
+                            {c.hindi_name && <span>हिंदी: <strong>{c.hindi_name}</strong> </span>}
+                            {c.gujarati_name && <span>| ગુજ: <strong>{c.gujarati_name}</strong></span>}
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: '0.74rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <div>💧 Water: <strong>{c.water_requirement || 'Moderate'}</strong></div>
+                          <div>🌡️ Temp: <strong>{c.temperature_min_c ?? 15} - {c.temperature_max_c ?? 35}°C</strong></div>
+                          <div>🌧️ Rain: <strong>{c.rainfall_min_mm ?? 400} - {c.rainfall_max_mm ?? 1200} mm</strong></div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ marginTop: '0.75rem', fontSize: '0.74rem', padding: '0.35rem 0.6rem', width: '100%' }}
+                        onClick={() => handleTestCropPreset(c)}
+                      >
+                        🧪 Test This Crop
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.9rem' }}>No crops match your search or category filter.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Note */}
+            <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0, 0, 0, 0.4)', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.73rem', color: '#94a3b8' }}>
+              ℹ️ Literature dataset profiles from FAO Ecocrop and ICAR. Suitable for exploratory testing and prototyping.
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+

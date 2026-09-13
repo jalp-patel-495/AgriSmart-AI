@@ -60,6 +60,14 @@ ai/data/crop_health_stress.csv
 models/crop_stress/*.pkl
 ai/models/crop_stress/*.pkl
 
+# Large ML model binaries (sklearn/pickle - use DVC or Git LFS for these)
+*.pkl
+*.joblib
+
+# Raw disease image datasets (large image folders)
+dataset/disease/
+ai/data/disease/
+
 
 # Databases and caches
 *.db

@@ -85,6 +85,13 @@ class RecommendedCropItem(BaseModel):
     soil_suitability: str
     economic_potential: str
     agronomic_advice: str
+    scientific_name: Optional[str] = None
+    crop_category: Optional[str] = None
+    hindi_name: Optional[str] = None
+    gujarati_name: Optional[str] = None
+    temperature_range: Optional[str] = None
+    rainfall_range: Optional[str] = None
+    preferred_ph: Optional[str] = None
 
 
 class CropRecommendationResponse(BaseModel):

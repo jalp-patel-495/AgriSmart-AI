@@ -22,6 +22,9 @@ class ChatContext(BaseModel):
     irrigation_status: Optional[str] = None
     soil_type: Optional[str] = None
     n_p_k: Optional[str] = None
+    weather_risk: Optional[str] = None
+    weather_condition: Optional[str] = None
+    weather_recommendation: Optional[str] = None
 
 
 class ChatRequest(BaseModel):

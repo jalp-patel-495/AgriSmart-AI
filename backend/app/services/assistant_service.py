@@ -46,6 +46,12 @@ def build_system_prompt(context: Any) -> str:
             context_str += f"- Rain Forecast (24-48h): {context.rain_forecast_mm} mm\n"
         if context.irrigation_status:
             context_str += f"- Soil Irrigation Status: {context.irrigation_status}\n"
+        if getattr(context, "weather_risk", None):
+            context_str += f"- Agrometeorological Weather Risk: {context.weather_risk}\n"
+        if getattr(context, "weather_condition", None):
+            context_str += f"- Weather Condition: {context.weather_condition}\n"
+        if getattr(context, "weather_recommendation", None):
+            context_str += f"- Weather-Driven Advisory: {context.weather_recommendation}\n"
         if context.soil_type:
             context_str += f"- Soil Texture: {context.soil_type}\n"
         if context.n_p_k:
@@ -230,7 +236,28 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             "How do I test my soil pH and NPK before planting?"
         ]
 
-    # 5. General Agricultural Question
+    # 5. Weather & Agrometeorological Guidance
+    elif any(k in q_lower for k in ["weather", "rain", "forecast", "climate", "risk", "temperature", "humidity", "storm"]):
+        risk = getattr(context, "weather_risk", "MODERATE") if context else "MODERATE"
+        rec = getattr(context, "weather_recommendation", None) if context else None
+        cond = getattr(context, "weather_condition", None) if context else None
+        text = (
+            f"### Agrometeorological Field Assessment for {crop}\n\n"
+            f"Synthesizing live microclimate telemetry for your **{crop}** parcel:\n\n"
+            f"- **Current Atmospheric State:** {cond or 'Ambient Conditions'} at **{temp:.1f}°C** and **{humidity:.0f}% RH**.\n"
+            f"- **Precipitation Outlook:** {rain:.1f} mm rainfall expected across the next 24–48 hours.\n"
+            f"- **Computed Weather Risk:** **{risk} RISK**.\n\n"
+            f"**Operational Field Advisory:**\n"
+            f"{rec or ('Rain is forecast. Delay planned irrigation to avoid root hypoxia and fungicide washoff.' if rain > 1.0 else 'Atmospheric parameters remain favorable. Normal irrigation and field scouting can proceed.')}\n\n"
+            f"- **Crop Protection Rule:** Relative humidity exceeding 75% prolongs leaf wetness duration, accelerating fungal conidia germination. Prioritize morning drip irrigation and inspect interior canopy leaves."
+        )
+        followups = [
+            "When should I irrigate my crop?",
+            "How does this weather affect foliar disease pressure?",
+            "What preventive sprays are recommended before rain?"
+        ]
+
+    # 6. General Agricultural Question
     else:
         text = (
             f"### AgriSmart Extension Advisory for {crop}\n\n"

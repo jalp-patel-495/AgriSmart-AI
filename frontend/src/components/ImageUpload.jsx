@@ -119,7 +119,7 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
   };
 
   const triggerDiagnose = () => {
-    if (!selectedFile) return;
+    if (!selectedFile || isAnalyzing) return;
     onDiagnose(selectedFile);
   };
 
@@ -142,14 +142,32 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
 
       {/* Image Preview or Dropzone */}
       {previewUrl ? (
-        <div className="upload-preview-wrapper">
-          <img src={previewUrl} alt="Crop Leaf Preview" className="upload-preview-img" />
-          {isAnalyzing && <div className="scanner-laser" />}
-          {!isAnalyzing && (
-            <button className="btn-remove-preview" title="Remove image" onClick={clearImage}>
-              ✕
-            </button>
-          )}
+        <div>
+          <div className="upload-preview-wrapper">
+            <img src={previewUrl} alt="Crop Leaf Preview" className="upload-preview-img" />
+            {isAnalyzing && <div className="scanner-laser" />}
+            {!isAnalyzing && (
+              <button className="btn-remove-preview" title="Remove image" onClick={clearImage}>
+                ✕
+              </button>
+            )}
+          </div>
+          {/* Real image guidance tip */}
+          <div style={{
+            marginTop: '0.65rem',
+            padding: '0.45rem 0.75rem',
+            background: 'rgba(16, 185, 129, 0.08)',
+            borderRadius: '6px',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            fontSize: '0.82rem',
+            color: '#a7f3d0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}>
+            <span>💡</span>
+            <span>Tip: Use a clear, well-lit leaf image.</span>
+          </div>
         </div>
       ) : (
         <div
@@ -162,16 +180,16 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
         >
           <div className="dropzone-icon">🍃</div>
           <div className="dropzone-title">Click to browse or drop leaf photo here</div>
-          <p className="dropzone-hint">High-resolution field photo (JPEG, PNG, WebP up to 20MB)</p>
+          <p className="dropzone-hint">Tip: Use a clear, well-lit leaf image (JPEG, PNG, WebP up to 20MB)</p>
         </div>
       )}
 
       {/* Action Buttons Row */}
       <div className="upload-buttons-row">
-        <button className="btn-secondary" onClick={() => startCamera()}>
+        <button className="btn-secondary" onClick={() => startCamera()} disabled={isAnalyzing}>
           📷 Open Field Camera
         </button>
-        <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}>
+        <button className="btn-secondary" onClick={() => fileInputRef.current?.click()} disabled={isAnalyzing}>
           📁 Select File
         </button>
       </div>
@@ -183,7 +201,7 @@ export default function ImageUpload({ onDiagnose, isAnalyzing }) {
           disabled={!selectedFile || isAnalyzing}
           onClick={triggerDiagnose}
         >
-          {isAnalyzing ? '🔬 Running PyTorch Neural Diagnostics...' : '🔍 Analyze Leaf Condition'}
+          {isAnalyzing ? 'Analyzing leaf...' : '🔍 Analyze Leaf Condition'}
         </button>
       </div>
 

@@ -27,29 +27,47 @@ def parse_class_name(raw_class_name: str) -> Tuple[str, str]:
     Examples:
     'Tomato___Early_blight' -> ('Tomato', 'Early Blight')
     'Potato___healthy' -> ('Potato', 'Healthy')
-    'Corn___Northern_Leaf_Blight' -> ('Corn', 'Northern Leaf Blight')
-    'Apple___Apple_scab' -> ('Apple', 'Apple Scab')
+    'Bell_Pepper_Bacterial_Spot' -> ('Bell Pepper', 'Bacterial Spot')
+    'Grape_Black_Rot' -> ('Grape', 'Black Rot')
+    'Peach_Bacterial_Spot' -> ('Peach', 'Bacterial Spot')
     """
-    # 1. Primary separator: '___' (PlantVillage canonical)
-    if "___" in raw_class_name:
-        parts = raw_class_name.split("___")
+    clean_raw = str(raw_class_name).strip()
+
+    # Special handling for known multi-word crops
+    if clean_raw.lower().startswith("bell_pepper___"):
+        crop_part = "Bell Pepper"
+        disease_part = clean_raw[len("bell_pepper___"):]
+    elif clean_raw.lower().startswith("bell_pepper_"):
+        crop_part = "Bell Pepper"
+        disease_part = clean_raw[len("bell_pepper_"):]
+    elif clean_raw.lower().startswith("pepper,_bell___"):
+        crop_part = "Bell Pepper"
+        disease_part = clean_raw[len("pepper,_bell___"):]
+    elif clean_raw.lower().startswith("grape_") and "___" not in clean_raw:
+        crop_part = "Grape"
+        disease_part = clean_raw[len("grape_"):]
+    elif clean_raw.lower().startswith("peach_") and "___" not in clean_raw:
+        crop_part = "Peach"
+        disease_part = clean_raw[len("peach_"):]
+    elif "___" in clean_raw:
+        parts = clean_raw.split("___", 1)
         crop_part = parts[0]
         disease_part = parts[1]
-    elif "__" in raw_class_name:
-        parts = raw_class_name.split("__")
+    elif "__" in clean_raw:
+        parts = clean_raw.split("__", 1)
         crop_part = parts[0]
         disease_part = parts[1]
-    elif "_" in raw_class_name:
-        parts = raw_class_name.split("_", 1)
+    elif "_" in clean_raw:
+        parts = clean_raw.split("_", 1)
         crop_part = parts[0]
         disease_part = parts[1]
-    elif "/" in raw_class_name:
-        parts = raw_class_name.split("/", 1)
+    elif "/" in clean_raw:
+        parts = clean_raw.split("/", 1)
         crop_part = parts[0]
         disease_part = parts[1]
     else:
         crop_part = "Plant"
-        disease_part = raw_class_name
+        disease_part = clean_raw
 
     # Clean formatting
     crop = crop_part.replace("_", " ").strip().title()
@@ -73,7 +91,7 @@ def load_disease_model_artifacts(
     """
     global _CACHED_MODEL, _CACHED_CLASSES, _CACHED_CONFIG
 
-    if _CACHED_MODEL is not None and _CACHED_CLASSES:
+    if _CACHED_MODEL is not None and _CACHED_CLASSES and not model_path and not class_names_path:
         return _CACHED_MODEL, _CACHED_CLASSES
 
     root_dir = Path(__file__).resolve().parents[3]
@@ -132,14 +150,17 @@ def load_disease_model_artifacts(
             resolved_model_path = mp
             break
 
-    num_classes = len(_CACHED_CLASSES)
     arch = "efficientnet_b0"
 
     if resolved_model_path:
         try:
             ckpt = torch.load(resolved_model_path, map_location=_DEVICE, weights_only=False)
+            if isinstance(ckpt, dict) and "class_names" in ckpt:
+                _CACHED_CLASSES = list(ckpt["class_names"])
             if isinstance(ckpt, dict) and "architecture" in ckpt:
                 arch = ckpt["architecture"]
+
+            num_classes = len(_CACHED_CLASSES)
             model = build_crop_disease_model(architecture=arch, num_classes=num_classes, pretrained=False)
             state_dict = ckpt["model_state_dict"] if isinstance(ckpt, dict) and "model_state_dict" in ckpt else ckpt
             model.load_state_dict(state_dict)
@@ -150,6 +171,7 @@ def load_disease_model_artifacts(
         except Exception as e:
             print(f"[!] Warning: error loading checkpoint from {resolved_model_path}: {e}")
 
+    num_classes = len(_CACHED_CLASSES)
     # Fallback to freshly initialized model
     model = build_crop_disease_model(architecture=arch, num_classes=num_classes, pretrained=True)
     model.to(_DEVICE)
@@ -162,7 +184,7 @@ def predict_disease(
     image_path: str,
     model_path: Optional[str] = None,
     class_names_path: Optional[str] = None,
-    confidence_threshold: float = 0.60,
+    confidence_threshold: float = 0.65,
     top_k: int = 3
 ) -> Dict[str, Any]:
     """
@@ -225,9 +247,9 @@ def predict_disease(
     if raw_confidence < confidence_threshold:
         return {
             "status": "low_confidence",
-            "message": "The image could not be identified confidently.",
+            "message": "Low Confidence — Further Inspection Needed",
             "crop": None,
-            "disease": None,
+            "disease": "Low Confidence — Further Inspection Needed",
             "confidence": round(raw_confidence, 4),
             "threshold": confidence_threshold,
             "top_candidate": {

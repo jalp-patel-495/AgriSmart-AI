@@ -22,6 +22,7 @@ from backend.app.services.irrigation_service import (
 from backend.app.services.crop_recommender_service import (
     predict_top_crops,
     SOIL_PRESETS,
+    get_crops_catalog_service,
     load_recommender_model,
 )
 
@@ -128,6 +129,14 @@ def get_soil_presets():
     Returns pre-configured agro-climatic zones across agricultural regions.
     """
     return SOIL_PRESETS
+
+
+@router.get("/crops-catalog")
+def get_crops_catalog():
+    """
+    Returns the complete list of 95 supported crop classes and their literature profiles.
+    """
+    return get_crops_catalog_service()
 
 
 @router.get("/history")

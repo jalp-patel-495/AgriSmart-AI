@@ -70,12 +70,23 @@ def load_classes_metadata():
     if classes_path.exists():
         with open(classes_path, "r", encoding="utf-8") as f:
             for c in json.load(f).get("classes", []):
-                meta_by_name[c["name"].strip()] = c
+                k = c["name"].strip()
+                meta_by_name[k] = c
+                meta_by_name[k.lower()] = c
+                meta_by_name[k.lower().replace("___", "_")] = c
+                meta_by_name[k.replace("___", "_")] = c
 
     for idx, cname in enumerate(_CLASSES_LIST):
-        if cname in meta_by_name:
-            m = dict(meta_by_name[cname])
+        matched_meta = (
+            meta_by_name.get(cname) or
+            meta_by_name.get(cname.lower()) or
+            meta_by_name.get(cname.lower().replace("___", "_")) or
+            meta_by_name.get(cname.replace("___", "_"))
+        )
+        if matched_meta:
+            m = dict(matched_meta)
             m["id"] = idx
+            m["name"] = cname
             _CLASSES_MAP[idx] = m
         else:
             crop, disease = parse_class_name(cname)
@@ -222,6 +233,29 @@ async def predict_crop_disease(
 
     duration_ms = round((time.time() - start_time) * 1000, 2)
     confidence_str = f"{int(round(raw_confidence * 100))}%"
+
+    # Model Safety Rule: Confidence < 65% triggers inspection warning & suppresses treatments
+    if raw_confidence < 0.65:
+        return PredictionResponse(
+            success=True,
+            message="Low confidence prediction. Further inspection needed.",
+            disease="Low Confidence — Further Inspection Needed",
+            crop="Undetermined",
+            confidence=confidence_str,
+            confidence_score=round(raw_confidence, 4),
+            status="Low Confidence",
+            pathogen=None,
+            symptoms="Unable to determine symptoms with high confidence. Please upload a clearer, high-resolution leaf image in good natural daylight.",
+            precautions=[
+                "Upload a clearer, high-resolution leaf image in bright daylight",
+                "Ensure the leaf is in sharp focus without blur, harsh shadows, or glare",
+                "Inspect both upper and lower leaf surfaces for early signs of disease",
+                "Consult a certified local agricultural extension officer before applying chemical treatments"
+            ],
+            treatment=None,
+            top_predictions=top_predictions,
+            processing_time_ms=duration_ms
+        )
 
     return PredictionResponse(
         success=True,
