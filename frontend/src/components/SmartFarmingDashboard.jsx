@@ -549,8 +549,7 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
               setSubTab('crops');
             }}
           >
-            🌱 AI Crop Recommender (95 Crops){' '}
-            <span style={{ fontSize: '0.68rem', background: 'rgba(234, 179, 8, 0.25)', color: '#facc15', border: '1px solid #facc15', borderRadius: '4px', padding: '0.1rem 0.35rem', marginLeft: '0.35rem', fontWeight: 700 }}>⚠️ EXPERIMENTAL</span>
+            🌱 AI Crop Recommender (95 Crops)
           </button>
           <button
             className={`sub-tab-btn ${subTab === 'history' ? 'active' : ''}`}
@@ -925,14 +924,14 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   borderRadius: '6px',
+                  border: 'none',
                   cursor: 'pointer',
-                  background: cropModelVersion === '95class' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                  color: cropModelVersion === '95class' ? '#facc15' : '#94a3b8',
-                  border: cropModelVersion === '95class' ? '1px solid #facc15' : '1px solid transparent',
+                  background: cropModelVersion === '95class' ? 'var(--primary-600)' : 'transparent',
+                  color: cropModelVersion === '95class' ? '#fff' : '#94a3b8',
                   transition: 'all 0.2s',
                 }}
               >
-                🧪 95-Crop (⚠️ EXPERIMENTAL)
+                🧪 95-Crop Recommendation
               </button>
             </div>
 
@@ -1282,14 +1281,14 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
                 {cropResult && (
                   <span style={{
                     fontSize: '0.72rem',
-                    color: cropResult.is_experimental ? '#facc15' : '#34d399',
-                    background: cropResult.is_experimental ? 'rgba(234, 179, 8, 0.2)' : 'rgba(16, 185, 129, 0.15)',
+                    color: '#34d399',
+                    background: 'rgba(16, 185, 129, 0.15)',
                     padding: '0.18rem 0.55rem',
                     borderRadius: '999px',
-                    border: `1px solid ${cropResult.is_experimental ? '#facc15' : 'rgba(52, 211, 153, 0.3)'}`,
+                    border: '1px solid rgba(52, 211, 153, 0.3)',
                     fontWeight: 700
                   }}>
-                    {cropResult.is_experimental ? '95-Class Model ⚠️ EXPERIMENTAL' : '22-Class Production Model'}
+                    {cropResult.is_experimental ? '95-Class Recommendation Model' : '22-Class Production Model'}
                   </span>
                 )}
               </div>
