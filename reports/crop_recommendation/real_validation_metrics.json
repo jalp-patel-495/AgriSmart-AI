@@ -1,0 +1,1040 @@
+{
+  "canonical_crops_count": 95,
+  "real_crops_supported": 21,
+  "real_crops_missing": 74,
+  "coverage_table": [
+    {
+      "crop": "Alfalfa",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Aloe Vera",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Apple",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Ashwagandha",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Avocado",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Banana",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Barley",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Beetroot",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Berseem",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Bitter Gourd",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Black Gram",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Black Pepper",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Bottle Gourd",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Brinjal / Eggplant",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Broccoli",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Buckwheat",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cabbage",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Capsicum / Bell Pepper",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cardamom",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Carrot",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Castor",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cauliflower",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Chickpea",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Chilli",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cinnamon",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cloves",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cocoa",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Coconut",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Coffee (Arabica)",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Coriander",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cotton",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Cowpea",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cucumber",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Cumin",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Date Palm",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Dragon Fruit",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Fenugreek",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Field Pea",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Finger Millet",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Flaxseed / Linseed",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Foxtail Millet",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Garlic",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Ginger",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Grape",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Green Gram",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Groundnut",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Guava",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Hemp",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Jute",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Kidney Bean",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Kiwi",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Lemon",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Lemongrass",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Lentil",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Maize / Corn",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Mango",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Muskmelon",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Mustard / Rapeseed",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Napier Grass",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Oats",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Oil Palm",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Okra",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Onion",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Orange",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Papaya",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Peach",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Pear",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Pearl Millet",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Pigeon Pea",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Pineapple",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Pomegranate",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Potato",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Pumpkin",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Quinoa",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Radish",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Rice",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Rubber",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Rye",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Safflower",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Saffron",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Sesame",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Sisal",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Sorghum",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Soybean",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Spinach",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Strawberry",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Sugarcane",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Sunflower",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Tea",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Tobacco",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Tomato",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Tulsi",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Turmeric",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    },
+    {
+      "crop": "Watermelon",
+      "samples": 100,
+      "source": "ICAR / State Agri Depts (Crop_recommendation.csv)",
+      "geography": "India (District Level Agricultural Trials)",
+      "years": "2010 - 2020",
+      "status": "REAL-DATA-SUPPORTED"
+    },
+    {
+      "crop": "Wheat",
+      "samples": 0,
+      "source": "None (FAOSTAT/ICAR yield aggregates lack synchronized soil NPK/climate telemetry)",
+      "geography": "Global / Literature Only",
+      "years": "N/A",
+      "status": "NO-REAL-DATA"
+    }
+  ],
+  "real_val_accuracy": 0.3333333333333333,
+  "real_val_macro_f1": 0.18693727990731074,
+  "real_val_top3_acc": 0.5424242424242425,
+  "real_test_accuracy": 0.30606060606060603,
+  "real_test_macro_f1": 0.17383682639830417,
+  "real_test_macro_p": 0.22105303228785012,
+  "real_test_macro_r": 0.17264957264957265,
+  "real_test_weighted_f1": 0.30816528316063013,
+  "real_test_top3_acc": 0.5484848484848485,
+  "real_full_accuracy": 0.31727272727272726,
+  "real_full_macro_f1": 0.15347879071349935,
+  "per_crop_report": {
+    "Apple": {
+      "precision": 0.5454545454545454,
+      "recall": 0.4,
+      "f1-score": 0.46153846153846156,
+      "support": 15.0
+    },
+    "Banana": {
+      "precision": 0.75,
+      "recall": 0.2,
+      "f1-score": 0.3157894736842105,
+      "support": 15.0
+    },
+    "Black Gram": {
+      "precision": 0.7692307692307693,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.7142857142857143,
+      "support": 15.0
+    },
+    "Brinjal / Eggplant": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Buckwheat": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Cabbage": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Chickpea": {
+      "precision": 0.875,
+      "recall": 0.9333333333333333,
+      "f1-score": 0.9032258064516129,
+      "support": 15.0
+    },
+    "Coconut": {
+      "precision": 0.6153846153846154,
+      "recall": 0.5333333333333333,
+      "f1-score": 0.5714285714285714,
+      "support": 15.0
+    },
+    "Coffee (Arabica)": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Cotton": {
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1-score": 0.8888888888888888,
+      "support": 15.0
+    },
+    "Cowpea": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Cucumber": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Cumin": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Date Palm": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Fenugreek": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Grape": {
+      "precision": 0.5263157894736842,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.5882352941176471,
+      "support": 15.0
+    },
+    "Green Gram": {
+      "precision": 0.42857142857142855,
+      "recall": 1.0,
+      "f1-score": 0.6,
+      "support": 15.0
+    },
+    "Groundnut": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Jute": {
+      "precision": 0.1111111111111111,
+      "recall": 0.06666666666666667,
+      "f1-score": 0.08333333333333333,
+      "support": 15.0
+    },
+    "Kidney Bean": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Lentil": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Maize / Corn": {
+      "precision": 0.75,
+      "recall": 0.6,
+      "f1-score": 0.6666666666666666,
+      "support": 15.0
+    },
+    "Mango": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Moth Bean": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Muskmelon": {
+      "precision": 0.5,
+      "recall": 0.6,
+      "f1-score": 0.5454545454545454,
+      "support": 15.0
+    },
+    "Oats": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Orange": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Papaya": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Pearl Millet": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Pigeon Pea": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Pineapple": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Pomegranate": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Rice": {
+      "precision": 0.75,
+      "recall": 0.2,
+      "f1-score": 0.3157894736842105,
+      "support": 15.0
+    },
+    "Sisal": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Sorghum": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Spinach": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Tomato": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Watermelon": {
+      "precision": 1.0,
+      "recall": 0.06666666666666667,
+      "f1-score": 0.125,
+      "support": 15.0
+    },
+    "Wheat": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "accuracy": 0.30606060606060603,
+    "macro avg": {
+      "precision": 0.22105303228785012,
+      "recall": 0.17264957264957265,
+      "f1-score": 0.17383682639830417,
+      "support": 330.0
+    },
+    "weighted avg": {
+      "precision": 0.3918667390557342,
+      "recall": 0.30606060606060603,
+      "f1-score": 0.30816528316063013,
+      "support": 330.0
+    }
+  },
+  "gate_checks": {
+    "1_real_data_evaluation_exists": true,
+    "2_test_data_independent": true,
+    "3_no_synthetic_in_final_test": true,
+    "4_real_data_provenance_documented": true,
+    "5_adequate_95_crop_coverage": false,
+    "6_macro_f1_meets_target": false,
+    "7_no_data_leakage": true,
+    "8_per_class_performance_reviewed": true,
+    "9_model_behavior_reproducible": true,
+    "10_limitations_clearly_documented": true
+  },
+  "decision": "NOT VERIFIED"
+}
