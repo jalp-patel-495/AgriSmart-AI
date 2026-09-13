@@ -69,7 +69,13 @@ class User(Base):
     farm_name = Column(String(150), nullable=True, default="My Family Farm")
     farm_location = Column(String(150), nullable=True, default="Punjab, India")
     preferred_crop = Column(String(80), nullable=True, default="Wheat")
-    role = Column(String(50), default="FARMER", nullable=False)  # 'FARMER', 'AGRICULTURAL_EXPERT', 'ADMIN'
+    role = Column(String(50), default="FARMER", nullable=False)  # 'FARMER', 'AGRICULTURAL_STAKEHOLDER', 'AGRICULTURAL_EXPERT', 'ADMIN'
     is_active = Column(Boolean, default=True, nullable=False)
+    organization_name = Column(String(150), nullable=True)
+    organization_type = Column(String(100), nullable=True)
+    operating_regions = Column(String(255), nullable=True)
+    primary_crops = Column(String(255), nullable=True)
+    stakeholder_type = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
 

@@ -535,8 +535,8 @@ export default function Dashboard({
         </div>
       </section>
 
-      {/* 2. AGENTIC ADVISOR */}
-      <section id="agentic-advisor-section" style={{ width: '100%' }}>
+      {/* 1.5 AGENTIC ADVISOR (Module G: Multi-Module Decision Support Layer) */}
+      <section id="agentic-advisor-section" style={{ maxWidth: '1400px', margin: '0 auto 1.5rem auto' }}>
         <AgenticAdvisorCard
           advisorData={agenticAdvisorData}
           loading={agenticAdvisorLoading}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authApi } from '../services/authApi';
 
-const ROLES = ['FARMER', 'AGRICULTURAL_EXPERT', 'ADMIN'];
+const ROLES = ['FARMER', 'AGRICULTURAL_EXPERT', 'AGRICULTURAL_STAKEHOLDER', 'ADMIN'];
 
 export default function UserManagementView({ currentUser, onShowToast }) {
   const [users, setUsers] = useState([]);
@@ -100,7 +100,7 @@ export default function UserManagementView({ currentUser, onShowToast }) {
             </span>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary, #94a3b8)', fontSize: '0.95rem' }}>
-            Manage registered accounts, assign cryptographic access tiers (Farmer, Agricultural Expert, Admin), and configure account status.
+            Manage registered accounts across 4 authorization tiers (Farmer, Agricultural Stakeholder, Agricultural Expert, Admin).
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function UserManagementView({ currentUser, onShowToast }) {
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.5rem', flex: '1 1 300px' }}>
           <input
             type="text"
-            placeholder="Search by user name, email, or farm..."
+            placeholder="Search by user name, email, organization, or farm..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -188,6 +188,7 @@ export default function UserManagementView({ currentUser, onShowToast }) {
           >
             <option value="">All Roles</option>
             <option value="FARMER">👨‍🌾 Farmer</option>
+            <option value="AGRICULTURAL_STAKEHOLDER">🌐 Agricultural Stakeholder</option>
             <option value="AGRICULTURAL_EXPERT">👨‍🔬 Agricultural Expert</option>
             <option value="ADMIN">🛠️ Admin</option>
           </select>
@@ -221,7 +222,7 @@ export default function UserManagementView({ currentUser, onShowToast }) {
               <tr style={{ background: 'rgba(2, 44, 34, 0.5)', borderBottom: '1px solid rgba(16, 185, 129, 0.2)' }}>
                 <th style={thStyle}>ID</th>
                 <th style={thStyle}>User</th>
-                <th style={thStyle}>Farm & Location</th>
+                <th style={thStyle}>Affiliation / Location</th>
                 <th style={thStyle}>Current Role</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Actions</th>
@@ -238,6 +239,13 @@ export default function UserManagementView({ currentUser, onShowToast }) {
                 users.map((u) => {
                   const isCurrent = currentUser?.id === u.id;
                   const isUpdating = updatingId === u.id;
+                  const roleColors = {
+                    ADMIN: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5' },
+                    AGRICULTURAL_EXPERT: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', color: '#93c5fd' },
+                    AGRICULTURAL_STAKEHOLDER: { bg: 'rgba(14, 165, 233, 0.15)', border: 'rgba(14, 165, 233, 0.4)', color: '#7dd3fc' },
+                    FARMER: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.4)', color: '#a7f3d0' }
+                  };
+                  const currentRoleStyle = roleColors[u.role] || roleColors.FARMER;
 
                   return (
                     <tr
@@ -257,8 +265,13 @@ export default function UserManagementView({ currentUser, onShowToast }) {
                         <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>{u.email}</div>
                       </td>
                       <td style={tdStyle}>
-                        <div style={{ color: '#e2e8f0', fontSize: '0.9rem' }}>{u.farm_name || 'Family Farm'}</div>
-                        <div style={{ fontSize: '0.82rem', color: '#64748b' }}>{u.farm_location || 'India'}</div>
+                        <div style={{ color: '#e2e8f0', fontSize: '0.9rem' }}>
+                          {u.organization_name ? `🏢 ${u.organization_name}` : (u.farm_name ? `🌾 ${u.farm_name}` : 'Family Farm')}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                          {u.operating_regions || u.farm_location || 'India'}
+                          {u.stakeholder_type && ` • ${u.stakeholder_type}`}
+                        </div>
                       </td>
                       <td style={tdStyle}>
                         <select
@@ -266,17 +279,9 @@ export default function UserManagementView({ currentUser, onShowToast }) {
                           disabled={isUpdating}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
                           style={{
-                            background: u.role === 'ADMIN'
-                              ? 'rgba(239, 68, 68, 0.15)'
-                              : (u.role === 'AGRICULTURAL_EXPERT' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)'),
-                            border: `1px solid ${
-                              u.role === 'ADMIN'
-                                ? 'rgba(239, 68, 68, 0.4)'
-                                : (u.role === 'AGRICULTURAL_EXPERT' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(16, 185, 129, 0.4)')
-                            }`,
-                            color: u.role === 'ADMIN'
-                              ? '#fca5a5'
-                              : (u.role === 'AGRICULTURAL_EXPERT' ? '#93c5fd' : '#a7f3d0'),
+                            background: currentRoleStyle.bg,
+                            border: `1px solid ${currentRoleStyle.border}`,
+                            color: currentRoleStyle.color,
                             borderRadius: '6px',
                             padding: '0.4rem 0.65rem',
                             fontWeight: 600,
@@ -285,6 +290,7 @@ export default function UserManagementView({ currentUser, onShowToast }) {
                           }}
                         >
                           <option value="FARMER" style={{ background: '#0f172a', color: '#fff' }}>👨‍🌾 FARMER</option>
+                          <option value="AGRICULTURAL_STAKEHOLDER" style={{ background: '#0f172a', color: '#fff' }}>🌐 AGRICULTURAL_STAKEHOLDER</option>
                           <option value="AGRICULTURAL_EXPERT" style={{ background: '#0f172a', color: '#fff' }}>👨‍🔬 AGRICULTURAL_EXPERT</option>
                           <option value="ADMIN" style={{ background: '#0f172a', color: '#fff' }}>🛠️ ADMIN</option>
                         </select>

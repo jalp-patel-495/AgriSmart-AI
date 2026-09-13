@@ -3,7 +3,7 @@ import React from 'react';
 export default function AgenticAdvisorCard({ advisorData, loading, onRefresh }) {
   if (loading) {
     return (
-      <div className="panel-card" style={{ padding: '1.5rem', marginBottom: 0, border: '1px solid rgba(52, 211, 153, 0.2)' }}>
+      <div className="panel-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid rgba(52, 211, 153, 0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '1.5rem', animation: 'spin 2s linear infinite' }}>⚙️</span>
           <div>
@@ -85,7 +85,7 @@ export default function AgenticAdvisorCard({ advisorData, loading, onRefresh }) 
       id="agentic-advisor-card"
       style={{
         padding: '1.75rem',
-        marginBottom: 0,
+        marginBottom: '1.5rem',
         background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%)',
         border: `1px solid ${pStyle.border}`,
         borderRadius: 'var(--radius-lg)',

@@ -11,6 +11,7 @@ from backend.app.api.v1.endpoints import (
     agentic_advisor,
     expert,
     admin,
+    stakeholder,
 )
 
 api_router = APIRouter()
@@ -25,6 +26,8 @@ api_router.include_router(sustainability.router, prefix="", tags=["Sustainabilit
 api_router.include_router(agentic_advisor.router, prefix="", tags=["Agentic Advisor"])
 api_router.include_router(expert.router, prefix="", tags=["Agricultural Expert Review"])
 api_router.include_router(admin.router, prefix="", tags=["System Administration"])
+api_router.include_router(stakeholder.router, prefix="", tags=["Agricultural Stakeholder Intelligence"])
+
 
 
 

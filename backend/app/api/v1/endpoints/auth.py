@@ -25,9 +25,29 @@ from backend.app.services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def build_user_response(user, token: str, message: str) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        farm_name=user.farm_name,
+        farm_location=user.farm_location,
+        preferred_crop=user.preferred_crop,
+        role=user.role,
+        token=token,
+        is_active=bool(user.is_active) if hasattr(user, "is_active") and user.is_active is not None else True,
+        organization_name=getattr(user, "organization_name", None),
+        organization_type=getattr(user, "organization_type", None),
+        operating_regions=getattr(user, "operating_regions", None),
+        primary_crops=getattr(user, "primary_crops", None),
+        stakeholder_type=getattr(user, "stakeholder_type", None),
+        message=message,
+    )
+
+
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def signup(req: UserSignupRequest, db: Session = Depends(get_db)):
-    """Registers a new farmer or agronomist account."""
+    """Registers a new farmer, stakeholder, or agronomist account."""
     if len(req.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,17 +55,7 @@ def signup(req: UserSignupRequest, db: Session = Depends(get_db)):
         )
     try:
         user, token = register_user(db, req)
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            farm_name=user.farm_name,
-            farm_location=user.farm_location,
-            preferred_crop=user.preferred_crop,
-            role=user.role,
-            token=token,
-            message="Account created successfully! Welcome to AgriSmart AI."
-        )
+        return build_user_response(user, token, "Account created successfully! Welcome to AgriSmart AI.")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
@@ -57,17 +67,7 @@ def login(req: UserLoginRequest, db: Session = Depends(get_db)):
     """Authenticates an existing user and returns a session token."""
     try:
         user, token = authenticate_user(db, req)
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            farm_name=user.farm_name,
-            farm_location=user.farm_location,
-            preferred_crop=user.preferred_crop,
-            role=user.role,
-            token=token,
-            message="Logged in successfully."
-        )
+        return build_user_response(user, token, "Logged in successfully.")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except Exception as e:
@@ -79,35 +79,16 @@ def demo_login(req: DemoLoginRequest = None, db: Session = Depends(get_db)):
     """One-click instant login for demonstrations and review."""
     role = req.role if req and req.role else "farmer"
     user, token = get_or_create_demo_user(db, role=role)
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        full_name=user.full_name,
-        farm_name=user.farm_name,
-        farm_location=user.farm_location,
-        preferred_crop=user.preferred_crop,
-        role=user.role,
-        token=token,
-        message=f"Logged in as Demo {role.capitalize()}."
-    )
+    display_role = role.replace("_", " ").title()
+    return build_user_response(user, token, f"Logged in as Demo {display_role}.")
 
 
 @router.put("/profile", response_model=UserResponse)
 def update_profile(req: UpdateProfileRequest, db: Session = Depends(get_db)):
-    """Updates the user's name, farm name, location, or preferred crop."""
+    """Updates the user's name, farm name, location, preferred crop, or organization fields."""
     try:
         user, token = update_user_profile(db, req)
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            farm_name=user.farm_name,
-            farm_location=user.farm_location,
-            preferred_crop=user.preferred_crop,
-            role=user.role,
-            token=token,
-            message="Profile updated successfully."
-        )
+        return build_user_response(user, token, "Profile updated successfully.")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:

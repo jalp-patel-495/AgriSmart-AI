@@ -11,6 +11,7 @@ from backend.app.db.models import User
 from backend.app.schemas.auth import (
     normalize_role,
     ROLE_FARMER,
+    ROLE_AGRICULTURAL_STAKEHOLDER,
     ROLE_AGRICULTURAL_EXPERT,
     ROLE_ADMIN,
 )
@@ -79,7 +80,11 @@ def require_role(*allowed_roles: str):
     normalized_allowed = [normalize_role(r) for r in allowed_roles]
 
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        user_role = normalize_role(current_user.role)
+        try:
+            user_role = normalize_role(current_user.role)
+        except ValueError:
+            user_role = "UNKNOWN"
+
         if user_role not in normalized_allowed:
             allowed_display = ", ".join(normalized_allowed)
             raise HTTPException(
@@ -89,3 +94,4 @@ def require_role(*allowed_roles: str):
         return current_user
 
     return role_checker
+

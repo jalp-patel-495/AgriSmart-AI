@@ -8,28 +8,52 @@ from pydantic import BaseModel, field_validator
 
 class UserRole(str, Enum):
     FARMER = "FARMER"
+    AGRICULTURAL_STAKEHOLDER = "AGRICULTURAL_STAKEHOLDER"
     AGRICULTURAL_EXPERT = "AGRICULTURAL_EXPERT"
     ADMIN = "ADMIN"
 
 
 ROLE_FARMER = "FARMER"
+ROLE_AGRICULTURAL_STAKEHOLDER = "AGRICULTURAL_STAKEHOLDER"
 ROLE_AGRICULTURAL_EXPERT = "AGRICULTURAL_EXPERT"
 ROLE_ADMIN = "ADMIN"
-ALLOWED_ROLES = [ROLE_FARMER, ROLE_AGRICULTURAL_EXPERT, ROLE_ADMIN]
+ALLOWED_ROLES = [
+    ROLE_FARMER,
+    ROLE_AGRICULTURAL_STAKEHOLDER,
+    ROLE_AGRICULTURAL_EXPERT,
+    ROLE_ADMIN,
+]
 
 
 def normalize_role(role: Optional[str]) -> str:
-    """Safely normalizes input role string to one of the canonical 3 roles."""
-    if not role or not isinstance(role, str):
+    """Safely normalizes input role string to one of the canonical 4 roles."""
+    if role is None or not isinstance(role, str) or not role.strip():
         return ROLE_FARMER
     cleaned = role.strip().upper()
     if cleaned in ("FARMER", "KISAN"):
         return ROLE_FARMER
     if cleaned in ("AGRICULTURAL_EXPERT", "EXPERT", "AGRONOMIST", "RESEARCHER"):
         return ROLE_AGRICULTURAL_EXPERT
+    if cleaned in (
+        "AGRICULTURAL_STAKEHOLDER",
+        "STAKEHOLDER",
+        "AGRIBUSINESS",
+        "AGRI_STAKEHOLDER",
+        "BUYER",
+        "FPO",
+        "EXPORTER",
+        "PROCESSOR",
+        "INSURER",
+        "BANKER",
+        "INPUT_SUPPLIER",
+        "GOVT_AGENCY",
+        "GOVERNMENT",
+        "RESEARCH_INSTITUTION",
+    ):
+        return ROLE_AGRICULTURAL_STAKEHOLDER
     if cleaned in ("ADMIN", "ADMINISTRATOR"):
         return ROLE_ADMIN
-    return ROLE_FARMER
+    raise ValueError(f"Invalid role '{role}'. Allowed roles: {', '.join(ALLOWED_ROLES)}")
 
 
 class UserBase(BaseModel):
@@ -39,6 +63,11 @@ class UserBase(BaseModel):
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
     role: Optional[str] = ROLE_FARMER
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    stakeholder_type: Optional[str] = None
 
 
 class UserSignupRequest(BaseModel):
@@ -49,6 +78,11 @@ class UserSignupRequest(BaseModel):
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
     role: Optional[str] = ROLE_FARMER
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    stakeholder_type: Optional[str] = None
 
     @field_validator('email')
     @classmethod
@@ -78,7 +112,7 @@ class UserLoginRequest(BaseModel):
 
 
 class DemoLoginRequest(BaseModel):
-    role: Optional[str] = "farmer"  # 'farmer', 'expert'/'agronomist', or 'admin'
+    role: Optional[str] = "farmer"  # 'farmer', 'stakeholder', 'expert'/'agronomist', or 'admin'
 
 
 class UpdateProfileRequest(BaseModel):
@@ -87,6 +121,11 @@ class UpdateProfileRequest(BaseModel):
     farm_name: Optional[str] = "Family Homestead Farm"
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    stakeholder_type: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -105,6 +144,11 @@ class UserResponse(BaseModel):
     role: str
     token: str
     is_active: Optional[bool] = True
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    stakeholder_type: Optional[str] = None
     message: Optional[str] = "Success"
 
 
@@ -117,6 +161,11 @@ class AdminUserListItem(BaseModel):
     preferred_crop: Optional[str]
     role: str
     is_active: bool
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    operating_regions: Optional[str] = None
+    primary_crops: Optional[str] = None
+    stakeholder_type: Optional[str] = None
     created_at: Optional[str] = None
 
 
@@ -139,4 +188,5 @@ class AdminUpdateRoleRequest(BaseModel):
 
 class AdminUpdateStatusRequest(BaseModel):
     is_active: bool
+
 

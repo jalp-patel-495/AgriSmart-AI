@@ -92,6 +92,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
   const [signupPassword, setSignupPassword] = useState('');
   const [farmLocation, setFarmLocation] = useState('Punjab, India');
   const [signupRole, setSignupRole] = useState('FARMER');
+  const [organizationName, setOrganizationName] = useState('');
+  const [stakeholderType, setStakeholderType] = useState('Farmer Producer Organization');
 
   // Synchronize modal tab mode with initialMode and clear previous errors
   useEffect(() => {
@@ -157,22 +159,42 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
     }
   };
 
+  const handleDemoLogin = async (role) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const user = await authApi.demoLogin(role);
+      onAuthSuccess(user);
+      onClose();
+    } catch (err) {
+      setError(sanitizeAuthError(err.message, 'login'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const selectedRole = signupRole === 'AGRICULTURAL_EXPERT' ? 'AGRICULTURAL_EXPERT' : 'FARMER';
+      let farmName = 'Family Homestead Farm';
+      if (signupRole === 'AGRICULTURAL_STAKEHOLDER') {
+        farmName = organizationName.trim() || 'Agricultural Stakeholder Operations';
+      } else if (signupRole === 'AGRICULTURAL_EXPERT') {
+        farmName = 'Agricultural Extension Center';
+      }
+
       const user = await authApi.signup({
         full_name: fullName.trim(),
         email: signupEmail.trim().toLowerCase(),
         password: signupPassword,
         farm_location: farmLocation || 'Punjab, India',
-        farm_name: selectedRole === 'AGRICULTURAL_EXPERT'
-          ? 'Agricultural Extension Center'
-          : 'Family Homestead Farm',
+        farm_name: farmName,
         preferred_crop: 'Wheat',
-        role: selectedRole,
+        role: signupRole,
+        organization_name: signupRole === 'AGRICULTURAL_STAKEHOLDER' ? (organizationName.trim() || null) : null,
+        stakeholder_type: signupRole === 'AGRICULTURAL_STAKEHOLDER' ? stakeholderType : null,
       });
       onAuthSuccess(user);
       onClose();
@@ -182,6 +204,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       setLoading(false);
     }
   };
+
 
 
   return (
@@ -300,7 +323,106 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
               {loading ? 'Signing In...' : 'Sign In to Dashboard →'}
             </button>
 
-
+            {/* Instant Demo Login Bar */}
+            <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', marginBottom: '0.65rem', textAlign: 'center' }}>
+                ⚡ Instant One-Click Demo Access
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  id="demo-login-farmer-btn"
+                  className="demo-login-btn"
+                  onClick={() => handleDemoLogin('farmer')}
+                  disabled={loading}
+                  style={{
+                    padding: '0.6rem 0.5rem',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    color: '#a7f3d0',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  🌾 Demo Farmer
+                </button>
+                <button
+                  type="button"
+                  id="demo-login-stakeholder-btn"
+                  className="demo-login-btn"
+                  onClick={() => handleDemoLogin('stakeholder')}
+                  disabled={loading}
+                  style={{
+                    padding: '0.6rem 0.5rem',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    background: 'rgba(14, 165, 233, 0.15)',
+                    border: '1px solid rgba(14, 165, 233, 0.4)',
+                    color: '#7dd3fc',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  🌐 Demo Stakeholder
+                </button>
+                <button
+                  type="button"
+                  id="demo-login-expert-btn"
+                  className="demo-login-btn"
+                  onClick={() => handleDemoLogin('expert')}
+                  disabled={loading}
+                  style={{
+                    padding: '0.6rem 0.5rem',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    color: '#93c5fd',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  🔬 Demo Expert
+                </button>
+                <button
+                  type="button"
+                  id="demo-login-admin-btn"
+                  className="demo-login-btn"
+                  onClick={() => handleDemoLogin('admin')}
+                  disabled={loading}
+                  style={{
+                    padding: '0.6rem 0.5rem',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#fca5a5',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  🛠️ Demo Admin
+                </button>
+              </div>
+            </div>
           </form>
         ) : (
           /* Signup Form */
@@ -346,7 +468,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                   type={showSignupPassword ? 'text' : 'password'}
                   required
                   minLength={6}
-                  placeholder="Create a password"
+                  placeholder="Create a password (min 6 chars)"
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
                   autoComplete="new-password"
@@ -365,7 +487,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
             </div>
 
             <div className="form-group">
-              <label htmlFor="signup-region">Region / Location</label>
+              <label htmlFor="signup-region">Region / Operational Area</label>
               <div className="input-icon-wrapper">
                 <span className="input-icon" aria-hidden="true">📍</span>
                 <select
@@ -385,9 +507,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
               </div>
             </div>
 
+            {/* Role Selection Grid: Farmer, Stakeholder, Expert */}
             <div className="form-group">
-              <label htmlFor="signup-role-group">Account Role / Access Level</label>
-              <div id="signup-role-group" className="signup-role-grid" role="radiogroup" aria-label="Account Role">
+              <label htmlFor="signup-role-group">Account Role / Persona</label>
+              <div id="signup-role-group" className="signup-role-grid" role="radiogroup" aria-label="Account Role" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+                {/* 1. Farmer */}
                 <button
                   type="button"
                   id="signup-role-farmer"
@@ -396,13 +520,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                   role="radio"
                   aria-checked={signupRole === 'FARMER'}
                 >
-                  <span className="signup-role-icon" aria-hidden="true">👨‍🌾</span>
+                  <span className="signup-role-icon" aria-hidden="true">🌾</span>
                   <div className="signup-role-meta">
                     <span className="signup-role-title">Farmer</span>
-                    <span className="signup-role-desc">Farming &amp; AI Tools</span>
+                    <span className="signup-role-desc">Get farm-level AI recommendations and crop insights.</span>
                   </div>
                 </button>
 
+                {/* 2. Agricultural Stakeholder */}
+                <button
+                  type="button"
+                  id="signup-role-stakeholder"
+                  className={`signup-role-card ${signupRole === 'AGRICULTURAL_STAKEHOLDER' ? 'active stakeholder' : ''}`}
+                  onClick={() => setSignupRole('AGRICULTURAL_STAKEHOLDER')}
+                  role="radio"
+                  aria-checked={signupRole === 'AGRICULTURAL_STAKEHOLDER'}
+                  style={{
+                    borderColor: signupRole === 'AGRICULTURAL_STAKEHOLDER' ? '#38bdf8' : undefined,
+                    background: signupRole === 'AGRICULTURAL_STAKEHOLDER' ? 'rgba(14, 165, 233, 0.15)' : undefined,
+                  }}
+                >
+                  <span className="signup-role-icon" aria-hidden="true">🌐</span>
+                  <div className="signup-role-meta">
+                    <span className="signup-role-title" style={{ color: signupRole === 'AGRICULTURAL_STAKEHOLDER' ? '#7dd3fc' : undefined }}>
+                      Agricultural Stakeholder
+                    </span>
+                    <span className="signup-role-desc">Monitor agricultural intelligence, risks, crops, and regions.</span>
+                  </div>
+                </button>
+
+                {/* 3. Agricultural Expert */}
                 <button
                   type="button"
                   id="signup-role-expert"
@@ -411,14 +558,60 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                   role="radio"
                   aria-checked={signupRole === 'AGRICULTURAL_EXPERT'}
                 >
-                  <span className="signup-role-icon" aria-hidden="true">👨‍🔬</span>
+                  <span className="signup-role-icon" aria-hidden="true">🔬</span>
                   <div className="signup-role-meta">
                     <span className="signup-role-title">Agricultural Expert</span>
-                    <span className="signup-role-desc">Expert Review</span>
+                    <span className="signup-role-desc">Review and validate agricultural and AI-generated results.</span>
                   </div>
                 </button>
               </div>
             </div>
+
+            {/* Optional Stakeholder Profile Fields */}
+            {signupRole === 'AGRICULTURAL_STAKEHOLDER' && (
+              <div style={{
+                background: 'rgba(14, 165, 233, 0.08)',
+                border: '1px solid rgba(14, 165, 233, 0.25)',
+                borderRadius: '12px',
+                padding: '1rem',
+                marginBottom: '1rem',
+              }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#7dd3fc', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  🏢 Stakeholder Organization Profile (Optional)
+                </div>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <label htmlFor="signup-org-name" style={{ fontSize: '0.82rem' }}>Organization / Entity Name</label>
+                  <input
+                    id="signup-org-name"
+                    type="text"
+                    placeholder="e.g. Kisan FPO Alliance / Agri-Procurement Ltd."
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#f8fafc', fontSize: '0.88rem' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-org-type" style={{ fontSize: '0.82rem' }}>Stakeholder Category</label>
+                  <select
+                    id="signup-org-type"
+                    value={stakeholderType}
+                    onChange={(e) => setStakeholderType(e.target.value)}
+                    className="auth-select"
+                    style={{ fontSize: '0.88rem' }}
+                  >
+                    <option value="Farmer Producer Organization">Farmer Producer Organization (FPO)</option>
+                    <option value="Agribusiness">Agribusiness &amp; Food Processing</option>
+                    <option value="Procurement / Buyer">Procurement &amp; Commodity Buyer</option>
+                    <option value="Government / Public Sector">Government / Agricultural Extension</option>
+                    <option value="Agricultural Research / Academic">Agricultural Research / Academic</option>
+                    <option value="NGO / Sustainability Organization">NGO / Sustainability Organization</option>
+                    <option value="Agricultural Input Provider">Agricultural Input Provider</option>
+                    <option value="Financial / Insurance organization">Financial / Crop Insurance Organization</option>
+                    <option value="Other agricultural organization">Other Agricultural Organization</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"

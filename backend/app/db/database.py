@@ -47,9 +47,20 @@ def init_db():
             with engine.connect() as conn:
                 if "is_active" not in columns:
                     conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                if "organization_name" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN organization_name VARCHAR(150)"))
+                if "organization_type" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN organization_type VARCHAR(100)"))
+                if "operating_regions" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN operating_regions VARCHAR(255)"))
+                if "primary_crops" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN primary_crops VARCHAR(255)"))
+                if "stakeholder_type" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN stakeholder_type VARCHAR(100)"))
                 # Normalize any legacy role strings in database to uppercase canonical
                 conn.execute(text("UPDATE users SET role = 'FARMER' WHERE role IS NULL OR role = '' OR LOWER(role) = 'farmer'"))
                 conn.execute(text("UPDATE users SET role = 'AGRICULTURAL_EXPERT' WHERE LOWER(role) IN ('agronomist', 'expert', 'agricultural_expert')"))
+                conn.execute(text("UPDATE users SET role = 'AGRICULTURAL_STAKEHOLDER' WHERE LOWER(role) IN ('stakeholder', 'agricultural_stakeholder', 'agribusiness', 'agri_stakeholder')"))
                 conn.execute(text("UPDATE users SET role = 'ADMIN' WHERE LOWER(role) = 'admin'"))
                 conn.commit()
     except Exception as e:

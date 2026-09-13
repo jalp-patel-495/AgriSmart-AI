@@ -11,11 +11,23 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
 import cv2
 import numpy as np
-import torch
-import torch.nn.functional as F
-import torchvision.transforms as T
+try:
+    import torch
+    import torch.nn.functional as F
+    import torchvision.transforms as T
+    _TORCH_AVAILABLE = True
+    _DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _NORMALIZE = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+except ImportError:
+    torch = None
+    F = None
+    T = None
+    _TORCH_AVAILABLE = False
+    _DEVICE = "cpu"
+    _NORMALIZE = None
 from fastapi import APIRouter, UploadFile, File, Form, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
+from backend.app.core.config import settings
 
 from backend.app.schemas.prediction import (
     PredictionResponse,
@@ -23,27 +35,32 @@ from backend.app.schemas.prediction import (
     ComprehensiveAdvisoryResponse,
     ComprehensiveAdvisoryRequest
 )
-from backend.app.core.config import settings
-from ai_model.src.model import build_model
-from src.disease.predict import predict_disease
-from src.crop_recommendation.predict import predict_crop
-from src.irrigation.predict import predict_irrigation
-from src.yield_prediction.predict import predict_yield
-from src.farmer_advisor.advisor import generate_farmer_advice
+try:
+    from ai_model.src.model import build_model
+except ImportError:
+    build_model = None
+
+try:
+    from src.disease.predict import predict_disease
+    from src.crop_recommendation.predict import predict_crop
+    from src.irrigation.predict import predict_irrigation
+    from src.yield_prediction.predict import predict_yield
+    from src.farmer_advisor.advisor import generate_farmer_advice
+except ImportError:
+    predict_disease = None
+    predict_crop = None
+    predict_irrigation = None
+    predict_yield = None
+    generate_farmer_advice = None
 
 router = APIRouter()
 
 
 # Global cached model and classes
-_MODEL: Optional[torch.nn.Module] = None
+_MODEL: Optional[Any] = None
 _CLASSES_MAP: Dict[int, dict] = {}
 _CLASSES_LIST: List[str] = []
-_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-IMAGENET_MEAN = [0.485, 0.456, 0.406]
-IMAGENET_STD = [0.229, 0.224, 0.225]
-
-_NORMALIZE = T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 
 
 def load_classes_metadata():

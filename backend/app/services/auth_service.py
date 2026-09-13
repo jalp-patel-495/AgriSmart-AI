@@ -18,6 +18,7 @@ from backend.app.schemas.auth import (
     ChangePasswordRequest,
     normalize_role,
     ROLE_FARMER,
+    ROLE_AGRICULTURAL_STAKEHOLDER,
     ROLE_AGRICULTURAL_EXPERT,
     ROLE_ADMIN,
 )
@@ -116,16 +117,27 @@ def register_user(db: Session, req: UserSignupRequest) -> Tuple[User, str]:
     if user_role == ROLE_ADMIN:
         raise ValueError("Admin accounts cannot be self-registered. Please sign in with existing admin credentials.")
 
+    default_farm_name = "Green Valley Farms"
+    if user_role == ROLE_AGRICULTURAL_STAKEHOLDER:
+        default_farm_name = req.organization_name or "Agricultural Operations Network"
+    elif user_role == ROLE_AGRICULTURAL_EXPERT:
+        default_farm_name = "Agricultural Extension Center"
+
     user = User(
         full_name=req.full_name.strip(),
         email=req.email.lower().strip(),
         password_hash=pwd_hash,
         salt=salt,
-        farm_name=req.farm_name.strip() if req.farm_name else "Green Valley Farms",
+        farm_name=req.farm_name.strip() if req.farm_name else default_farm_name,
         farm_location=req.farm_location.strip() if req.farm_location else "Punjab, India",
         preferred_crop=req.preferred_crop.strip() if req.preferred_crop else "Wheat",
         role=user_role,
         is_active=True,
+        organization_name=req.organization_name.strip() if req.organization_name else None,
+        organization_type=req.organization_type.strip() if req.organization_type else None,
+        operating_regions=req.operating_regions.strip() if req.operating_regions else None,
+        primary_crops=req.primary_crops.strip() if req.primary_crops else None,
+        stakeholder_type=req.stakeholder_type.strip() if req.stakeholder_type else None,
     )
     db.add(user)
     db.commit()
@@ -153,20 +165,42 @@ def authenticate_user(db: Session, req: UserLoginRequest) -> Tuple[User, str]:
         raise ValueError("Invalid email or password.")
 
     # Ensure role is canonicalized
-    if user.role != normalize_role(user.role):
-        user.role = normalize_role(user.role)
-        db.commit()
-        db.refresh(user)
+    try:
+        canonical_role = normalize_role(user.role)
+        if user.role != canonical_role:
+            user.role = canonical_role
+            db.commit()
+            db.refresh(user)
+    except ValueError:
+        pass
 
     token = generate_session_token(user.id, user.email)
     return user, token
 
 
 def get_or_create_demo_user(db: Session, role: str = "farmer") -> Tuple[User, str]:
-    """Creates or returns a pre-configured demo user for instant one-click login across all 3 roles."""
+    """Creates or returns a pre-configured demo user for instant one-click login across all 4 roles."""
     normalized = normalize_role(role)
 
-    if normalized == ROLE_AGRICULTURAL_EXPERT:
+    org_name = None
+    org_type = None
+    regions = None
+    crops = None
+    s_type = None
+
+    if normalized == ROLE_AGRICULTURAL_STAKEHOLDER:
+        email = "stakeholder@agrismart.ai"
+        name = "Vikrant Verma"
+        farm = "Agri-Procurement & Stakeholder Intelligence Network"
+        loc = "Punjab & Haryana Northern Agri-Corridor"
+        crop = "Wheat, Rice & Cotton"
+        user_role = ROLE_AGRICULTURAL_STAKEHOLDER
+        org_name = "Bharat Agri-Procurement & Crop Intelligence FPO"
+        org_type = "Farmer Producer Organization"
+        regions = "Punjab, Haryana, Rajasthan"
+        crops = "Wheat, Rice, Cotton, Tomato"
+        s_type = "Procurement / Buyer"
+    elif normalized == ROLE_AGRICULTURAL_EXPERT:
         email = "expert@agrismart.ai"
         name = "Dr. Ananya Sharma"
         farm = "Agricultural Extension Center"
@@ -202,15 +236,30 @@ def get_or_create_demo_user(db: Session, role: str = "farmer") -> Tuple[User, st
             preferred_crop=crop,
             role=user_role,
             is_active=True,
+            organization_name=org_name,
+            organization_type=org_type,
+            operating_regions=regions,
+            primary_crops=crops,
+            stakeholder_type=s_type,
         )
         db.add(user)
         db.commit()
         db.refresh(user)
     else:
-        # Ensure role and is_active are aligned
+        # Ensure role, is_active, and demo profile fields are aligned
+        updated = False
         if user.role != user_role or not user.is_active:
             user.role = user_role
             user.is_active = True
+            updated = True
+        if org_name and not getattr(user, "organization_name", None):
+            user.organization_name = org_name
+            user.organization_type = org_type
+            user.operating_regions = regions
+            user.primary_crops = crops
+            user.stakeholder_type = s_type
+            updated = True
+        if updated:
             db.commit()
             db.refresh(user)
 
@@ -232,6 +281,16 @@ def update_user_profile(db: Session, req: UpdateProfileRequest) -> Tuple[User, s
         user.farm_location = req.farm_location.strip()
     if req.preferred_crop is not None:
         user.preferred_crop = req.preferred_crop.strip()
+    if req.organization_name is not None:
+        user.organization_name = req.organization_name.strip()
+    if req.organization_type is not None:
+        user.organization_type = req.organization_type.strip()
+    if req.operating_regions is not None:
+        user.operating_regions = req.operating_regions.strip()
+    if req.primary_crops is not None:
+        user.primary_crops = req.primary_crops.strip()
+    if req.stakeholder_type is not None:
+        user.stakeholder_type = req.stakeholder_type.strip()
 
     db.commit()
     db.refresh(user)

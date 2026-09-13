@@ -66,11 +66,21 @@ AgriSmart AI is an end-to-end intelligent agricultural diagnosis and advisory sy
 - **Arbitration Levels**: `CRITICAL` > `HIGH` > `MEDIUM` > `LOW` > `DATA INSUFFICIENT`.
 - **Traceability**: Every generated recommendation strictly includes `Action`, `Reason`, and `Source` (e.g., *Source: Smart Irrigation*, *Reason: The irrigation model predicts irrigation is required.*).
 
-### 9. Enterprise Security: Role-Based Access Control (RBAC)
-- **Role Hierarchy**: Strict 3-tier access structure:
-  1. `FARMER` (Default): Access to all 9 farming AI modules. Zero duplicate or new pages.
-  2. `AGRICULTURAL_EXPERT`: Access to all farming features + **ONE new page**: `👨‍🔬 Expert Review` (read-only audit of multi-subsystem telemetries).
-  3. `ADMIN`: Full system access + **TWO new pages**: `🛠️ User Management` (assign roles, toggle active status) and `🛠️ System Monitoring` (real-time model artifacts & service health).
+### 9. Enterprise Security: 4-Tier Role-Based Access Control (RBAC)
+- **Role Hierarchy**: Strict 4-tier access structure:
+  1. `FARMER` (Default): Access to all 9 farming AI operational modules. Zero duplicate or new pages.
+  2. `AGRICULTURAL_EXPERT`: Access to all farming features + `👨‍🔬 Expert Review` (read-only audit of multi-subsystem field telemetries).
+  3. `AGRICULTURAL_STAKEHOLDER`: Dedicated macro-level agricultural intelligence command center for agribusinesses, FPOs, processors, insurers, banks, and policy makers:
+     - **Macro KPIs**: Monitored farms, represented hectares, health index, water stress, aggregate ESG score, active early warnings.
+     - **Crop Intelligence**: Variety adoption distributions, regional NPK soil profiles, yield forecasts.
+     - **Phytosanitary & Disease Risk**: District-level infection tracking, high-risk pathogen clusters, quarantine watchlists.
+     - **Water Stress Index**: Basin-wide moisture profiling, irrigation demand trends.
+     - **Weather & Climate Risk**: Extreme weather exposure, 7-day risk projections, drought/flood exposure indices.
+     - **ESG & Sustainability**: 3-pillar sustainability scores, water efficiency ratings, N-P-K nutrient stewardship indices.
+     - **Early Warning Alerts**: Prioritized action warnings across disease outbreaks, water deficits, and weather shocks.
+     - **AI Policy & Procurement Copilot**: Natural language analytical assistant synthesizing regional telemetry.
+     - **Zero Fabricated Data Guarantee**: All figures originate from verified database records and live services; honest empty states ("No recorded observations") when telemetry is unobserved.
+  4. `ADMIN`: Full system access + `🛠️ User Management` (assign roles across all 4 tiers, toggle active status) and `🛠️ System Monitoring` (real-time model artifacts & service health).
 - **Security Guarantee**: Cryptographic HMAC-SHA256 session tokens with backend dependency authorization (`require_role`). Frontend manipulation cannot bypass access (401 unauthenticated, 403 forbidden).
 - **Documentation**: Full architectural specification available in [docs/role_based_access_control.md](docs/role_based_access_control.md).
 
@@ -88,14 +98,15 @@ AGRISMART_AI/
 │   └── src/                   # AI training, augmentation, and inference scripts
 ├── backend/                   # FastAPI high-throughput REST backend
 │   ├── app/
-│   │   ├── api/               # Dependencies (deps.py) & endpoints (auth, expert, admin, predict, etc.)
+│   │   ├── api/               # Dependencies (deps.py) & endpoints (auth, expert, stakeholder, admin, predict, etc.)
 │   │   ├── core/              # Settings and security configuration
-│   │   ├── schemas/           # Pydantic data schemas & RBAC roles
+│   │   ├── db/                # SQLite database session and SQLAlchemy models
+│   │   ├── schemas/           # Pydantic data schemas & RBAC roles (auth, stakeholder, etc.)
 │   │   └── services/          # Business logic, auth tokens, and agrometeorological integrations
 │   └── main.py                # FastAPI entry point
 ├── frontend/                  # React Vite single-page application
 │   ├── src/
-│   │   ├── components/        # Dashboard, ExpertReviewView, UserManagementView, SystemMonitoringView, etc.
+│   │   ├── components/        # Dashboard, StakeholderDashboard, ExpertReviewView, UserManagementView, etc.
 │   │   ├── services/          # API client services (authApi, smartFarmingApi, etc.)
 │   │   └── utils/             # Crop & disease canonical ontology resolver
 │   └── package.json
@@ -103,7 +114,7 @@ AGRISMART_AI/
 ├── dataset/                   # PlantVillage dataset manifests and classes.json (19 classes)
 ├── docs/                      # Architectural guides & RBAC specification
 ├── reports/                   # Validation benchmarks, SIH audit, and final reports
-├── tests/                     # Comprehensive test suite (93 automated tests)
+├── tests/                     # Comprehensive test suite (93+ automated tests including stakeholder RBAC)
 └── README.md
 ```
 

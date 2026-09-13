@@ -12,6 +12,7 @@ import FloatingChatbotButton from './components/FloatingChatbotButton';
 import ExpertReviewView from './components/ExpertReviewView';
 import UserManagementView from './components/UserManagementView';
 import SystemMonitoringView from './components/SystemMonitoringView';
+import StakeholderDashboard from './components/StakeholderDashboard';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
 import { resolveCrop, CANONICAL_CLASSES } from './utils/cropDiseaseResolver';
@@ -51,8 +52,15 @@ export function RoleProtectedRoute({ currentUser, requiredRoles, children }) {
 export default function App() {
   // Authentication state
   const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
-  // Navigation: before login defaults to 'home', after login defaults to 'dashboard'
-  const [activeTab, setActiveTab] = useState(() => (authApi.getCurrentUser() ? 'dashboard' : 'home'));
+  // Navigation: before login defaults to 'home', after login defaults by role
+  const [activeTab, setActiveTab] = useState(() => {
+    const user = authApi.getCurrentUser();
+    if (!user) return 'home';
+    if ((user.role || '').toUpperCase() === 'AGRICULTURAL_STAKEHOLDER') {
+      return 'stakeholder-dashboard';
+    }
+    return 'dashboard';
+  });
   const [smartFarmingSubTab, setSmartFarmingSubTab] = useState('irrigation');
   const [backendStatus, setBackendStatus] = useState('checking');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -68,6 +76,10 @@ export default function App() {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'dashboard': return 'Farmer Dashboard';
+      case 'stakeholder-dashboard': return 'Stakeholder Intelligence Dashboard';
+      case 'stakeholder-risks': return 'Regional Risk & Phytosanitary Alerts';
+      case 'stakeholder-copilot': return 'Agri Intelligence Copilot';
+      case 'regional-intelligence': return 'Regional Agricultural Intelligence';
       case 'diagnose': return 'Disease Detection Studio';
       case 'crop-recommendation': return 'Crop Recommendation Studio';
       case 'smart-farming': return 'Smart Irrigation Hub';
@@ -109,7 +121,12 @@ export default function App() {
   const handleAuthSuccess = (user) => {
     setCurrentUser(user);
     showToast(`Welcome back, ${user.full_name}! Signed in successfully.`);
-    setActiveTab(pendingTab || 'dashboard');
+    const userRole = (user.role || 'FARMER').toUpperCase();
+    if (userRole === 'AGRICULTURAL_STAKEHOLDER') {
+      setActiveTab(pendingTab || 'stakeholder-dashboard');
+    } else {
+      setActiveTab(pendingTab || 'dashboard');
+    }
     setPendingTab(null);
   };
 
@@ -282,19 +299,36 @@ export default function App() {
         {/* Protected Pages (Rendered only after authentication) */}
         {currentUser && (
           <>
+            {/* Tab: Agricultural Stakeholder Modules */}
+            {(activeTab === 'stakeholder-dashboard' ||
+              activeTab === 'stakeholder-risks' ||
+              activeTab === 'stakeholder-copilot' ||
+              activeTab === 'regional-intelligence' ||
+              (activeTab === 'home' && (currentUser?.role || '').toUpperCase() === 'AGRICULTURAL_STAKEHOLDER')) && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['AGRICULTURAL_STAKEHOLDER', 'ADMIN']}>
+                <StakeholderDashboard
+                  currentUser={currentUser}
+                  activeView={activeTab}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                />
+              </RoleProtectedRoute>
+            )}
+
             {/* Tab: Farmer Dashboard */}
-            {(activeTab === 'dashboard' || activeTab === 'home') && (
-              <Dashboard
-                onStartDiagnose={() => setActiveTab('diagnose')}
-                onNavigateTab={(tab, subTab = 'irrigation') => {
-                  if (subTab) setSmartFarmingSubTab(subTab);
-                  setActiveTab(tab);
-                }}
-                latestResult={result}
-                currentUser={currentUser}
-                classesData={classesData}
-                onWeatherUpdate={setLiveWeather}
-              />
+            {(activeTab === 'dashboard' || (activeTab === 'home' && (currentUser?.role || '').toUpperCase() !== 'AGRICULTURAL_STAKEHOLDER')) && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['FARMER', 'ADMIN', 'AGRICULTURAL_EXPERT']}>
+                <Dashboard
+                  onStartDiagnose={() => setActiveTab('diagnose')}
+                  onNavigateTab={(tab, subTab = 'irrigation') => {
+                    if (subTab) setSmartFarmingSubTab(subTab);
+                    setActiveTab(tab);
+                  }}
+                  latestResult={result}
+                  currentUser={currentUser}
+                  classesData={classesData}
+                  onWeatherUpdate={setLiveWeather}
+                />
+              </RoleProtectedRoute>
             )}
 
             {/* Tab: Disease Detector Studio */}

@@ -24,8 +24,33 @@ Covers all 20 specified verification scenarios:
 """
 import unittest
 import time
-import requests
+from fastapi.testclient import TestClient
+from backend.main import app
 
+_test_client = TestClient(app)
+
+
+class LocalClientShim:
+    @staticmethod
+    def _adapt_url(url):
+        if url.startswith("http://127.0.0.1:8000"):
+            return url.replace("http://127.0.0.1:8000", "")
+        return url
+
+    def get(self, url, **kwargs):
+        return _test_client.get(self._adapt_url(url), **kwargs)
+
+    def post(self, url, **kwargs):
+        return _test_client.post(self._adapt_url(url), **kwargs)
+
+    def put(self, url, **kwargs):
+        return _test_client.put(self._adapt_url(url), **kwargs)
+
+    def patch(self, url, **kwargs):
+        return _test_client.patch(self._adapt_url(url), **kwargs)
+
+
+requests = LocalClientShim()
 BASE_URL = "http://127.0.0.1:8000/api/v1"
 
 

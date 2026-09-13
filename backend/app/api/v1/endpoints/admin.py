@@ -64,6 +64,11 @@ def list_users(
             preferred_crop=u.preferred_crop,
             role=u.role,
             is_active=bool(u.is_active) if hasattr(u, "is_active") and u.is_active is not None else True,
+            organization_name=getattr(u, "organization_name", None),
+            organization_type=getattr(u, "organization_type", None),
+            operating_regions=getattr(u, "operating_regions", None),
+            primary_crops=getattr(u, "primary_crops", None),
+            stakeholder_type=getattr(u, "stakeholder_type", None),
             created_at=u.created_at.strftime("%Y-%m-%d %H:%M UTC") if u.created_at else None,
         )
         for u in users

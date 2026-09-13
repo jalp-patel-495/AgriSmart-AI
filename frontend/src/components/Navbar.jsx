@@ -46,7 +46,15 @@ export default function Navbar({
         {/* Brand Logo & Name */}
         <div
           className="brand"
-          onClick={() => setActiveTab(currentUser ? 'dashboard' : 'home')}
+          onClick={() => {
+            if (!currentUser) {
+              setActiveTab('home');
+            } else if ((currentUser.role || '').toUpperCase() === 'AGRICULTURAL_STAKEHOLDER') {
+              setActiveTab('stakeholder-dashboard');
+            } else {
+              setActiveTab('dashboard');
+            }
+          }}
           role="button"
           tabIndex={0}
         >
@@ -61,8 +69,85 @@ export default function Navbar({
         {/* Navigation Links: rendered only when logged in */}
         {currentUser && (() => {
           const userRole = (currentUser.role || 'FARMER').toUpperCase();
+          const isStakeholder = userRole === 'AGRICULTURAL_STAKEHOLDER';
           const isExpert = userRole === 'AGRICULTURAL_EXPERT' || userRole === 'ADMIN';
           const isAdmin = userRole === 'ADMIN';
+
+          if (isStakeholder) {
+            return (
+              <nav className="nav-links" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', alignItems: 'center' }}>
+                <button
+                  className={`nav-btn ${activeTab === 'stakeholder-dashboard' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('stakeholder-dashboard')}
+                  style={{
+                    border: '1px solid rgba(14, 165, 233, 0.4)',
+                    background: activeTab === 'stakeholder-dashboard' ? 'rgba(14, 165, 233, 0.35)' : 'rgba(14, 165, 233, 0.12)',
+                    color: '#7dd3fc',
+                    fontWeight: 600,
+                  }}
+                >
+                  📊 Stakeholder Dashboard
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'crop-recommendation' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('crop-recommendation')}
+                >
+                  🌱 Crop Intelligence
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'diagnose' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('diagnose')}
+                >
+                  🦠 Disease Intelligence
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'smart-farming' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('smart-farming')}
+                >
+                  💧 Water & Irrigation
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'weather' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('weather')}
+                >
+                  🌦️ Weather Intelligence
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'yield' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('yield')}
+                >
+                  📈 Yield Intelligence
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'sustainability' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('sustainability')}
+                >
+                  🌿 Sustainability
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'stakeholder-risks' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('stakeholder-risks')}
+                  style={{
+                    color: activeTab === 'stakeholder-risks' ? '#fde047' : '#fef08a',
+                  }}
+                >
+                  ⚠️ Risk & Alerts
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'stakeholder-copilot' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('stakeholder-copilot')}
+                >
+                  🤖 Agri Intelligence Copilot
+                </button>
+                <button
+                  className={`nav-btn ${activeTab === 'regional-intelligence' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('regional-intelligence')}
+                >
+                  📍 Regional Intelligence
+                </button>
+              </nav>
+            );
+          }
 
           return (
             <nav className="nav-links" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -122,6 +207,17 @@ export default function Navbar({
               {isAdmin && (
                 <>
                   <button
+                    className={`nav-btn ${activeTab === 'stakeholder-dashboard' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('stakeholder-dashboard')}
+                    style={{
+                      border: '1px solid rgba(14, 165, 233, 0.4)',
+                      background: activeTab === 'stakeholder-dashboard' ? 'rgba(14, 165, 233, 0.35)' : 'rgba(14, 165, 233, 0.12)',
+                      color: '#7dd3fc',
+                    }}
+                  >
+                    📊 Stakeholder
+                  </button>
+                  <button
                     className={`nav-btn ${activeTab === 'user-management' ? 'active' : ''}`}
                     onClick={() => setActiveTab('user-management')}
                     style={{
@@ -155,7 +251,19 @@ export default function Navbar({
             const userRole = (currentUser.role || 'FARMER').toUpperCase();
             const roleBadge = userRole === 'ADMIN'
               ? '🛠️ Admin'
-              : (userRole === 'AGRICULTURAL_EXPERT' ? '👨‍🔬 Agricultural Expert' : '👨‍🌾 Farmer');
+              : (userRole === 'AGRICULTURAL_EXPERT'
+                  ? '👨‍🔬 Agricultural Expert'
+                  : (userRole === 'AGRICULTURAL_STAKEHOLDER'
+                      ? '🌐 Agricultural Stakeholder'
+                      : '👨‍🌾 Farmer'));
+
+            const roleStyles = {
+              ADMIN: { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5' },
+              AGRICULTURAL_EXPERT: { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 0.4)', color: '#93c5fd' },
+              AGRICULTURAL_STAKEHOLDER: { bg: 'rgba(14, 165, 233, 0.2)', border: 'rgba(14, 165, 233, 0.4)', color: '#7dd3fc' },
+              FARMER: { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgba(16, 185, 129, 0.4)', color: '#a7f3d0' }
+            };
+            const currentRoleStyle = roleStyles[userRole] || roleStyles.FARMER;
 
             return (
               <div className="user-profile-wrapper" ref={dropdownRef}>
@@ -172,7 +280,7 @@ export default function Navbar({
                   </div>
                   <div className="user-info-text">
                     <span className="user-name">{currentUser.full_name}</span>
-                    <span className="user-farm" style={{ color: '#a7f3d0', fontWeight: 600, fontSize: '0.78rem' }}>
+                    <span className="user-farm" style={{ color: currentRoleStyle.color, fontWeight: 600, fontSize: '0.78rem' }}>
                       {roleBadge}
                     </span>
                   </div>
@@ -190,21 +298,17 @@ export default function Navbar({
                         <div className="dropdown-name">{currentUser.full_name}</div>
                         <div className="dropdown-email">{currentUser.email}</div>
                         <div className="dropdown-badge-row">
-                          <span className="dropdown-farm-badge">🌾 {currentUser.farm_name || 'Family Homestead Farm'}</span>
+                          <span className="dropdown-farm-badge">
+                            {currentUser.organization_name
+                              ? `🏢 ${currentUser.organization_name}`
+                              : `🌾 ${currentUser.farm_name || 'Family Homestead Farm'}`}
+                          </span>
                           <span
                             className="dropdown-role-badge"
                             style={{
-                              background: userRole === 'ADMIN'
-                                ? 'rgba(239, 68, 68, 0.2)'
-                                : (userRole === 'AGRICULTURAL_EXPERT' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(16, 185, 129, 0.2)'),
-                              border: `1px solid ${
-                                userRole === 'ADMIN'
-                                  ? 'rgba(239, 68, 68, 0.4)'
-                                  : (userRole === 'AGRICULTURAL_EXPERT' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(16, 185, 129, 0.4)')
-                              }`,
-                              color: userRole === 'ADMIN'
-                                ? '#fca5a5'
-                                : (userRole === 'AGRICULTURAL_EXPERT' ? '#93c5fd' : '#a7f3d0'),
+                              background: currentRoleStyle.bg,
+                              border: `1px solid ${currentRoleStyle.border}`,
+                              color: currentRoleStyle.color,
                               fontWeight: 700,
                             }}
                           >

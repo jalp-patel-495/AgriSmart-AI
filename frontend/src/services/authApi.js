@@ -244,5 +244,107 @@ export const authApi = {
     }
     return data;
   },
+
+  /**
+   * Stakeholder API: Fetches dashboard overview metrics.
+   * Restricted to AGRICULTURAL_STAKEHOLDER and ADMIN.
+   */
+  async getStakeholderDashboard() {
+    const res = await fetch('/api/v1/stakeholder/dashboard', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch stakeholder dashboard.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetches crop suitability and recommendation distribution.
+   */
+  async getStakeholderCropIntelligence() {
+    const res = await fetch('/api/v1/stakeholder/crop-intelligence', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch crop intelligence.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetches disease intelligence and pathogenetic risks.
+   */
+  async getStakeholderDiseaseIntelligence(crop = '') {
+    const url = crop ? `/api/v1/stakeholder/disease-intelligence?crop=${encodeURIComponent(crop)}` : '/api/v1/stakeholder/disease-intelligence';
+    const res = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch disease intelligence.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetches cross-subsystem risk synthesis.
+   */
+  async getStakeholderRisks() {
+    const res = await fetch('/api/v1/stakeholder/risks', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch agricultural risks.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetches regional and multi-farm visibility.
+   */
+  async getStakeholderRegionalIntelligence(region = '') {
+    const url = region ? `/api/v1/stakeholder/regional-intelligence?region=${encodeURIComponent(region)}` : '/api/v1/stakeholder/regional-intelligence';
+    const res = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch regional intelligence.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Interacts with grounded Agri Intelligence Copilot.
+   */
+  async queryStakeholderCopilot(query, context = null) {
+    const res = await fetch('/api/v1/stakeholder/copilot', {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ query, context }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to consult copilot.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
 };
+
 
