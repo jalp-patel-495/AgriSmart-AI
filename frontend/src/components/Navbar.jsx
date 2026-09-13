@@ -79,12 +79,6 @@ export default function Navbar({
                 Disease Detection
               </button>
               <button
-                className={`nav-btn ${activeTab === 'crop-recommendation' ? 'active' : ''}`}
-                onClick={() => setActiveTab('crop-recommendation')}
-              >
-                Crop Recommendation
-              </button>
-              <button
                 className={`nav-btn ${activeTab === 'smart-farming' ? 'active' : ''}`}
                 onClick={() => setActiveTab('smart-farming')}
               >
@@ -95,18 +89,6 @@ export default function Navbar({
                 onClick={() => setActiveTab('weather')}
               >
                 Weather
-              </button>
-              <button
-                className={`nav-btn ${activeTab === 'yield' ? 'active' : ''}`}
-                onClick={() => setActiveTab('yield')}
-              >
-                Yield
-              </button>
-              <button
-                className={`nav-btn ${activeTab === 'sustainability' ? 'active' : ''}`}
-                onClick={() => setActiveTab('sustainability')}
-              >
-                Sustainability
               </button>
               <button
                 className={`nav-btn ${activeTab === 'assistant' ? 'active' : ''}`}

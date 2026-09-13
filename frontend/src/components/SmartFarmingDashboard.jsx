@@ -889,17 +889,8 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
         <div className="crops-view-grid">
           {/* Left Column: Soil & Climate Parameters Form */}
           <div className="panel-card">
-            <h3 className="panel-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <h3 className="panel-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>🌾</span> Soil Macronutrients & Agro-Climate Inputs
-              {cropModelVersion === '95class' ? (
-                <span style={{ fontSize: '0.68rem', background: 'rgba(234, 179, 8, 0.25)', color: '#facc15', border: '1px solid #facc15', borderRadius: '4px', padding: '0.1rem 0.45rem', fontWeight: 700 }}>
-                  ⚠️ EXPERIMENTAL
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid #10b981', borderRadius: '4px', padding: '0.1rem 0.45rem', fontWeight: 700 }}>
-                  🌱 PRODUCTION BASELINE
-                </span>
-              )}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.85rem' }}>
               Input laboratory soil test values (N-P-K, pH) and local climate parameters to predict the most suitable crop class.
