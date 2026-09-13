@@ -37,5 +37,23 @@ def init_db():
     """Initializes schema and tables."""
     import backend.app.db.models  # ensure models are registered
     Base.metadata.create_all(bind=engine)
+    
+    # Safe SQLite column migration for is_active if table was created previously
+    try:
+        from sqlalchemy import inspect, text
+        insp = inspect(engine)
+        if "users" in insp.get_table_names():
+            columns = [c["name"] for c in insp.get_columns("users")]
+            with engine.connect() as conn:
+                if "is_active" not in columns:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                # Normalize any legacy role strings in database to uppercase canonical
+                conn.execute(text("UPDATE users SET role = 'FARMER' WHERE role IS NULL OR role = '' OR LOWER(role) = 'farmer'"))
+                conn.execute(text("UPDATE users SET role = 'AGRICULTURAL_EXPERT' WHERE LOWER(role) IN ('agronomist', 'expert', 'agricultural_expert')"))
+                conn.execute(text("UPDATE users SET role = 'ADMIN' WHERE LOWER(role) = 'admin'"))
+                conn.commit()
+    except Exception as e:
+        print(f"[!] DB migration notice: {e}")
+
     print(f"[*] Database initialized ({DATABASE_URL.split('://')[0].upper()}).")
 

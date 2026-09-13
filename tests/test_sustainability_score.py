@@ -14,12 +14,12 @@ Verifies:
 11. Partial data
 12. Score always remains between 0 and 100
 """
-import pytest
+import unittest
 from backend.app.schemas.sustainability import SustainabilityScoreRequest
 from backend.app.services.sustainability_service import compute_sustainability_score
 
 
-class TestSustainabilityScore:
+class TestSustainabilityScore(unittest.TestCase):
 
     def test_01_healthy_crop_and_no_irrigation_required(self):
         """Test 1: Healthy crop + no irrigation required (high efficiency)."""
@@ -283,3 +283,8 @@ class TestSustainabilityScore:
         assert res_empty.sustainability_score is None
         assert res_empty.level == "Data Unavailable"
         assert res_empty.available_data is False
+
+
+if __name__ == "__main__":
+    unittest.main()
+

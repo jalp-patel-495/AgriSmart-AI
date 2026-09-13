@@ -72,7 +72,8 @@ class CropRecommendationRequest(BaseModel):
     ph: float = Field(..., ge=3.5, le=10.0, description="Soil pH level (3.5 to 10)")
     temperature: float = Field(..., ge=5.0, le=50.0, description="Average temperature in °C")
     humidity: float = Field(..., ge=10.0, le=100.0, description="Relative humidity in %")
-    rainfall: float = Field(..., ge=10.0, le=1500.0, description="Annual/seasonal rainfall in mm")
+    rainfall: float = Field(..., ge=10.0, le=4000.0, description="Annual/seasonal rainfall in mm")
+    model_version: Optional[str] = Field("95class", description="'95class' (experimental) or '22class' (production)")
 
 
 class RecommendedCropItem(BaseModel):
@@ -98,6 +99,8 @@ class CropRecommendationResponse(BaseModel):
     top_recommendations: List[RecommendedCropItem]
     soil_summary: str
     created_at: str
+    model_version: Optional[str] = "95class"
+    is_experimental: Optional[bool] = True
 
 
 class SoilPreset(BaseModel):

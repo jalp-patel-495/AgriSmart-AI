@@ -99,7 +99,8 @@ def predict_top_crops(req: CropRecommendationRequest) -> CropRecommendationRespo
         "rainfall": req.rainfall,
     }
 
-    pred_res = predict_crop(input_payload, model_version="95class")
+    version = getattr(req, "model_version", "95class") or "95class"
+    pred_res = predict_crop(input_payload, model_version=version)
 
     top_3_items = pred_res.get("top_3", [])
     if not top_3_items and pred_res.get("recommended_crop"):
@@ -169,7 +170,9 @@ def predict_top_crops(req: CropRecommendationRequest) -> CropRecommendationRespo
     return CropRecommendationResponse(
         top_recommendations=recommendations,
         soil_summary=summary,
-        created_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+        created_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+        model_version=version,
+        is_experimental=(version == "95class")
     )
 
 

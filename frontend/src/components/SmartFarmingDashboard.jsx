@@ -5,6 +5,7 @@ import {
   getSoilPresets,
   getAdvisoryHistory,
   getCropsCatalog,
+  getCropTrainingMeans,
 } from '../services/smartFarmingApi';
 import { fetchWeatherIntelligence } from '../services/weatherIntelligenceService';
 
@@ -77,9 +78,47 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
   const [ph, setPh] = useState(6.8);
   const [rainfall, setRainfall] = useState(180.0);
 
-  const [cropResult, setCropResult] = useState(null);
+  const [predictionResult, setPredictionResult] = useState(null);
   const [isRecommendingCrop, setIsRecommendingCrop] = useState(false);
   const [cropError, setCropError] = useState(null);
+  const [cropModelVersion, setCropModelVersion] = useState('95class');
+
+  // Separate states as specified:
+  // selectedTestCrop: The exact crop clicked by the user
+  // testingProfile: The profile belonging to selectedTestCrop
+  const [selectedTestCrop, setSelectedTestCrop] = useState(null);
+  const [testingProfile, setTestingProfile] = useState(null);
+  const [cropTrainingMeans, setCropTrainingMeans] = useState({});
+
+  // Aliases for clean separation and backward compatibility:
+  const cropResult = predictionResult;
+  const setCropResult = setPredictionResult;
+  const recommendedCrop = predictionResult ? predictionResult.crop : null;
+
+  // Form parameters derived object
+  const formData = {
+    nitrogen,
+    phosphorus,
+    potassium,
+    ph,
+    temperature: cropTemp,
+    humidity: cropHum,
+    rainfall,
+  };
+
+  // Canonical crop profile lookup helper from 95-crop catalog
+  const getCropProfile = (cropName) => {
+    if (!cropName || !cropsCatalog || cropsCatalog.length === 0) return null;
+    return (
+      cropsCatalog.find(
+        (c) => c.crop_name?.toLowerCase().trim() === cropName.toLowerCase().trim()
+      ) || null
+    );
+  };
+
+  // The Crop Profile card data MUST always come from selectedTestCrop / testingProfile
+  // Never fallback to recommendedCrop or default crop
+  const cropProfile = testingProfile || getCropProfile(selectedTestCrop);
 
   // --- Real Persisted History State ---
   const [irrigationHistory, setIrrigationHistory] = useState(() => {
@@ -106,6 +145,11 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
     getCropsCatalog().then((data) => {
       if (Array.isArray(data) && data.length > 0) {
         setCropsCatalog(data);
+      }
+    });
+    getCropTrainingMeans().then((means) => {
+      if (means && typeof means === 'object') {
+        setCropTrainingMeans(means);
       }
     });
     getAdvisoryHistory().then((data) => {
@@ -301,21 +345,29 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
         temperature: parseFloat(cropTemp),
         humidity: parseFloat(cropHum),
         rainfall: parseFloat(rainfall),
+        model_version: cropModelVersion,
       };
 
       const res = await getCropRecommendation(payload);
 
-      // Extract top recommendations from the 95-class model
+      // Extract top recommendations from the model
       const topRecs = res.top_recommendations || [];
       const primaryRec = topRecs.length > 0 ? topRecs[0] : null;
-      const topCrop = primaryRec ? primaryRec.crop : (res.recommended_crop || 'Rice');
-      const conf = primaryRec ? primaryRec.match_percentage : (res.confidence ? `${Math.round(res.confidence * 100)}%` : 'Available');
+      const topCrop = primaryRec ? primaryRec.crop : (res.recommended_crop || null);
+      const conf = primaryRec ? primaryRec.match_percentage : (res.confidence ? `${Math.round(res.confidence * 100)}%` : 'Unavailable');
 
-      setCropResult({
+      if (!topCrop) {
+        setCropError('Recommendation unavailable — please try different soil/climate parameters.');
+        return;
+      }
+
+      setPredictionResult({
         crop: topCrop,
         confidence: conf,
         top_recommendations: topRecs,
-        crop_profile: primaryRec ? {
+        model_version: res.model_version || cropModelVersion,
+        is_experimental: (res.model_version || cropModelVersion) === '95class',
+        recommended_profile: primaryRec ? {
           scientific_name: primaryRec.scientific_name,
           crop_category: primaryRec.crop_category,
           growing_season: primaryRec.growing_season,
@@ -368,35 +420,77 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
   };
 
   const handleTestCropPreset = (cropItem) => {
-    // Populate form with approximate optimal conditions from global crop catalog
-    const tMin = cropItem.temperature_min_c || 20;
-    const tMax = cropItem.temperature_max_c || 30;
-    const rMin = cropItem.rainfall_min_mm || 500;
-    const rMax = cropItem.rainfall_max_mm || 1000;
-    const phMin = cropItem.ph_min || 6.0;
-    const phMax = cropItem.ph_max || 7.5;
+    // Capture the canonical crop name immediately from the specific cropItem.
+    if (!cropItem || !cropItem.crop_name) return;
+    const canonicalName = cropItem.crop_name;
 
-    setCropTemp(parseFloat(((tMin + tMax) / 2).toFixed(1)));
-    setRainfall(parseFloat(((rMin + rMax) / 2).toFixed(0)));
-    setPh(parseFloat(((phMin + phMax) / 2).toFixed(1)));
-    setCropHum(cropItem.humidity_preference === 'high' ? 80.0 : cropItem.humidity_preference === 'low' ? 40.0 : 65.0);
+    // 1. Clear any previous AI prediction result so stale data is not visible
+    setPredictionResult(null);
+    setCropError(null);
 
-    // Default target NPK targets based on category
-    if (cropItem.crop_category === 'Pulse' || cropItem.sub_category?.includes('Legume')) {
-      setNitrogen(25.0);
-      setPhosphorus(50.0);
-      setPotassium(30.0);
-    } else if (cropItem.crop_category === 'Cereal') {
-      setNitrogen(100.0);
-      setPhosphorus(50.0);
-      setPotassium(40.0);
+    // 2. Store the selected test crop identity and its profile (SEPARATE from AI prediction)
+    setSelectedTestCrop(canonicalName);
+    setTestingProfile(cropItem);
+
+    // 3. Populate form with parameters from this specific crop's training means or literature profile
+    const cropKey = canonicalName.toLowerCase().trim();
+    const meanData = cropTrainingMeans[cropKey] ||
+      (cropKey.includes('maize') || cropKey.includes('corn') ? cropTrainingMeans['maize'] : null) ||
+      (cropKey.includes('brinjal') || cropKey.includes('eggplant') ? cropTrainingMeans['brinjal / eggplant'] : null);
+
+    if (meanData) {
+      setNitrogen(parseFloat(meanData.nitrogen.toFixed(1)));
+      setPhosphorus(parseFloat(meanData.phosphorus.toFixed(1)));
+      setPotassium(parseFloat(meanData.potassium.toFixed(1)));
+      setCropTemp(parseFloat(meanData.temperature.toFixed(1)));
+      setCropHum(parseFloat(meanData.humidity.toFixed(1)));
+      setPh(parseFloat(meanData.ph.toFixed(2)));
+      setRainfall(parseFloat(meanData.rainfall.toFixed(1)));
     } else {
-      setNitrogen(80.0);
-      setPhosphorus(45.0);
-      setPotassium(45.0);
+      const tMin = cropItem.temperature_min_c ?? 20;
+      const tMax = cropItem.temperature_max_c ?? 30;
+      const rMin = cropItem.rainfall_min_mm ?? 500;
+      const rMax = cropItem.rainfall_max_mm ?? 1000;
+      const phMin = cropItem.ph_min ?? 6.0;
+      const phMax = cropItem.ph_max ?? 7.5;
+
+      setCropTemp(parseFloat(((tMin + tMax) / 2).toFixed(1)));
+      setRainfall(parseFloat(((rMin + rMax) / 2).toFixed(0)));
+      setPh(parseFloat(((phMin + phMax) / 2).toFixed(1)));
+      setCropHum(
+        cropItem.humidity_preference === 'high' ? 80.0 :
+        cropItem.humidity_preference === 'low' ? 40.0 : 65.0
+      );
+
+      // NPK defaults based on crop category
+      const cat = cropItem.crop_category || '';
+      const subCat = cropItem.sub_category || '';
+      if (cat === 'Pulse' || subCat.includes('Legume')) {
+        setNitrogen(25.0);
+        setPhosphorus(50.0);
+        setPotassium(30.0);
+      } else if (cat === 'Cereal') {
+        setNitrogen(100.0);
+        setPhosphorus(50.0);
+        setPotassium(40.0);
+      } else if (cat === 'Fruit' || cat === 'Plantation') {
+        setNitrogen(60.0);
+        setPhosphorus(40.0);
+        setPotassium(50.0);
+      } else if (cat === 'Oilseed') {
+        setNitrogen(70.0);
+        setPhosphorus(35.0);
+        setPotassium(35.0);
+      } else {
+        setNitrogen(80.0);
+        setPhosphorus(45.0);
+        setPotassium(45.0);
+      }
     }
 
+    // 4. Close catalog and switch to crops tab
     setShowCatalogModal(false);
+    setSubTab('crops');
   };
 
   const CROP_CATEGORIES = ['All', 'Cereal', 'Pulse', 'Vegetable', 'Fruit', 'Oilseed', 'Spice', 'Commercial', 'Fibre', 'Medicinal', 'Fodder'];
@@ -453,10 +547,10 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
             className={`sub-tab-btn ${subTab === 'crops' ? 'active' : ''}`}
             onClick={() => {
               setSubTab('crops');
-              if (!cropResult) handleRecommendCrop();
             }}
           >
-            🌱 AI Crop Recommender (95 Crops)
+            🌱 AI Crop Recommender (95 Crops){' '}
+            <span style={{ fontSize: '0.68rem', background: 'rgba(234, 179, 8, 0.25)', color: '#facc15', border: '1px solid #facc15', borderRadius: '4px', padding: '0.1rem 0.35rem', marginLeft: '0.35rem', fontWeight: 700 }}>⚠️ EXPERIMENTAL</span>
           </button>
           <button
             className={`sub-tab-btn ${subTab === 'history' ? 'active' : ''}`}
@@ -694,8 +788,8 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
 
                     <h3 style={{ color: '#fff', fontSize: '1.2rem', marginTop: '0.5rem', lineHeight: 1.4 }}>
                       {irrigationResult.prediction === 'YES'
-                        ? 'Irrigation is recommended under the provided conditions.'
-                        : 'Irrigation is not required under the provided conditions.'}
+                        ? 'The irrigation model predicts that irrigation is currently required under the provided conditions.'
+                        : 'The irrigation model predicts that irrigation is not currently required under the provided conditions.'}
                     </h3>
                   </div>
 
@@ -704,8 +798,8 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
                     <p style={{ margin: 0, fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
                       💡 <strong>Field Guidance:</strong> Soil moisture is currently recorded at <strong>{soilMoisture}%</strong>.
                       {irrigationResult.prediction === 'YES'
-                        ? ' Available root-zone moisture is below target levels. Apply scheduled irrigation.'
-                        : ' Soil hydration remains adequate. Prevent overwatering to protect root health.'}
+                        ? ' The irrigation model predicts that irrigation is currently required under the provided conditions.'
+                        : ' The irrigation model predicts that irrigation is not currently required under the provided conditions.'}
                     </p>
                   </div>
                 </div>
@@ -795,12 +889,103 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
         <div className="crops-view-grid">
           {/* Left Column: Soil & Climate Parameters Form */}
           <div className="panel-card">
-            <h3 className="panel-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 className="panel-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <span>🌾</span> Soil Macronutrients & Agro-Climate Inputs
+              {cropModelVersion === '95class' ? (
+                <span style={{ fontSize: '0.68rem', background: 'rgba(234, 179, 8, 0.25)', color: '#facc15', border: '1px solid #facc15', borderRadius: '4px', padding: '0.1rem 0.45rem', fontWeight: 700 }}>
+                  ⚠️ EXPERIMENTAL
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid #10b981', borderRadius: '4px', padding: '0.1rem 0.45rem', fontWeight: 700 }}>
+                  🌱 PRODUCTION BASELINE
+                </span>
+              )}
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-              Input laboratory soil test values (N-P-K, pH) and local climate parameters to predict the most suitable crop class among 95 global crop classes.
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.85rem' }}>
+              Input laboratory soil test values (N-P-K, pH) and local climate parameters to predict the most suitable crop class.
             </p>
+
+            {/* Model Engine Selector: 22-Crop Production vs 95-Crop Experimental */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', background: 'rgba(0, 0, 0, 0.3)', padding: '0.35rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                onClick={() => setCropModelVersion('22class')}
+                style={{
+                  flex: 1,
+                  padding: '0.45rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: cropModelVersion === '22class' ? 'var(--primary-600)' : 'transparent',
+                  color: cropModelVersion === '22class' ? '#fff' : '#94a3b8',
+                  transition: 'all 0.2s',
+                }}
+              >
+                🌱 22-Crop Production (Verified)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCropModelVersion('95class')}
+                style={{
+                  flex: 1,
+                  padding: '0.45rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  background: cropModelVersion === '95class' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                  color: cropModelVersion === '95class' ? '#facc15' : '#94a3b8',
+                  border: cropModelVersion === '95class' ? '1px solid #facc15' : '1px solid transparent',
+                  transition: 'all 0.2s',
+                }}
+              >
+                🧪 95-Crop (⚠️ EXPERIMENTAL)
+              </button>
+            </div>
+
+            {/* Testing Crop Banner — shown only when a crop was selected from catalog */}
+            {selectedTestCrop && (
+              <div style={{
+                marginBottom: '1rem',
+                padding: '0.65rem 1rem',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(52, 211, 153, 0.4)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1rem' }}>🧪</span>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em' }}>Testing Profile</span>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{selectedTestCrop}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTestCrop(null);
+                    setTestingProfile(null);
+                    setPredictionResult(null);
+                    setCropError(null);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#94a3b8',
+                    borderRadius: '6px',
+                    padding: '0.2rem 0.55rem',
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                  }}
+                  title="Clear test crop selection"
+                >✕ Clear</button>
+              </div>
+            )}
 
             {/* 95 Supported Crops Banner & Catalog Explorer Trigger */}
             <div style={{
@@ -963,188 +1148,278 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
             </button>
           </div>
 
-          {/* Right Column: Recommended Crop, Top 3 Alternatives, & Literature Profile */}
-          <div>
-            {cropResult ? (
-              <div className="panel-card recommended-crop-card" style={{ padding: '1.75rem' }}>
-                {/* Primary Recommendation Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-emerald)', fontWeight: 700 }}>
-                      🌱 Top Recommendation
-                    </span>
-                    <h3 style={{ fontSize: '2.1rem', color: '#fff', fontWeight: 800, margin: '0.35rem 0' }}>
-                      {cropResult.crop}
-                    </h3>
-                    {cropResult.crop_profile?.scientific_name && cropResult.crop_profile.scientific_name !== 'N/A' && (
-                      <div style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '0.92rem', marginBottom: '0.35rem' }}>
-                        {cropResult.crop_profile.scientific_name}
+          {/* Right Column: TEST INPUT CROP, CROP PROFILE, & AI RECOMMENDATION */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* 1. TEST INPUT CROP (shown when user selected a test crop) */}
+            {selectedTestCrop && (
+              <div
+                className="panel-card"
+                id="test-input-crop-card"
+                style={{
+                  padding: '1rem 1.25rem',
+                  background: 'rgba(96, 165, 250, 0.08)',
+                  border: '1px solid rgba(96, 165, 250, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{ fontSize: '1.3rem' }}>🧪</span>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#93c5fd', fontWeight: 700, letterSpacing: '0.04em' }}>
+                        Test Input Crop
                       </div>
-                    )}
-                    {(cropResult.crop_profile?.hindi_name || cropResult.crop_profile?.gujarati_name) && (
-                      <div style={{ fontSize: '0.84rem', color: '#6ee7b7', display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
-                        {cropResult.crop_profile.hindi_name && <span>हिंदी: <strong>{cropResult.crop_profile.hindi_name}</strong></span>}
-                        {cropResult.crop_profile.gujarati_name && <span>ગુજરાતી: <strong>{cropResult.crop_profile.gujarati_name}</strong></span>}
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#bfdbfe' }}>
+                        {selectedTestCrop}
                       </div>
-                    )}
+                    </div>
                   </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="match-percent-label" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399' }}>{cropResult.confidence}</span>
-                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Model Confidence</span>
-                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Profile parameters loaded into model inputs
+                  </span>
                 </div>
-
-                {/* Alternative Recommendations: Top-3 physiological rankings */}
-                {cropResult.top_recommendations && cropResult.top_recommendations.length > 1 && (
-                  <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(0, 0, 0, 0.3)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.65rem' }}>
-                      🌾 Other Suitable Options (Model-Ranked Recommendations):
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {cropResult.top_recommendations.slice(1, 3).map((alt, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '0.55rem 0.85rem',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            borderRadius: 'var(--radius-sm)',
-                            borderLeft: '3px solid #10b981'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>#{idx + 2}</span>
-                            <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{alt.crop}</strong>
-                            {alt.crop_category && (
-                              <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: 'rgba(255, 255, 255, 0.06)', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
-                                {alt.crop_category}
-                              </span>
-                            )}
-                          </div>
-                          <span style={{ fontSize: '0.85rem', color: '#a7f3d0', fontWeight: 600 }}>
-                            {alt.match_percentage} Match
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Literature Crop Profile Card from global_crops.json */}
-                {cropResult.crop_profile && (
-                  <div style={{ marginTop: '1.25rem', padding: '1.1rem', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em' }}>
-                        📖 Crop Profile (Literature-Typical Approximation)
-                      </span>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8', background: 'rgba(0, 0, 0, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
-                        FAO / ICAR Reference
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Crop Category</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.crop_category || 'Field Crop'}</strong>
-                      </div>
-
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Growing Season</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.growing_season || 'Seasonal'}</strong>
-                      </div>
-
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Preferred Soil pH</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.preferred_ph || '6.0 - 7.5'}</strong>
-                      </div>
-
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Water Requirement</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.water_requirement || 'Moderate'}</strong>
-                      </div>
-
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Temperature Range</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.temperature_range || '15 - 35°C'}</strong>
-                      </div>
-
-                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Rainfall Range</span>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.crop_profile.rainfall_range || '400 - 1200 mm'}</strong>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.5rem' }}>
-                      ℹ️ Note: These agronomic profile values are literature-typical approximations. They are not exact farm guarantees and vary with local cultivars, irrigation, and season.
-                    </div>
-                  </div>
-                )}
-
-                {/* Farmer-Friendly Explanation */}
-                <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(0, 0, 0, 0.25)', borderRadius: 'var(--radius-md)' }}>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#e2e8f0', lineHeight: 1.5 }}>
-                    <strong>Based on the provided soil and microclimate parameters:</strong>
-                  </p>
-                  <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                    Nitrogen ({cropResult.inputs.nitrogen} kg/ha) + Phosphorus ({cropResult.inputs.phosphorus} kg/ha) + Potassium ({cropResult.inputs.potassium} kg/ha) + Temperature ({cropResult.inputs.temperature}°C) + Humidity ({cropResult.inputs.humidity}%) + Soil pH ({cropResult.inputs.ph}) + Rainfall ({cropResult.inputs.rainfall} mm).
-                  </p>
-                </div>
-
-                {/* Submitted Input Parameters Table */}
-                <div style={{ marginTop: '1.25rem' }}>
-                  <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.65rem', fontWeight: 700 }}>
-                    Submitted Input Parameters:
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.6rem' }}>
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Nitrogen (N)</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.nitrogen} kg/ha</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Phosphorus (P)</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.phosphorus} kg/ha</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Potassium (K)</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.potassium} kg/ha</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Soil pH</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.ph}</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Temperature</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.temperature}°C</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Humidity</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.humidity}%</strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Rainfall</span>
-                      <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{cropResult.inputs.rainfall} mm</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="panel-card" style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🌾</div>
-                <h4>Awaiting Soil Evaluation</h4>
-                <p style={{ fontSize: '0.85rem', marginTop: '0.35rem' }}>
-                  Adjust soil nutrient values on the left or select a regional preset, then click <strong>Recommend Crop</strong>.
-                </p>
               </div>
             )}
+
+            {/* 2. CROP PROFILE CARD (strictly belonging to selectedTestCrop / testingProfile) */}
+            <div
+              className="panel-card"
+              id="crop-profile-card"
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h3 className="panel-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>📖</span> Crop Profile {selectedTestCrop ? `— ${selectedTestCrop}` : ''}
+                </h3>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: 'rgba(0, 0, 0, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  FAO / ICAR Reference
+                </span>
+              </div>
+
+              {selectedTestCrop && cropProfile ? (
+                <div>
+                  <div style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <h4 style={{ fontSize: '1.45rem', color: '#fff', fontWeight: 800, margin: 0 }}>
+                        {cropProfile.crop_name || selectedTestCrop}
+                      </h4>
+                      {cropProfile.scientific_name && cropProfile.scientific_name !== 'N/A' && (
+                        <span style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '0.95rem' }}>
+                          {cropProfile.scientific_name}
+                        </span>
+                      )}
+                    </div>
+                    {(cropProfile.hindi_name || cropProfile.gujarati_name) && (
+                      <div style={{ fontSize: '0.84rem', color: '#6ee7b7', marginTop: '0.35rem', display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
+                        {cropProfile.hindi_name && <span>हिंदी: <strong>{cropProfile.hindi_name}</strong></span>}
+                        {cropProfile.gujarati_name && <span>ગુજરાતી: <strong>{cropProfile.gujarati_name}</strong></span>}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Crop Category</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>{cropProfile.crop_category || 'Field Crop'}</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Growing Season</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>{cropProfile.growing_season || 'Seasonal'}</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Preferred Soil pH</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
+                        {cropProfile.ph_min !== undefined && cropProfile.ph_max !== undefined
+                          ? `${cropProfile.ph_min} - ${cropProfile.ph_max}`
+                          : (cropProfile.preferred_ph || '6.0 - 7.5')}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Water Requirement</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>{cropProfile.water_requirement || 'Moderate'}</strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Temperature Range</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
+                        {cropProfile.temperature_min_c !== undefined && cropProfile.temperature_max_c !== undefined
+                          ? `${cropProfile.temperature_min_c}–${cropProfile.temperature_max_c}°C`
+                          : (cropProfile.temperature_range || '15 - 35°C')}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Rainfall Range</span>
+                      <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
+                        {cropProfile.rainfall_min_mm !== undefined && cropProfile.rainfall_max_mm !== undefined
+                          ? `${cropProfile.rainfall_min_mm}–${cropProfile.rainfall_max_mm} mm`
+                          : (cropProfile.rainfall_range || '400 - 1200 mm')}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.5rem' }}>
+                    ℹ️ Note: Canonical literature profile from FAO/ICAR catalog for {cropProfile.crop_name || selectedTestCrop}.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1.75rem 1rem', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.92rem', margin: 0, fontWeight: 600 }}>
+                    Select a crop to view its profile.
+                  </p>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', marginTop: '0.35rem' }}>
+                    Browse the 95-crop catalog on the left and click <strong>🧪 Test This Crop</strong> to inspect its agronomic profile.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 3. AI RECOMMENDATION CARD (genuinely predicted by ML model) */}
+            <div className="panel-card" id="ai-recommendation-card" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-emerald)', fontWeight: 700 }}>
+                  🤖 AI Recommendation
+                </span>
+                {cropResult && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: cropResult.is_experimental ? '#facc15' : '#34d399',
+                    background: cropResult.is_experimental ? 'rgba(234, 179, 8, 0.2)' : 'rgba(16, 185, 129, 0.15)',
+                    padding: '0.18rem 0.55rem',
+                    borderRadius: '999px',
+                    border: `1px solid ${cropResult.is_experimental ? '#facc15' : 'rgba(52, 211, 153, 0.3)'}`,
+                    fontWeight: 700
+                  }}>
+                    {cropResult.is_experimental ? '95-Class Model ⚠️ EXPERIMENTAL' : '22-Class Production Model'}
+                  </span>
+                )}
+              </div>
+
+              {cropResult ? (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '2rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>
+                        {cropResult.crop}
+                      </h3>
+                      {cropResult.recommended_profile?.scientific_name && cropResult.recommended_profile.scientific_name !== 'N/A' && (
+                        <div style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '0.88rem' }}>
+                          {cropResult.recommended_profile.scientific_name}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className="match-percent-label" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399' }}>
+                        {cropResult.confidence}
+                      </span>
+                      <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Model Confidence</span>
+                    </div>
+                  </div>
+
+                  {/* Top 3 Alternatives */}
+                  {cropResult.top_recommendations && cropResult.top_recommendations.length > 1 && (
+                    <div style={{ marginTop: '1rem', padding: '0.85rem', background: 'rgba(0, 0, 0, 0.3)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                        🌾 Other Suitable Options (Model-Ranked Recommendations):
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                        {cropResult.top_recommendations.slice(1, 3).map((alt, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '0.45rem 0.75rem',
+                              background: 'rgba(255, 255, 255, 0.04)',
+                              borderRadius: 'var(--radius-sm)',
+                              borderLeft: '3px solid #10b981'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>#{idx + 2}</span>
+                              <strong style={{ color: '#fff', fontSize: '0.92rem' }}>{alt.crop}</strong>
+                              {alt.crop_category && (
+                                <span style={{ fontSize: '0.68rem', color: '#94a3b8', background: 'rgba(255, 255, 255, 0.06)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                                  {alt.crop_category}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '0.82rem', color: '#a7f3d0', fontWeight: 600 }}>
+                              {alt.match_percentage} Match
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submitted Input Parameters Table */}
+                  <div style={{ marginTop: '1rem' }}>
+                    <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.5rem', fontWeight: 700 }}>
+                      Submitted Input Parameters:
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Nitrogen (N)</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.nitrogen} kg/ha</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Phosphorus (P)</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.phosphorus} kg/ha</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Potassium (K)</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.potassium} kg/ha</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Soil pH</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.ph}</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Temperature</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.temperature}°C</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Humidity</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.humidity}%</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '0.45rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>Rainfall</span>
+                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{cropResult.inputs.rainfall} mm</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>🌾</div>
+                  {selectedTestCrop ? (
+                    <>
+                      <h4 style={{ color: '#6ee7b7', margin: '0.25rem 0' }}>Ready to test: {selectedTestCrop}</h4>
+                      <p style={{ fontSize: '0.82rem', margin: '0.25rem 0 0 0' }}>
+                        Profile parameters have been loaded into the form. Click <strong>🌱 Recommend Crop</strong> on the left to run the AI model.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h4 style={{ margin: '0.25rem 0' }}>Awaiting Soil Evaluation</h4>
+                      <p style={{ fontSize: '0.82rem', margin: '0.25rem 0 0 0' }}>
+                        Adjust soil nutrient values on the left or select a crop from the catalog, then click <strong>🌱 Recommend Crop</strong>.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1369,9 +1644,9 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
             <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
               {filteredCrops.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.85rem' }}>
-                  {filteredCrops.map((c, idx) => (
+                  {filteredCrops.map((c) => (
                     <div
-                      key={idx}
+                      key={c.crop_name || c.id || c.scientific_name}
                       style={{
                         background: 'rgba(255, 255, 255, 0.03)',
                         border: '1px solid rgba(255, 255, 255, 0.08)',

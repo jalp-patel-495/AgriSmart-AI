@@ -46,13 +46,17 @@ def get_current_weather(
     Returns live weather telemetry, disease propagation risk indices,
     7-day forecast, and agricultural advisories.
     """
-    return get_weather_intelligence(
-        lat=lat,
-        lon=lon,
-        location_name=location,
-        crop=crop,
-        disease=disease
-    )
+    try:
+        return get_weather_intelligence(
+            lat=lat,
+            lon=lon,
+            location_name=location,
+            crop=crop,
+            disease=disease
+        )
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Weather data unavailable. Upstream weather service offline.")
 
 
 @router.post("/recommendations", response_model=List[AgriculturalAdvisory])

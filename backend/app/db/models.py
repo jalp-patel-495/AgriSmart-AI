@@ -2,7 +2,7 @@
 SQLAlchemy ORM Models for Phase 8: Smart Irrigation and Crop Recommendation
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean
 from backend.app.db.database import Base
 
 
@@ -69,6 +69,7 @@ class User(Base):
     farm_name = Column(String(150), nullable=True, default="My Family Farm")
     farm_location = Column(String(150), nullable=True, default="Punjab, India")
     preferred_crop = Column(String(80), nullable=True, default="Wheat")
-    role = Column(String(50), default="farmer")  # 'farmer', 'agronomist', 'researcher'
+    role = Column(String(50), default="FARMER", nullable=False)  # 'FARMER', 'AGRICULTURAL_EXPERT', 'ADMIN'
+    is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

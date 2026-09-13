@@ -9,10 +9,44 @@ import SmartFarmingDashboard from './components/SmartFarmingDashboard';
 import GenAIAssistant from './components/GenAIAssistant';
 import AuthModal from './components/AuthModal';
 import FloatingChatbotButton from './components/FloatingChatbotButton';
+import ExpertReviewView from './components/ExpertReviewView';
+import UserManagementView from './components/UserManagementView';
+import SystemMonitoringView from './components/SystemMonitoringView';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
 import { resolveCrop, CANONICAL_CLASSES } from './utils/cropDiseaseResolver';
 import { fetchWeatherIntelligence } from './services/weatherIntelligenceService';
+
+/**
+ * Reusable RBAC Route Guard Component
+ * Enforces role authorization and renders an explicit 403 Forbidden Barrier if insufficient.
+ */
+export function RoleProtectedRoute({ currentUser, requiredRoles, children }) {
+  const userRole = (currentUser?.role || 'FARMER').toUpperCase();
+  const normalizedRequired = requiredRoles.map((r) => r.toUpperCase());
+  const hasAccess = normalizedRequired.includes(userRole);
+
+  if (!hasAccess) {
+    return (
+      <div className="auth-required-container" style={{ padding: '3rem 1rem' }}>
+        <div className="auth-required-card" style={{ borderColor: 'rgba(239, 68, 68, 0.45)', background: 'rgba(15, 23, 42, 0.95)' }}>
+          <div className="auth-required-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171' }}>🚫</div>
+          <h2 className="auth-required-title" style={{ color: '#fca5a5' }}>403 Forbidden • Access Denied</h2>
+          <p className="auth-required-desc">
+            Your authenticated role (<strong>{userRole}</strong>) does not have sufficient permission to access this module.
+            <br />
+            Required role: <strong style={{ color: '#93c5fd' }}>{normalizedRequired.join(' or ')}</strong>.
+          </p>
+          <div style={{ marginTop: '1.25rem', padding: '0.85rem', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', fontSize: '0.84rem', color: '#fca5a5' }}>
+            🔒 <strong>Strict Backend Security:</strong> Server-side API endpoints are protected and will reject direct requests with HTTP 403 Forbidden.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
 
 export default function App() {
   // Authentication state
@@ -34,10 +68,17 @@ export default function App() {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'dashboard': return 'Farmer Dashboard';
-      case 'diagnose': return 'Disease Detector Studio';
+      case 'diagnose': return 'Disease Detection Studio';
+      case 'crop-recommendation': return 'Crop Recommendation Studio';
       case 'smart-farming': return 'Smart Irrigation Hub';
       case 'weather': return 'Weather Intelligence Engine';
-      case 'assistant': return 'Kisan AI Co-Pilot';
+      case 'yield': return 'Yield Prediction';
+      case 'sustainability': return 'Sustainability Score';
+      case 'assistant': return 'Farmer Advisor';
+      case 'agentic-advisor': return 'Agentic Advisor';
+      case 'expert-review': return 'Expert Review';
+      case 'user-management': return 'User Management';
+      case 'system-monitoring': return 'System Monitoring';
       default: return 'Protected Module';
     }
   };
@@ -76,7 +117,7 @@ export default function App() {
     authApi.logout();
     setCurrentUser(null);
     setActiveTab('home');
-    showToast('You have signed out successfully.');
+    showToast('Signed out successfully.');
   };
 
   // Scientific safety checks for farm context
@@ -327,12 +368,86 @@ export default function App() {
 
             {/* Tab: Smart Farming & Precision Irrigation */}
             {activeTab === 'smart-farming' && (
-              <SmartFarmingDashboard initialSubTab={smartFarmingSubTab} />
+              <SmartFarmingDashboard initialSubTab="irrigation" />
             )}
 
-            {/* Tab: Kisan GenAI Assistant */}
+            {/* Tab: Crop Recommendation */}
+            {activeTab === 'crop-recommendation' && (
+              <SmartFarmingDashboard initialSubTab="crops" />
+            )}
+
+            {/* Tab: Yield Prediction */}
+            {activeTab === 'yield' && (
+              <Dashboard
+                onStartDiagnose={() => setActiveTab('diagnose')}
+                onNavigateTab={(tab, subTab = 'irrigation') => {
+                  if (subTab) setSmartFarmingSubTab(subTab);
+                  setActiveTab(tab);
+                }}
+                latestResult={result}
+                currentUser={currentUser}
+                classesData={classesData}
+                onWeatherUpdate={setLiveWeather}
+                initialModal="yield"
+              />
+            )}
+
+            {/* Tab: Sustainability Score */}
+            {activeTab === 'sustainability' && (
+              <Dashboard
+                onStartDiagnose={() => setActiveTab('diagnose')}
+                onNavigateTab={(tab, subTab = 'irrigation') => {
+                  if (subTab) setSmartFarmingSubTab(subTab);
+                  setActiveTab(tab);
+                }}
+                latestResult={result}
+                currentUser={currentUser}
+                classesData={classesData}
+                onWeatherUpdate={setLiveWeather}
+                initialModal="sustainability"
+              />
+            )}
+
+            {/* Tab: Farmer Advisor / Kisan AI Co-Pilot */}
             {activeTab === 'assistant' && (
               <GenAIAssistant farmContext={farmContext} />
+            )}
+
+            {/* Tab: Agentic Advisor (Module G) */}
+            {activeTab === 'agentic-advisor' && (
+              <Dashboard
+                onStartDiagnose={() => setActiveTab('diagnose')}
+                onNavigateTab={(tab, subTab = 'irrigation') => {
+                  if (subTab) setSmartFarmingSubTab(subTab);
+                  setActiveTab(tab);
+                }}
+                latestResult={result}
+                currentUser={currentUser}
+                classesData={classesData}
+                onWeatherUpdate={setLiveWeather}
+                focusSection="agentic"
+              />
+            )}
+
+            {/* Tab: 👨‍🔬 Expert Review (RoleProtectedRoute: AGRICULTURAL_EXPERT + ADMIN) */}
+            {activeTab === 'expert-review' && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['AGRICULTURAL_EXPERT', 'ADMIN']}>
+                <ExpertReviewView currentUser={currentUser} />
+              </RoleProtectedRoute>
+            )}
+
+            {/* Tab: 🛠️ User Management (RoleProtectedRoute: ADMIN only) */}
+            {activeTab === 'user-management' && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['ADMIN']}>
+                <UserManagementView currentUser={currentUser} onShowToast={showToast} />
+              </RoleProtectedRoute>
+            )}
+
+            {/* Tab: 🛠️ System Monitoring (RoleProtectedRoute: ADMIN only) */}
+            {activeTab === 'system-monitoring' && (
+              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['ADMIN']}>
+                <SystemMonitoringView currentUser={currentUser} />
+              </RoleProtectedRoute>
             )}
           </>
         )}

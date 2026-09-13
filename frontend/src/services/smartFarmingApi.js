@@ -138,3 +138,18 @@ export async function getCropsCatalog() {
   }
 }
 
+/**
+ * Fetch training-data-derived mean feature values per crop (all 95 crops)
+ */
+export async function getCropTrainingMeans() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/smart-farming/crop-training-means`);
+    if (!res.ok) throw new Error('Failed to fetch crop training means');
+    return await res.json();
+  } catch (err) {
+    console.warn('Crop training means fetch error:', err);
+    return {};
+  }
+}
+
+

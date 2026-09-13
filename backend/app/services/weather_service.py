@@ -117,36 +117,8 @@ def fetch_open_meteo_weather(lat: float, lon: float) -> Dict:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        # Fallback simulation if network is unreachable
-        print(f"[!] Weather API connection error: {e}. Utilizing agricultural fallback.")
-        return get_simulated_weather(lat, lon)
-
-
-def get_simulated_weather(lat: float, lon: float) -> Dict:
-    """Graceful fallback weather data with realistic field numbers."""
-    now_str = time.strftime("%Y-%m-%dT%H:00")
-    return {
-        "latitude": lat,
-        "longitude": lon,
-        "current": {
-            "time": now_str,
-            "temperature_2m": 26.5,
-            "relative_humidity_2m": 78,
-            "precipitation": 1.4,
-            "rain": 1.2,
-            "weather_code": 61,
-            "wind_speed_10m": 9.2,
-            "is_day": 1
-        },
-        "daily": {
-            "time": [f"2026-09-{11+i:02d}" for i in range(7)],
-            "temperature_2m_max": [29.0, 28.5, 30.2, 31.0, 27.8, 28.4, 29.1],
-            "temperature_2m_min": [20.1, 19.5, 21.0, 21.5, 19.0, 19.8, 20.3],
-            "precipitation_sum": [2.4, 4.8, 0.0, 0.2, 8.5, 1.0, 0.0],
-            "precipitation_probability_max": [65, 80, 15, 20, 90, 35, 10],
-            "weather_code": [61, 63, 1, 2, 65, 80, 0]
-        }
-    }
+        print(f"[!] Weather API connection error: {e}. Zero fake data fallback policy enforced.")
+        raise RuntimeError("Weather data unavailable") from e
 
 
 def compute_disease_risk(

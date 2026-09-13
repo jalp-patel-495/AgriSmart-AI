@@ -117,16 +117,16 @@ export default function HomePage({
             <div className="ticker-label">PlantVillage Real Leaf Images</div>
           </div>
           <div className="ticker-item">
-            <div className="ticker-value">13</div>
-            <div className="ticker-label">Crop Disease Classifiers</div>
+            <div className="ticker-value">19</div>
+            <div className="ticker-label">Disease Classes (7 Crop Staples)</div>
           </div>
           <div className="ticker-item">
             <div className="ticker-value">98.4%</div>
             <div className="ticker-label">AI Diagnostic Precision</div>
           </div>
           <div className="ticker-item">
-            <div className="ticker-value">FAO-56</div>
-            <div className="ticker-label">Dual-Depth Precision Irrigation</div>
+            <div className="ticker-value">ML Model</div>
+            <div className="ticker-label">Smart Irrigation Predictor</div>
           </div>
         </div>
       </section>
@@ -137,7 +137,7 @@ export default function HomePage({
           <div className="section-pill">INTELLIGENT AGRICULTURE ECOSYSTEM</div>
           <h2 className="section-title">Engineered for Precision Crop Protection</h2>
           <p className="section-description">
-            Combining deep learning computer vision, real-time IoT root-zone telemetry,
+            Combining deep learning computer vision, soil moisture intelligence,
             micro-climate intelligence, and generative agronomy AI into a unified portal.
           </p>
         </div>
@@ -152,7 +152,7 @@ export default function HomePage({
             <h3 className="feature-heading">Real-Time Leaf Disease Diagnostics</h3>
             <p className="feature-text">
               High-resolution transfer learning models trained on 15,014 verified agricultural
-              specimens. Detect early lesions, pathogens, and severity indices in under 400ms.
+              specimens across 19 classes and 7 crops. Detect early lesions and symptoms in under 400ms.
             </p>
             <div className="feature-action-link">
               <span>Launch Disease Studio →</span>
@@ -164,14 +164,14 @@ export default function HomePage({
             <div className="feature-icon-box blue">
               <span>💧</span>
             </div>
-            <div className="feature-tag">FAO-56 Dual Zone</div>
-            <h3 className="feature-heading">IoT Soil & Irrigation Intelligence</h3>
+            <div className="feature-tag">ML Irrigation Model</div>
+            <h3 className="feature-heading">Smart Irrigation Decision Engine</h3>
             <p className="feature-text">
-              Physics-based root-zone deficit calculations combining 15cm and 30cm sensor
-              telemetry, soil type constants, and rainfall forecasting to prevent crop stress.
+              Trained classification model predicting irrigation requirement based on
+              soil moisture, temperature, and relative humidity to prevent water stress.
             </p>
             <div className="feature-action-link">
-              <span>View Irrigation Telemetry →</span>
+              <span>View Irrigation Advisory →</span>
             </div>
           </div>
 
@@ -183,8 +183,8 @@ export default function HomePage({
             <div className="feature-tag">Micro-Climate</div>
             <h3 className="feature-heading">Agronomic Weather Intelligence</h3>
             <p className="feature-text">
-              Live evapotranspiration tracking, leaf wetness hours, and fungal spore outbreak
-              warnings calibrated to major agricultural belts across India and global zones.
+              Live weather forecasts, precipitation tracking, and environmental risk
+              calibrated to major agricultural belts across India and global zones.
             </p>
             <div className="feature-action-link">
               <span>Check Weather Radar →</span>
@@ -200,7 +200,7 @@ export default function HomePage({
             <h3 className="feature-heading">Kisan AI Agronomist Co-Pilot</h3>
             <p className="feature-text">
               A context-aware AI advisory speaking Hindi, Punjabi, Gujarati, and English.
-              Provides tailored chemical dosages, organic remedies, and spray scheduling.
+              Provides evidence-based cultural practices, organic remedies, and disease management.
             </p>
             <div className="feature-action-link">
               <span>Ask AI Assistant →</span>

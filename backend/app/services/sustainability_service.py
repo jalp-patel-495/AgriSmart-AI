@@ -182,13 +182,13 @@ def calculate_resource_use(
 
     if mean_dev <= 0.35:
         score = 30
-        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are within literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha)."
+        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are within literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha). Approximate profile-based indicator, not an agronomic prescription."
     elif mean_dev <= 0.75:
         score = 20
-        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are moderately outside literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha)."
+        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are moderately outside literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha). Approximate profile-based indicator, not an agronomic prescription."
     else:
         score = 10
-        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are strongly outside literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha)."
+        desc = f"NPK inputs ({n_val:.0f}-{p_val:.0f}-{k_val:.0f}) are strongly outside literature profile range for {resolved_crop} (target: {target_n:.0f}-{target_p:.0f}-{target_k:.0f} kg/ha). Approximate profile-based indicator, not an agronomic prescription."
 
     return (score, 30, "available", desc)
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWeatherIntelligence } from '../services/weatherIntelligenceService';
 import { fetchSustainabilityScore } from '../services/sustainabilityService';
+import { fetchAgenticAdvisor } from '../services/agenticAdvisorService';
+import AgenticAdvisorCard from './AgenticAdvisorCard';
 
 const API_BASE = 'http://127.0.0.1:8000';
 
@@ -10,6 +12,8 @@ export default function Dashboard({
   latestResult,
   currentUser,
   onWeatherUpdate,
+  initialModal,
+  focusSection,
 }) {
   // Navigation helper
   const navigateTo = (tab, subTab = 'irrigation') => {
@@ -115,6 +119,10 @@ export default function Dashboard({
   });
   const [isSustainabilityModalOpen, setIsSustainabilityModalOpen] = useState(false);
 
+  // Agentic Advisor State (Module G)
+  const [agenticAdvisorData, setAgenticAdvisorData] = useState(null);
+  const [agenticAdvisorLoading, setAgenticAdvisorLoading] = useState(true);
+
   // Sync latest disease diagnosis into recent analyses history
   useEffect(() => {
     if (latestResult && latestResult.disease) {
@@ -142,6 +150,21 @@ export default function Dashboard({
       });
     }
   }, [latestResult]);
+
+  // Handle direct navigation to modals or sections
+  useEffect(() => {
+    if (initialModal === 'yield') {
+      setIsYieldModalOpen(true);
+    } else if (initialModal === 'sustainability') {
+      setIsSustainabilityModalOpen(true);
+    }
+    if (focusSection === 'agentic') {
+      setTimeout(() => {
+        const el = document.getElementById('agentic-advisor-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [initialModal, focusSection]);
 
   // Load real API telemetry on mount
   useEffect(() => {
@@ -251,7 +274,7 @@ export default function Dashboard({
         const isReq = irrigationData.status === 'Irrigation Required';
         irrigationPred = isReq ? 'YES' : 'NO';
         irrigationPrio = isReq ? 'HIGH' : 'NONE';
-        soilM = irrigationData.lastLog?.moisture_15cm ?? 32.0;
+        soilM = irrigationData.lastLog?.moisture_15cm ?? null;
       }
 
       // 3. Gather Weather context
@@ -342,6 +365,99 @@ export default function Dashboard({
     };
   }, [recentAnalyses, latestResult, irrigationData, weatherData, cropRecData, currentUser]);
 
+  // Sync Agentic Advisor when underlying telemetry updates (Module G)
+  const updateAgenticAdvisor = async () => {
+    setAgenticAdvisorLoading(true);
+    try {
+      // 1. Disease
+      const latestLeaf = recentAnalyses && recentAnalyses.length > 0 ? recentAnalyses[0] : (latestResult || null);
+      const diseasePayload = latestLeaf ? {
+        crop: latestLeaf.crop || null,
+        disease: latestLeaf.disease || latestLeaf.status || null,
+        confidence: getRawConfidence(latestLeaf),
+      } : null;
+
+      // 2. Irrigation
+      let irrigationPayload = null;
+      if (irrigationData && (irrigationData.status || irrigationData.lastLog)) {
+        const isReq = irrigationData.status === 'Irrigation Required';
+        irrigationPayload = {
+          prediction: isReq ? 'YES' : 'NO',
+          priority: isReq ? 'HIGH' : 'NONE',
+          confidence: irrigationData.lastLog?.confidence || '95.0%',
+        };
+      }
+
+      // 3. Weather
+      let weatherPayload = null;
+      if (weatherData && weatherData.data && weatherData.data.weather) {
+        weatherPayload = {
+          temperature: weatherData.data.weather.temperature ?? null,
+          humidity: weatherData.data.weather.humidity ?? null,
+          rain_probability: weatherData.data.weather.rain_probability ?? null,
+          forecast_precipitation: weatherData.data.weather.forecast_precipitation ?? null,
+          weather_risk: weatherData.data.weather_risk ?? null,
+          irrigation_recommendation: weatherData.data.irrigation_recommendation ?? null,
+          disease_monitoring: weatherData.data.disease_monitoring ?? null,
+        };
+      }
+
+      // 4. Crop Recommendation
+      let cropRecPayload = null;
+      if (cropRecData && cropRecData.recommendation) {
+        const rec = cropRecData.recommendation;
+        cropRecPayload = {
+          recommended_crop: rec.top_crop || rec.crop || null,
+          probability: rec.confidence_score || rec.match_percentage || null,
+          top_3: rec.top_recommendations ? rec.top_recommendations.map(r => (typeof r === 'string' ? r : r.crop)) : null,
+        };
+      }
+
+      // 5. Yield
+      let yieldPayload = null;
+      if (yieldData && yieldData.estimated) {
+        yieldPayload = {
+          estimated_yield: yieldData.estimated,
+          unit: yieldData.unit || 'tons/ha',
+        };
+      }
+
+      // 6. Sustainability
+      let sustainabilityPayload = null;
+      if (sustainabilityData && sustainabilityData.score !== null && sustainabilityData.score !== undefined) {
+        sustainabilityPayload = {
+          score: sustainabilityData.score,
+          level: sustainabilityData.level,
+          water_efficiency: sustainabilityData.components?.water_efficiency ?? null,
+          resource_use: sustainabilityData.components?.resource_use ?? null,
+          crop_health: sustainabilityData.components?.crop_health ?? null,
+        };
+      }
+
+      const advisorPayload = {
+        disease: diseasePayload,
+        irrigation: irrigationPayload,
+        weather: weatherPayload,
+        crop_recommendation: cropRecPayload,
+        yield_prediction: yieldPayload,
+        sustainability: sustainabilityPayload,
+      };
+
+      const res = await fetchAgenticAdvisor(advisorPayload);
+      if (res) {
+        setAgenticAdvisorData(res);
+      }
+    } catch (err) {
+      console.warn('Agentic Advisor sync error:', err);
+    } finally {
+      setAgenticAdvisorLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    updateAgenticAdvisor();
+  }, [recentAnalyses, latestResult, irrigationData, weatherData, cropRecData, yieldData, sustainabilityData]);
+
   // Handle in-situ yield prediction
   const handleCalculateYield = async (e) => {
     e.preventDefault();
@@ -394,13 +510,13 @@ export default function Dashboard({
 
   // Helper for confidence score parsing
   const getRawConfidence = (item) => {
-    if (!item) return 1.0;
+    if (!item) return null;
     if (typeof item.confidence_score === 'number') return item.confidence_score;
     if (typeof item.confidence === 'string') {
       const num = parseFloat(item.confidence.replace('%', ''));
-      return isNaN(num) ? 1.0 : num / 100.0;
+      return isNaN(num) ? null : num > 1.0 ? num / 100.0 : num;
     }
-    return 1.0;
+    return null;
   };
 
   return (
@@ -419,6 +535,15 @@ export default function Dashboard({
         </div>
       </section>
 
+      {/* 1.5 AGENTIC ADVISOR (Module G: Multi-Module Decision Support Layer) */}
+      <section id="agentic-advisor-section" style={{ maxWidth: '1400px', margin: '0 auto 1.5rem auto' }}>
+        <AgenticAdvisorCard
+          advisorData={agenticAdvisorData}
+          loading={agenticAdvisorLoading}
+          onRefresh={updateAgenticAdvisor}
+        />
+      </section>
+
       {/* 2. FARM OVERVIEW (4 Cards) */}
       <section className="dashboard-overview-grid">
         {/* CARD 1: Crop Health */}
@@ -430,7 +555,7 @@ export default function Dashboard({
           <div className="card-body">
             <div className="card-metric-title">Crop Health</div>
             {latestAnalysis ? (
-              getRawConfidence(latestAnalysis) < 0.65 ? (
+              getRawConfidence(latestAnalysis) !== null && getRawConfidence(latestAnalysis) < 0.65 ? (
                 <div>
                   <div className="metric-status-val status-warning">Needs Inspection</div>
                   <div className="metric-desc-text">Low Confidence — Further Inspection Needed</div>
@@ -568,6 +693,153 @@ export default function Dashboard({
             >
               Predict Yield →
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.5 COMPACT SUSTAINABILITY SCORE SECTION (Bonus Module D) */}
+      <section className="dashboard-sustainability-section" id="sustainability-section">
+        <div className="sustainability-card">
+          {/* Header Row */}
+          <div className="sustainability-header-row">
+            <div className="sustainability-title-group">
+              <h2 className="sustainability-main-title">♻️ Sustainability Score</h2>
+              {sustainabilityData.is_normalized && (
+                <span className="sustainability-badge-normalized">Based on available data</span>
+              )}
+            </div>
+            <div className="sustainability-level-indicator">
+              <span className={`sustainability-level-pill level-${(sustainabilityData.level || 'unavailable').toLowerCase().replace(/\s+/g, '-')}`}>
+                {sustainabilityData.level === 'Excellent' && '🟢 '}
+                {sustainabilityData.level === 'Good' && '🟡 '}
+                {sustainabilityData.level === 'Moderate' && '🟠 '}
+                {sustainabilityData.level === 'Needs Improvement' && '🔴 '}
+                {sustainabilityData.level === 'Data Unavailable' && '⚪ '}
+                {sustainabilityData.level}
+              </span>
+            </div>
+          </div>
+
+          {/* Hero Score Display */}
+          <div className="sustainability-hero-score-row">
+            <div className="sustainability-score-display">
+              {sustainabilityData.score !== null ? (
+                <>
+                  <span className="sustainability-score-number">{sustainabilityData.score}</span>
+                  <span className="sustainability-score-denom"> / 100</span>
+                </>
+              ) : (
+                <span className="sustainability-score-unavailable">Data unavailable</span>
+              )}
+            </div>
+            <div className="sustainability-score-level-caption">
+              {sustainabilityData.level}
+            </div>
+          </div>
+
+          <hr className="sustainability-divider" />
+
+          {/* 3 Component Breakdown */}
+          <div className="sustainability-components-grid">
+            {/* Water Efficiency */}
+            <div className="sustainability-component-col" id="sustainability-col-water">
+              <div className="component-col-header">
+                <span className="component-name">Water Efficiency</span>
+                <span className="component-value">
+                  {sustainabilityData.components?.water_efficiency !== null && sustainabilityData.components?.water_efficiency !== undefined ? (
+                    `${sustainabilityData.components.water_efficiency} / 40`
+                  ) : (
+                    <span className="text-muted">Data unavailable</span>
+                  )}
+                </span>
+              </div>
+              <div className="component-progress-track">
+                <div
+                  className="component-progress-bar bar-water"
+                  style={{
+                    width: `${sustainabilityData.components?.water_efficiency !== null && sustainabilityData.components?.water_efficiency !== undefined
+                      ? Math.min(100, (sustainabilityData.components.water_efficiency / 40) * 100)
+                      : 0}%`
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Resource Use */}
+            <div className="sustainability-component-col" id="sustainability-col-resource">
+              <div className="component-col-header">
+                <span className="component-name">Resource Use</span>
+                <span className="component-value">
+                  {sustainabilityData.components?.resource_use !== null && sustainabilityData.components?.resource_use !== undefined ? (
+                    `${sustainabilityData.components.resource_use} / 30`
+                  ) : (
+                    <span className="text-muted">Data unavailable</span>
+                  )}
+                </span>
+              </div>
+              <div className="component-progress-track">
+                <div
+                  className="component-progress-bar bar-resource"
+                  style={{
+                    width: `${sustainabilityData.components?.resource_use !== null && sustainabilityData.components?.resource_use !== undefined
+                      ? Math.min(100, (sustainabilityData.components.resource_use / 30) * 100)
+                      : 0}%`
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Crop Health */}
+            <div className="sustainability-component-col" id="sustainability-col-health">
+              <div className="component-col-header">
+                <span className="component-name">Crop Health</span>
+                <span className="component-value">
+                  {sustainabilityData.components?.crop_health !== null && sustainabilityData.components?.crop_health !== undefined ? (
+                    `${sustainabilityData.components.crop_health} / 30`
+                  ) : (
+                    <span className="text-muted">Data unavailable</span>
+                  )}
+                </span>
+              </div>
+              <div className="component-progress-track">
+                <div
+                  className="component-progress-bar bar-health"
+                  style={{
+                    width: `${sustainabilityData.components?.crop_health !== null && sustainabilityData.components?.crop_health !== undefined
+                      ? Math.min(100, (sustainabilityData.components.crop_health / 30) * 100)
+                      : 0}%`
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <hr className="sustainability-divider" />
+
+          {/* Suggestions & View Details */}
+          <div className="sustainability-bottom-row">
+            <div className="sustainability-suggestions-box">
+              <div className="suggestions-heading">💡 Improvement Suggestions</div>
+              {sustainabilityData.suggestions && sustainabilityData.suggestions.length > 0 ? (
+                <ul className="suggestions-list">
+                  {sustainabilityData.suggestions.map((sug, idx) => (
+                    <li key={idx} className="suggestion-item">{sug}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="suggestion-item text-muted">Provide soil nutrients, irrigation, or leaf diagnostic data to evaluate farm sustainability.</p>
+              )}
+            </div>
+
+            <div className="sustainability-actions">
+              <button
+                className="btn-view-sustainability-details"
+                id="btn-view-sustainability-details"
+                onClick={() => setIsSustainabilityModalOpen(true)}
+              >
+                View Details →
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1027,6 +1299,157 @@ export default function Dashboard({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. SUSTAINABILITY DETAIL MODAL */}
+      {isSustainabilityModalOpen && (
+        <div className="dashboard-modal-overlay" onClick={() => setIsSustainabilityModalOpen(false)}>
+          <div className="dashboard-modal-card sustainability-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">♻️ Sustainability Score — Detailed Breakdown</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setIsSustainabilityModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="sustainability-modal-body">
+              {/* Score Formula Card */}
+              <div className="sustainability-formula-card">
+                <div className="formula-card-title">Score Formula</div>
+                <div className="formula-items-grid">
+                  <div className="formula-item">
+                    <span className="formula-name">Water Efficiency</span>
+                    <span className="formula-weight">40%</span>
+                  </div>
+                  <div className="formula-item">
+                    <span className="formula-name">Resource Use</span>
+                    <span className="formula-weight">30%</span>
+                  </div>
+                  <div className="formula-item">
+                    <span className="formula-name">Crop Health</span>
+                    <span className="formula-weight">30%</span>
+                  </div>
+                </div>
+                <div className="formula-note">
+                  Deterministic evaluation (0–100 total points). Normalized across available components when partial farm telemetry is submitted.
+                </div>
+              </div>
+
+              {/* Current Score Summary */}
+              <div className="modal-score-summary-banner">
+                <div className="summary-left">
+                  <span className="summary-label">Farm Score:</span>
+                  <strong className="summary-val">
+                    {sustainabilityData.score !== null ? `${sustainabilityData.score} / 100` : 'Data unavailable'}
+                  </strong>
+                  <span className={`sustainability-level-pill level-${(sustainabilityData.level || 'unavailable').toLowerCase().replace(/\s+/g, '-')}`}>
+                    {sustainabilityData.level === 'Excellent' && '🟢 '}
+                    {sustainabilityData.level === 'Good' && '🟡 '}
+                    {sustainabilityData.level === 'Moderate' && '🟠 '}
+                    {sustainabilityData.level === 'Needs Improvement' && '🔴 '}
+                    {sustainabilityData.level === 'Data Unavailable' && '⚪ '}
+                    {sustainabilityData.level}
+                  </span>
+                </div>
+                {sustainabilityData.is_normalized && (
+                  <div className="summary-normalized-note">
+                    Based on available data ({sustainabilityData.data_note || 'Normalized to 100'})
+                  </div>
+                )}
+              </div>
+
+              {/* Component Deep Dive */}
+              <div className="component-breakdown-list">
+                <div className="component-detail-card">
+                  <div className="detail-card-head">
+                    <span className="detail-comp-title">💧 Water Efficiency</span>
+                    <span className="detail-comp-score">
+                      {sustainabilityData.components?.water_efficiency !== null && sustainabilityData.components?.water_efficiency !== undefined ? (
+                        `${sustainabilityData.components.water_efficiency} / 40 points`
+                      ) : (
+                        <span className="text-warning">Data unavailable</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="detail-comp-desc">
+                    {sustainabilityData.component_details?.water_efficiency?.description ||
+                      'Evaluated from real-time Smart Irrigation output and local Open-Meteo precipitation forecast.'}
+                  </p>
+                </div>
+
+                <div className="component-detail-card">
+                  <div className="detail-card-head">
+                    <span className="detail-comp-title">🌱 Resource Use</span>
+                    <span className="detail-comp-score">
+                      {sustainabilityData.components?.resource_use !== null && sustainabilityData.components?.resource_use !== undefined ? (
+                        `${sustainabilityData.components.resource_use} / 30 points`
+                      ) : (
+                        <span className="text-warning">Data unavailable</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="detail-comp-desc">
+                    {sustainabilityData.component_details?.resource_use?.description ||
+                      'Evaluated by comparing submitted soil NPK values against the crop literature profile.'}
+                  </p>
+                  <div className="detail-comp-subnote">
+                    * Approximate profile-based indicators, not agronomic prescriptions.
+                  </div>
+                </div>
+
+                <div className="component-detail-card">
+                  <div className="detail-card-head">
+                    <span className="detail-comp-title">🌿 Crop Health</span>
+                    <span className="detail-comp-score">
+                      {sustainabilityData.components?.crop_health !== null && sustainabilityData.components?.crop_health !== undefined ? (
+                        `${sustainabilityData.components.crop_health} / 30 points`
+                      ) : (
+                        <span className="text-warning">Data unavailable</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="detail-comp-desc">
+                    {sustainabilityData.component_details?.crop_health?.description ||
+                      'Evaluated from verified computer vision leaf diagnosis (confidence threshold >= 65%).'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actionable Improvement Suggestions */}
+              {sustainabilityData.suggestions && sustainabilityData.suggestions.length > 0 && (
+                <div className="modal-suggestions-box">
+                  <div className="suggestions-heading">💡 Improvement Suggestions</div>
+                  <ul className="suggestions-list">
+                    {sustainabilityData.suggestions.map((sug, i) => (
+                      <li key={i} className="suggestion-item">{sug}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Mandatory Transparency Notice */}
+              <div className="sustainability-disclaimer-card">
+                <span className="disclaimer-icon">⚠️</span>
+                <div className="disclaimer-text">
+                  Rule-based sustainability assessment based on available project data. Not a certified environmental assessment.
+                </div>
+              </div>
+
+              <div className="modal-actions-row">
+                <button
+                  type="button"
+                  className="btn-primary-action"
+                  onClick={() => setIsSustainabilityModalOpen(false)}
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

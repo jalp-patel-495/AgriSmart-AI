@@ -138,5 +138,111 @@ export const authApi = {
 
     return data;
   },
+
+  /**
+   * Helper to return authenticated headers containing Bearer token.
+   */
+  getAuthHeaders() {
+    const user = this.getCurrentUser();
+    const headers = { 'Content-Type': 'application/json' };
+    if (user && user.token) {
+      headers['Authorization'] = `Bearer ${user.token}`;
+    }
+    return headers;
+  },
+
+  /**
+   * Expert Review API: Fetches aggregated real farm telemetry.
+   * Restricted to AGRICULTURAL_EXPERT and ADMIN.
+   */
+  async getExpertReviewData() {
+    const res = await fetch('/api/v1/expert/review-data', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch expert review data.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Admin API: Fetches all registered users with role and status.
+   * Restricted to ADMIN role only.
+   */
+  async getUsers(searchQuery = '', roleFilter = '') {
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('q', searchQuery);
+    if (roleFilter) params.append('role', roleFilter);
+    const url = `/api/v1/admin/users${params.toString() ? `?${params.toString()}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Access forbidden: Admin privilege required.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Admin API: Modifies the role of a user.
+   * Restricted to ADMIN role only.
+   */
+  async updateUserRole(userId, newRole) {
+    const res = await fetch(`/api/v1/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ role: newRole }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to update user role.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Admin API: Activates or deactivates a user account.
+   * Restricted to ADMIN role only.
+   */
+  async updateUserStatus(userId, isActive) {
+    const res = await fetch(`/api/v1/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ is_active: isActive }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to update user status.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Admin API: Fetches real status of project AI models and services.
+   * Restricted to ADMIN role only.
+   */
+  async getSystemMonitoring() {
+    const res = await fetch('/api/v1/admin/system-monitoring', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Access forbidden: Admin privilege required.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
 };
 

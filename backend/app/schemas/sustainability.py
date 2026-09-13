@@ -47,6 +47,6 @@ class SustainabilityScoreResponse(BaseModel):
     data_note: Optional[str] = Field(None, description="Note explaining data availability or normalization")
     suggestions: List[str] = Field(default_factory=list, description="Actionable improvement suggestions based strictly on weak components")
     disclaimer: str = Field(
-        "Indicative score based on available project data. Not a certified environmental assessment.",
+        "Rule-based sustainability assessment based on available project data. Not a certified environmental assessment.",
         description="Regulatory and transparency disclaimer"
     )

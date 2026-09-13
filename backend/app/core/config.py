@@ -15,6 +15,7 @@ class Settings(BaseModel):
     ]
     CLASSES_PATH: str = os.getenv("CLASSES_PATH", "dataset/classes.json")
     MODEL_PATH: str = os.getenv("MODEL_PATH", "ai_model/models/crop_disease_model.pth")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "agrismart_ai_super_secret_rbac_key_2026")
 
 
 settings = Settings()

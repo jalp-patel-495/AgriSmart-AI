@@ -1,6 +1,8 @@
 """
 FastAPI Endpoints for Phase 8: Smart Irrigation and Crop Recommendation
 """
+import json
+import os
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -177,3 +179,30 @@ def get_advisory_history(db: Session = Depends(get_db)):
     except Exception as e:
         print(f"[!] History query error: {e}")
         return {"irrigation_logs": [], "crop_recommendations": []}
+
+
+@router.get("/crop-training-means")
+def get_crop_training_means():
+    """
+    Returns training-data-derived mean feature values per crop (all 95 crops).
+    These means are computed from the actual crop_training_data.csv used to train the 95-class model.
+    Use these as representative 'Test This Crop' parameters — they reflect the actual
+    feature distribution the model learned from, unlike crude catalog midpoints.
+    """
+    # Navigate 6 levels up from backend/app/api/v1/endpoints/smart_farming.py to project root
+    curr = os.path.abspath(__file__)
+    for _ in range(6):
+        curr = os.path.dirname(curr)
+    means_path = os.path.join(curr, "data", "crop_training_means.json")
+    if not os.path.exists(means_path):
+        means_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))), "data", "crop_training_means.json")
+    if not os.path.exists(means_path):
+        means_path = os.path.join(os.getcwd(), "data", "crop_training_means.json")
+
+    if os.path.exists(means_path):
+        try:
+            with open(means_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[!] Error reading crop_training_means.json: {e}")
+    return {}
