@@ -3,7 +3,7 @@ AgriSmart AI - Leaf Localization Module
 Isolates the salient leaf region using foliar contour segmentation and saliency bounding,
 reducing background noise (soil, wooden benches, sky, camera artifacts) prior to classification.
 """
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 import cv2
 import numpy as np
 
