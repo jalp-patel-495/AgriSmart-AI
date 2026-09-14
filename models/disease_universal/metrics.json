@@ -1,213 +1,57 @@
 {
-  "selected_architecture": "efficientnet_b0",
-  "architectures_comparison": {
-    "efficientnet_b0": {
-      "architecture": "efficientnet_b0",
-      "crop_macro_f1": 0.9421,
-      "crop_accuracy": 0.9518,
-      "disease_accuracy": 0.9342,
-      "field_robustness": 0.5769,
-      "composite_score": 0.8302,
-      "val_metrics": {
-        "crop_accuracy": 0.9605,
-        "crop_macro_f1": 0.9623,
-        "crop_per_class_f1": [
-          0.9787,
-          1.0,
-          0.9565,
-          1.0,
-          0.96,
-          1.0,
-          0.9167,
-          0.9565,
-          0.9189,
-          1.0,
-          1.0,
-          1.0,
-          0.8182,
-          0.9672
-        ],
-        "disease_accuracy": 0.9298,
-        "total_eval_samples": 228
-      },
-      "test_metrics": {
-        "crop_accuracy": 0.9518,
-        "crop_macro_f1": 0.9421,
-        "crop_per_class_f1": [
-          0.902,
-          0.9091,
-          0.9091,
-          0.9787,
-          0.9796,
-          1.0,
-          0.88,
-          0.9565,
-          0.9444,
-          0.9091,
-          0.9231,
-          0.9231,
-          1.0,
-          0.9748
-        ],
-        "disease_accuracy": 0.9342,
-        "total_eval_samples": 228
-      }
-    },
-    "resnet18": {
-      "architecture": "resnet18",
-      "crop_macro_f1": 0.9208,
-      "crop_accuracy": 0.9211,
-      "disease_accuracy": 0.886,
-      "field_robustness": 0.5,
-      "composite_score": 0.7841,
-      "val_metrics": {
-        "crop_accuracy": 0.9254,
-        "crop_macro_f1": 0.9131,
-        "crop_per_class_f1": [
-          0.8519,
-          0.8333,
-          0.8571,
-          0.9583,
-          0.96,
-          0.9231,
-          0.8696,
-          0.8696,
-          0.9189,
-          1.0,
-          1.0,
-          0.9091,
-          0.8571,
-          0.9748
-        ],
-        "disease_accuracy": 0.8596,
-        "total_eval_samples": 228
-      },
-      "test_metrics": {
-        "crop_accuracy": 0.9211,
-        "crop_macro_f1": 0.9208,
-        "crop_per_class_f1": [
-          0.8889,
-          0.9091,
-          0.8182,
-          0.9796,
-          0.9796,
-          1.0,
-          0.9091,
-          0.8571,
-          0.8718,
-          1.0,
-          0.8333,
-          1.0,
-          0.9231,
-          0.9217
-        ],
-        "disease_accuracy": 0.886,
-        "total_eval_samples": 228
-      }
-    },
-    "mobilenet_v3": {
-      "architecture": "mobilenet_v3",
-      "crop_macro_f1": 0.9794,
-      "crop_accuracy": 0.9781,
-      "disease_accuracy": 0.9298,
-      "field_robustness": 0.4808,
-      "composite_score": 0.8149,
-      "val_metrics": {
-        "crop_accuracy": 0.9781,
-        "crop_macro_f1": 0.9705,
-        "crop_per_class_f1": [
-          0.9583,
-          0.9231,
-          0.9565,
-          1.0,
-          0.9796,
-          1.0,
-          1.0,
-          0.96,
-          1.0,
-          1.0,
-          0.9091,
-          1.0,
-          0.9091,
-          0.9917
-        ],
-        "disease_accuracy": 0.9079,
-        "total_eval_samples": 228
-      },
-      "test_metrics": {
-        "crop_accuracy": 0.9781,
-        "crop_macro_f1": 0.9794,
-        "crop_per_class_f1": [
-          0.9583,
-          1.0,
-          0.9167,
-          1.0,
-          0.9796,
-          1.0,
-          0.9167,
-          1.0,
-          1.0,
-          1.0,
-          1.0,
-          1.0,
-          0.9565,
-          0.9833
-        ],
-        "disease_accuracy": 0.9298,
-        "total_eval_samples": 228
-      }
+  "stage_a_crop_classifier": {
+    "validation_macro_f1": 0.849,
+    "test_accuracy": 0.9596,
+    "test_macro_f1": 0.8303,
+    "field_benchmark_accuracy": 0.7761,
+    "field_benchmark_macro_f1": 0.6333
+  },
+  "stage_b_disease_classifier": {
+    "validation_macro_f1": 0.8107,
+    "test_accuracy": 0.922,
+    "test_macro_f1": 0.658,
+    "field_benchmark_accuracy": 0.5793,
+    "field_benchmark_macro_f1": 0.4689,
+    "per_class_f1": {
+      "apple_scab": 0.9072,
+      "apple_black_rot": 0.9845,
+      "apple_cedar_apple_rust": 0.9485,
+      "apple_healthy": 0.9864,
+      "blueberry_healthy": 0.9785,
+      "cherry_powdery_mildew": 0.9907,
+      "cherry_healthy": 0.9771,
+      "corn_cercospora_leaf_spot": 0.3077,
+      "corn_common_rust": 0.6316,
+      "corn_northern_leaf_blight": 0.6429,
+      "grape_black_rot": 0.5,
+      "grape_healthy": 0.7059,
+      "orange_citrus_greening": 0.9474,
+      "peach_bacterial_spot": 0.9976,
+      "peach_healthy": 0.9528,
+      "bell_pepper_bacterial_spot": 0.2857,
+      "bell_pepper_healthy": 0.2,
+      "potato_early_blight": 0.32,
+      "potato_late_blight": 0.4906,
+      "potato_healthy": 0.8889,
+      "raspberry_healthy": 0.7857,
+      "soybean_healthy": 0.6471,
+      "squash_powdery_mildew": 0.8837,
+      "strawberry_healthy": 0.8333,
+      "tomato_bacterial_spot": 0.2162,
+      "tomato_early_blight": 0.3846,
+      "tomato_late_blight": 0.5116,
+      "tomato_leaf_mold": 0.6452,
+      "tomato_septoria_leaf_spot": 0.5641,
+      "tomato_spider_mites": 0.0,
+      "tomato_yellow_leaf_curl_virus": 0.6286,
+      "tomato_mosaic_virus": 0.4,
+      "tomato_healthy": 0.5714
     }
   },
-  "best_metrics": {
-    "architecture": "efficientnet_b0",
-    "crop_macro_f1": 0.9421,
-    "crop_accuracy": 0.9518,
-    "disease_accuracy": 0.9342,
-    "field_robustness": 0.5769,
-    "composite_score": 0.8302,
-    "val_metrics": {
-      "crop_accuracy": 0.9605,
-      "crop_macro_f1": 0.9623,
-      "crop_per_class_f1": [
-        0.9787,
-        1.0,
-        0.9565,
-        1.0,
-        0.96,
-        1.0,
-        0.9167,
-        0.9565,
-        0.9189,
-        1.0,
-        1.0,
-        1.0,
-        0.8182,
-        0.9672
-      ],
-      "disease_accuracy": 0.9298,
-      "total_eval_samples": 228
-    },
-    "test_metrics": {
-      "crop_accuracy": 0.9518,
-      "crop_macro_f1": 0.9421,
-      "crop_per_class_f1": [
-        0.902,
-        0.9091,
-        0.9091,
-        0.9787,
-        0.9796,
-        1.0,
-        0.88,
-        0.9565,
-        0.9444,
-        0.9091,
-        0.9231,
-        0.9231,
-        1.0,
-        0.9748
-      ],
-      "disease_accuracy": 0.9342,
-      "total_eval_samples": 228
-    }
+  "dataset_splits": {
+    "train": 8382,
+    "val": 2040,
+    "test": 2082,
+    "field_benchmark": 1626
   }
 }

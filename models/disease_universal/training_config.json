@@ -1,15 +1,10 @@
 {
-  "seed": 42,
+  "architecture": "efficientnet_b0",
+  "epochs": 5,
   "batch_size": 32,
-  "image_size": 224,
-  "backbone": "efficientnet_b0",
-  "architectures_compared": [
-    "efficientnet_b0",
-    "resnet18",
-    "mobilenet_v3"
-  ],
-  "selection_metric": "Composite (Macro-F1 + Disease Acc + Field Robustness)",
-  "train_samples": 1064,
-  "val_samples": 228,
-  "test_samples": 228
+  "learning_rate": 0.001,
+  "optimizer": "AdamW",
+  "scheduler": "CosineAnnealingLR",
+  "seed": 42,
+  "device": "cpu"
 }
