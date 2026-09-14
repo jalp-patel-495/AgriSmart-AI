@@ -452,26 +452,17 @@ h1, h2, h3, h4, h5, h6 {
 .upload-preview-wrapper {
   position: relative;
   width: 100%;
-  height: 350px;
-  min-height: 320px;
-  max-height: 420px;
+  height: 240px;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border-glass);
   margin-bottom: 1.25rem;
-  background: #080d0a;
-  background-image: radial-gradient(circle at center, rgba(16, 185, 129, 0.04) 0%, rgba(5, 10, 7, 0.95) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .upload-preview-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
+  object-fit: cover;
 }
 
 .scanner-laser {
@@ -483,7 +474,6 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(90deg, transparent, #34d399, #10b981, transparent);
   box-shadow: 0 0 15px #34d399;
   animation: scan 2s ease-in-out infinite alternate;
-  pointer-events: none;
 }
 
 @keyframes scan {
@@ -493,35 +483,24 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-remove-preview {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: var(--transition-smooth);
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .btn-remove-preview:hover {
   background: var(--accent-red);
-  border-color: rgba(239, 68, 68, 0.5);
-  transform: scale(1.08);
-}
-
-@media (max-width: 640px) {
-  .upload-preview-wrapper {
-    height: 280px;
-    min-height: 250px;
-  }
 }
 
 /* Buttons */

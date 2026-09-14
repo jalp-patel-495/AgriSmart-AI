@@ -5,17 +5,17 @@
     "Bell_Pepper_Bacterial_Spot",
     "Bell_Pepper_Healthy",
     "Corn___Common_rust",
-    "Corn___healthy",
     "Corn___Northern_Leaf_Blight",
+    "Corn___healthy",
     "Grape_Black_Rot",
     "Grape_Healthy",
     "Peach_Bacterial_Spot",
     "Peach_Healthy",
     "Potato___Early_blight",
-    "Potato___healthy",
     "Potato___Late_blight",
+    "Potato___healthy",
     "Tomato___Bacterial_spot",
     "Tomato___Early_blight",
-    "Tomato___healthy",
-    "Tomato___Late_blight"
+    "Tomato___Late_blight",
+    "Tomato___healthy"
 ]
