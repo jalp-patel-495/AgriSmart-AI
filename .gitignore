@@ -67,6 +67,9 @@ ai/models/crop_stress/*.pkl
 # Raw disease image datasets (large image folders)
 dataset/disease/
 ai/data/disease/
+dataset/plant_pathology_2021/
+dataset/plantdoc_field_test/
+scratch/
 
 
 # Databases and caches

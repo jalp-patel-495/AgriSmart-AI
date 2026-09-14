@@ -10,9 +10,15 @@ from PIL import Image
 import torch
 import torch.nn.functional as F
 
+import cv2
+import numpy as np
+
 from ai.src.disease.models import build_crop_disease_model
 from ai.src.disease.augmentation import get_inference_transforms
 from ai.src.disease.disease_info import get_disease_info
+from ai.src.disease.quality_gate import check_image_quality
+from ai.src.disease.segmentation import localize_leaf_specimen
+from ai.src.disease.hierarchical import predict_hierarchical
 
 # Global Model & Metadata Singleton Cache
 _CACHED_MODEL = None
@@ -138,6 +144,8 @@ def load_disease_model_artifacts(
     # Resolve model checkpoint
     candidates_models = [
         Path(model_path) if model_path else None,
+        ai_root / "models" / "disease" / "best_model_robust.pt",
+        root_dir / "models" / "disease" / "best_model_robust.pt",
         ai_root / "models" / "disease" / "best_model.pt",
         root_dir / "ai" / "models" / "disease" / "best_model.pt",
         root_dir / "models" / "disease" / "best_model.pt",
@@ -188,14 +196,15 @@ def predict_disease(
     top_k: int = 3
 ) -> Dict[str, Any]:
     """
-    Predicts crop and disease from leaf image:
-    1. Loads cached model and classes
-    2. Validates and preprocesses image
-    3. Executes forward inference
-    4. Applies confidence threshold check
-    5. Returns JSON-compatible structured result with top-3 predictions and advice.
+    Hierarchical crop-disease prediction pipeline:
+    1. Image Quality Check
+    2. Leaf Detection / Segmentation
+    3. Crop Identification (Stage A)
+    4. Supported / Unsupported Check
+    5. Disease Classification (Stage B)
+    6. Confidence Calibration + OOD Detection
+    7. Final Safe Result
     """
-    # 1. Validate image path
     path = Path(image_path)
     if not path.exists():
         return {
@@ -207,87 +216,155 @@ def predict_disease(
         }
 
     try:
-        img = Image.open(path).convert("RGB")
+        with open(path, "rb") as f:
+            image_bytes = f.read()
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Could not decode image file: {str(e)}",
+            "message": f"Could not read image file: {str(e)}",
             "crop": None,
             "disease": None,
             "confidence": 0.0
         }
 
-    # 2. Load model and classes
-    model, class_names = load_disease_model_artifacts(model_path, class_names_path)
-    transform = get_inference_transforms(image_size=224)
-    input_tensor = transform(img).unsqueeze(0).to(_DEVICE)
-
-    # 3. Model forward pass
-    with torch.no_grad():
-        logits = model(input_tensor)
-        probs = F.softmax(logits, dim=1).squeeze(0).cpu().numpy()
-
-    # 4. Top-K predictions
-    top_indices = probs.argsort()[::-1][:top_k]
-    top_class_id = int(top_indices[0])
-    raw_confidence = float(probs[top_class_id])
-    top_raw_class = class_names[top_class_id]
-
-    top_crop, top_disease = parse_class_name(top_raw_class)
-
-    # 5. Calculate aggregated crop confidence (sum of probabilities of all classes of same crop)
-    crop_prob_sum = 0.0
-    for idx, cname in enumerate(class_names):
-        c_crop, _ = parse_class_name(cname)
-        if c_crop.lower() == top_crop.lower():
-            crop_prob_sum += float(probs[idx])
-    crop_confidence = min(1.0, round(crop_prob_sum, 4))
-
-    # 6. Check confidence threshold
-    if raw_confidence < confidence_threshold:
+    # 1. Image Quality Check
+    quality_ok, quality_msg, quality_metrics = check_image_quality(image_bytes)
+    if not quality_ok:
         return {
-            "status": "low_confidence",
-            "message": "Low Confidence — Further Inspection Needed",
-            "crop": None,
-            "disease": "Low Confidence — Further Inspection Needed",
-            "confidence": round(raw_confidence, 4),
-            "threshold": confidence_threshold,
-            "top_candidate": {
-                "class": top_raw_class,
-                "crop": top_crop,
-                "disease": top_disease,
-                "confidence": round(raw_confidence, 4)
-            }
+            "status": "image_quality_insufficient",
+            "message": quality_msg,
+            "crop": "Undetermined",
+            "disease": "Not confidently identified",
+            "confidence": 0.0,
+            "is_supported": False,
+            "is_ood": True,
+            "quality_ok": False,
+            "top_predictions": []
         }
 
-    # 7. Format Top-K List
-    top_predictions = []
-    for idx in top_indices:
-        cid = int(idx)
-        c_raw = class_names[cid]
-        c_crop, c_disease = parse_class_name(c_raw)
-        top_predictions.append({
-            "class": c_raw,
-            "crop": c_crop,
-            "disease": c_disease,
-            "confidence": round(float(probs[cid]), 4)
-        })
+    # 2. Leaf Localization / Segmentation
+    np_buf = np.frombuffer(image_bytes, np.uint8)
+    img_bgr = cv2.imdecode(np_buf, cv2.IMREAD_COLOR)
+    cropped_bgr, bbox, foliar_ratio = localize_leaf_specimen(img_bgr)
+    img_rgb = cv2.cvtColor(cropped_bgr, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(img_rgb)
 
-    # 8. Retrieve agronomic disease info
+    # 3. Model Forward Pass
+    model, class_names = load_disease_model_artifacts(model_path, class_names_path)
+    transform = get_inference_transforms(image_size=224)
+    input_tensor = transform(pil_img).unsqueeze(0).to(_DEVICE)
+
+    with torch.no_grad():
+        logits = model(input_tensor)
+
+    # Build canonical class map for hierarchical resolver
+    class_map = {}
+    for idx, cname in enumerate(class_names):
+        c_crop, c_dis = parse_class_name(cname)
+        d_info = get_disease_info(c_crop, c_dis)
+        class_map[idx] = {
+            "id": idx,
+            "name": cname,
+            "crop": c_crop,
+            "disease": c_dis,
+            "status": "Healthy" if "healthy" in c_dis.lower() else "Diseased",
+            "pathogen": d_info.get("pathogen", "N/A"),
+            "symptoms": d_info.get("symptoms", "Foliar discoloration"),
+            "precautions": [
+                "Remove affected leaves to reduce spore spread",
+                "Improve air circulation between plants",
+                "Avoid overhead watering"
+            ],
+            "treatment": d_info.get("management", "Apply recommended protective treatments.")
+        }
+
+    hierarchical_res = predict_hierarchical(
+        logits=logits,
+        class_map=class_map,
+        class_names=class_names,
+        confidence_threshold=confidence_threshold,
+        min_crop_confidence_floor=0.22
+    )
+
+    if hierarchical_res["status"] == "uncertain":
+        is_supp = hierarchical_res.get("is_supported", False)
+        crop_label = "Unsupported / Unknown" if not is_supp else "Undetermined"
+        return {
+            "status": "uncertain",
+            "crop": crop_label,
+            "disease": "Not confidently identified",
+            "confidence": round(hierarchical_res["confidence"], 4),
+            "crop_confidence": round(hierarchical_res.get("crop_confidence", 0.0), 4),
+            "disease_confidence": round(hierarchical_res.get("disease_confidence", 0.0), 4),
+            "top_crop": hierarchical_res.get("top_crop"),
+            "top_crop_confidence": hierarchical_res.get("top_crop_confidence"),
+            "second_crop": hierarchical_res.get("second_crop"),
+            "second_crop_confidence": hierarchical_res.get("second_crop_confidence"),
+            "crop_distribution": hierarchical_res.get("crop_distribution"),
+            "is_supported": is_supp,
+            "is_ood": hierarchical_res.get("is_ood", False),
+            "quality_ok": True,
+            "rejection_reason": hierarchical_res.get("rejection_reason"),
+            "ood_score": hierarchical_res.get("ood_score", 0.85),
+            "ood_status": hierarchical_res.get("ood_status", "out_of_distribution"),
+            "top_predictions": []
+        }
+
+    top_crop = hierarchical_res["crop"]
+    top_disease = hierarchical_res["disease"]
+    crop_conf = round(hierarchical_res.get("crop_confidence", 0.0), 4)
+    disease_conf = round(hierarchical_res.get("disease_confidence", 0.0), 4)
+
+    if hierarchical_res["status"] == "Low Confidence":
+        return {
+            "status": "Low Confidence",
+            "crop": top_crop,
+            "crop_confidence": crop_conf,
+            "disease": "Not confidently identified",
+            "disease_confidence": disease_conf,
+            "confidence": disease_conf,
+            "class": None,
+            "top_predictions": [],
+            "pathogen": None,
+            "symptoms": "Unable to determine symptoms with high confidence. Please upload a clearer, high-resolution leaf image in good natural daylight.",
+            "prevention": "Inspect both upper and lower leaf surfaces for early signs of disease.",
+            "management": "Consult a certified local agricultural extension officer before applying chemical treatments.",
+            "advice": "Capture a closer, sharp foliar photograph in bright daylight.",
+            "is_supported": True,
+            "is_ood": False,
+            "quality_ok": True,
+            "ood_score": hierarchical_res.get("ood_score", 0.0),
+            "ood_status": "in_distribution"
+        }
+
     disease_info = get_disease_info(crop_name=top_crop, disease_name=top_disease)
+    top_preds = [
+        {
+            "class": class_names[p["class_id"]] if p["class_id"] < len(class_names) else p["disease"],
+            "crop": p["crop"],
+            "disease": p["disease"],
+            "confidence": round(p["confidence"], 4)
+        }
+        for p in hierarchical_res.get("top_predictions", [])[:top_k]
+    ]
 
     return {
         "status": "success",
         "crop": top_crop,
-        "crop_confidence": crop_confidence,
+        "crop_confidence": crop_conf,
         "disease": top_disease,
-        "disease_confidence": round(raw_confidence, 4),
-        "confidence": round(raw_confidence, 4),
-        "class": top_raw_class,
-        "top_predictions": top_predictions,
+        "disease_confidence": disease_conf,
+        "confidence": disease_conf,
+        "class": hierarchical_res.get("canonical_disease", f"{top_crop}___{top_disease}"),
+        "top_predictions": top_preds,
         "pathogen": disease_info.get("pathogen", "N/A"),
         "symptoms": disease_info.get("symptoms", ""),
         "prevention": disease_info.get("prevention", ""),
         "management": disease_info.get("management", ""),
-        "advice": disease_info.get("farmer_advice", "")
+        "advice": disease_info.get("farmer_advice", ""),
+        "is_supported": True,
+        "is_ood": False,
+        "quality_ok": True,
+        "ood_score": hierarchical_res.get("ood_score", 0.0),
+        "ood_status": "in_distribution"
     }

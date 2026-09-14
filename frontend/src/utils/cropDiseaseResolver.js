@@ -1,51 +1,44 @@
 /**
- * AgriSmart AI – Crop & Disease Scientific Resolution Utility
+ * AgriSmart AI – Universal Multi-Crop & Disease Scientific Resolution Utility
  * 
- * Enforces scientific safety thresholds and class mappings across all
- * 19 canonical disease/healthy classes and 7 supported crop staples.
+ * Enforces scientific safety thresholds, dynamic class mappings, and taxonomy resolution
+ * across all 14 supported crop species and 38 disease/healthy classes.
+ * 
+ * Dynamic catalog loaded directly from class_registry.json.
  * 
  * Safety Rules:
- * - Confidence < 65%: LOW CONFIDENCE safety gate.
+ * - Disease Confidence < 65%: LOW CONFIDENCE safety gate.
  *   - Disease is NOT confirmed ("Not confidently identified").
- *   - If crop can be resolved from model prediction: "Possible Crop: [Crop]".
- *   - If unresolvable: "Crop: Undetermined".
+ *   - Crop species is PRESERVED if identified with valid evidence.
  *   - Pathogens, chemical dosages, and treatments are STRICTLY SUPPRESSED.
  *   - Differential diagnosis percentages are HIDDEN.
- * - Confidence >= 65%: Verified prediction displayed.
+ * - Disease Confidence >= 65%: Verified prediction displayed.
  * - Healthy: General monitoring advice, pathology sections suppressed.
  */
 
-export const SUPPORTED_CROPS = [
-  'Apple',
-  'Corn',
-  'Potato',
-  'Tomato',
-  'Grape',
-  'Bell Pepper',
-  'Peach'
-];
+import classRegistry from './class_registry.json';
 
-export const CANONICAL_CLASSES = [
-  { id: 0, name: 'Apple___Apple_scab', crop: 'Apple', disease: 'Apple Scab', status: 'Diseased', pathogen: 'Venturia inaequalis (Fungus)' },
-  { id: 1, name: 'Apple___Black_rot', crop: 'Apple', disease: 'Black Rot', status: 'Diseased', pathogen: 'Botryosphaeria obtusa (Fungus)' },
-  { id: 2, name: 'Apple___healthy', crop: 'Apple', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 3, name: 'Bell_Pepper_Bacterial_Spot', crop: 'Bell Pepper', disease: 'Bacterial Spot', status: 'Diseased', pathogen: 'Xanthomonas campestris pv. vesicatoria (Bacteria)' },
-  { id: 4, name: 'Bell_Pepper_Healthy', crop: 'Bell Pepper', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 5, name: 'Corn___Common_rust', crop: 'Corn', disease: 'Common Rust', status: 'Diseased', pathogen: 'Puccinia sorghi (Fungus)' },
-  { id: 6, name: 'Corn___healthy', crop: 'Corn', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 7, name: 'Corn___Northern_Leaf_Blight', crop: 'Corn', disease: 'Northern Leaf Blight', status: 'Diseased', pathogen: 'Exserohilum turcicum (Fungus)' },
-  { id: 8, name: 'Grape_Black_Rot', crop: 'Grape', disease: 'Black Rot', status: 'Diseased', pathogen: 'Guignardia bidwellii (Fungus)' },
-  { id: 9, name: 'Grape_Healthy', crop: 'Grape', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 10, name: 'Peach_Bacterial_Spot', crop: 'Peach', disease: 'Bacterial Spot', status: 'Diseased', pathogen: 'Xanthomonas arboricola pv. pruni (Bacteria)' },
-  { id: 11, name: 'Peach_Healthy', crop: 'Peach', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 12, name: 'Potato___Early_blight', crop: 'Potato', disease: 'Early Blight', status: 'Diseased', pathogen: 'Alternaria solani (Fungus)' },
-  { id: 13, name: 'Potato___healthy', crop: 'Potato', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 14, name: 'Potato___Late_blight', crop: 'Potato', disease: 'Late Blight', status: 'Diseased', pathogen: 'Phytophthora infestans (Oomycete)' },
-  { id: 15, name: 'Tomato___Bacterial_spot', crop: 'Tomato', disease: 'Bacterial Spot', status: 'Diseased', pathogen: 'Xanthomonas perforans (Bacteria)' },
-  { id: 16, name: 'Tomato___Early_blight', crop: 'Tomato', disease: 'Early Blight', status: 'Diseased', pathogen: 'Alternaria solani (Fungus)' },
-  { id: 17, name: 'Tomato___healthy', crop: 'Tomato', disease: 'Healthy', status: 'Healthy', pathogen: null },
-  { id: 18, name: 'Tomato___Late_blight', crop: 'Tomato', disease: 'Late Blight', status: 'Diseased', pathogen: 'Phytophthora infestans (Oomycete)' }
-];
+export const TOTAL_SUPPORTED_CROPS = classRegistry?.total_supported_crops || 14;
+export const TOTAL_SUPPORTED_CLASSES = classRegistry?.total_supported_classes || 38;
+
+export const SUPPORTED_CROPS = classRegistry?.crops
+  ? classRegistry.crops.map((c) => c.name)
+  : [
+      'Apple', 'Blueberry', 'Cherry', 'Corn', 'Grape',
+      'Orange', 'Peach', 'Pepper, bell', 'Potato', 'Raspberry',
+      'Soybean', 'Squash', 'Strawberry', 'Tomato'
+    ];
+
+export const CANONICAL_CLASSES = classRegistry?.classes
+  ? classRegistry.classes.map((c) => ({
+      id: c.class_index,
+      name: c.raw_class_name,
+      crop: c.crop_name,
+      disease: c.disease_name,
+      status: c.status,
+      pathogen: c.pathogen
+    }))
+  : [];
 
 export const SAFE_LOW_CONFIDENCE_PRECAUTIONS = [
   'Upload a clearer, high-resolution leaf image',
@@ -64,26 +57,68 @@ export const HEALTHY_MONITORING_PRECAUTIONS = [
 ];
 
 /**
+ * Normalizes crop names across naming conventions (e.g. 'Pepper, bell' vs 'Bell Pepper').
+ */
+export function normalizeCropName(name) {
+  if (!name || typeof name !== 'string') return null;
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  
+  if (lower === 'bell pepper' || lower === 'pepper, bell' || lower === 'pepper bell' || lower === 'pepper') {
+    return 'Pepper, bell';
+  }
+  if (lower.startsWith('cherry')) {
+    return 'Cherry';
+  }
+  if (lower.startsWith('corn')) {
+    return 'Corn';
+  }
+  return matchCanonicalCrop(trimmed) || trimmed;
+}
+
+/**
  * Resolves the crop name from prediction payload, top_predictions, or class mappings.
- * Returns null if the crop cannot be reliably determined.
+ * Returns null if OOD or image quality insufficient.
+ * Preserves detected crop species even when disease confidence is below the 65% gate!
  */
 export function resolveCrop(result) {
   if (!result) return null;
 
-  // 1. Direct match on top_predictions[0].crop
+  // Quality failure: Crop is Undetermined
+  if (result.status === 'image_quality_insufficient' || result.quality_ok === false) {
+    return null;
+  }
+
+  // Genuine OOD or Unsupported species
+  if (result.is_ood === true || result.is_supported === false || result.crop === 'Unsupported / Unknown') {
+    return null;
+  }
+
+  // 1. Direct match on top-level result.crop (e.g. Tomato, Apple, Corn, Peach, etc.)
+  if (result.crop && typeof result.crop === 'string') {
+    const trimmed = result.crop.trim();
+    if (trimmed.toLowerCase() !== 'undetermined' && trimmed.toLowerCase() !== 'crop' && trimmed.toLowerCase() !== 'unsupported / unknown') {
+      const matched = matchCanonicalCrop(trimmed);
+      if (matched) return matched;
+      return trimmed;
+    }
+  }
+
+  // 2. Direct match on top_predictions[0].crop
   const topCandidate = result.top_predictions?.[0];
   if (topCandidate?.crop && typeof topCandidate.crop === 'string') {
     const matched = matchCanonicalCrop(topCandidate.crop);
     if (matched) return matched;
+    return topCandidate.crop;
   }
 
-  // 2. Class ID lookup in CANONICAL_CLASSES
+  // 3. Class ID lookup in CANONICAL_CLASSES
   if (topCandidate && typeof topCandidate.class_id === 'number') {
     const foundClass = CANONICAL_CLASSES.find((c) => c.id === topCandidate.class_id);
     if (foundClass) return foundClass.crop;
   }
 
-  // 3. Match from top_candidate disease or class name
+  // 4. Match from top_candidate disease or class name
   if (topCandidate?.disease) {
     const matched = extractCropFromText(topCandidate.disease);
     if (matched) return matched;
@@ -91,15 +126,6 @@ export function resolveCrop(result) {
   if (topCandidate?.class) {
     const matched = extractCropFromText(topCandidate.class);
     if (matched) return matched;
-  }
-
-  // 4. Match from top-level result.crop (if not generic/undetermined)
-  if (result.crop && typeof result.crop === 'string') {
-    const trimmed = result.crop.trim();
-    if (trimmed.toLowerCase() !== 'undetermined' && trimmed.toLowerCase() !== 'crop') {
-      const matched = matchCanonicalCrop(trimmed);
-      if (matched) return matched;
-    }
   }
 
   // 5. Match from top-level result.disease or result.class
@@ -116,11 +142,16 @@ export function resolveCrop(result) {
 }
 
 /**
- * Checks if a string matches one of the 7 supported crops.
+ * Checks if a string matches one of the 14 supported crops.
  */
 function matchCanonicalCrop(cropName) {
   if (!cropName) return null;
   const lower = cropName.trim().toLowerCase();
+  
+  if (lower === 'bell pepper' || lower === 'pepper, bell' || lower === 'pepper bell' || lower === 'pepper') {
+    return 'Pepper, bell';
+  }
+
   for (const canonical of SUPPORTED_CROPS) {
     if (canonical.toLowerCase() === lower) {
       return canonical;
@@ -136,33 +167,29 @@ function extractCropFromText(text) {
   if (!text || typeof text !== 'string') return null;
   const lower = text.toLowerCase();
 
-  if (lower.startsWith('bell_pepper') || lower.startsWith('bell pepper') || lower.includes('bell pepper')) {
-    return 'Bell Pepper';
+  if (lower.includes('bell_pepper') || lower.includes('bell pepper') || lower.includes('pepper,_bell')) {
+    return 'Pepper, bell';
   }
-  if (lower.startsWith('apple') || lower.includes('apple')) {
-    return 'Apple';
-  }
-  if (lower.startsWith('corn') || lower.includes('corn')) {
-    return 'Corn';
-  }
-  if (lower.startsWith('potato') || lower.includes('potato')) {
-    return 'Potato';
-  }
-  if (lower.startsWith('tomato') || lower.includes('tomato')) {
-    return 'Tomato';
-  }
-  if (lower.startsWith('grape') || lower.includes('grape')) {
-    return 'Grape';
-  }
-  if (lower.startsWith('peach') || lower.includes('peach')) {
-    return 'Peach';
-  }
+  if (lower.includes('apple')) return 'Apple';
+  if (lower.includes('blueberry')) return 'Blueberry';
+  if (lower.includes('cherry')) return 'Cherry';
+  if (lower.includes('corn') || lower.includes('maize')) return 'Corn';
+  if (lower.includes('grape')) return 'Grape';
+  if (lower.includes('orange') || lower.includes('citrus')) return 'Orange';
+  if (lower.includes('peach')) return 'Peach';
+  if (lower.includes('potato')) return 'Potato';
+  if (lower.includes('raspberry')) return 'Raspberry';
+  if (lower.includes('soybean') || lower.includes('soyabean')) return 'Soybean';
+  if (lower.includes('squash')) return 'Squash';
+  if (lower.includes('strawberry')) return 'Strawberry';
+  if (lower.includes('tomato')) return 'Tomato';
 
   return null;
 }
 
 /**
- * Resolves confidence float (0.0 to 1.0), formatted string, and safety tier.
+ * Resolves confidence float (0.0 to 1.0), formatted string, safety tier,
+ * and distinct crop confidence vs disease confidence.
  */
 export function resolveConfidence(result) {
   if (!result) {
@@ -172,40 +199,74 @@ export function resolveConfidence(result) {
       percentNum: 0,
       isLowConfidence: true,
       tier: 'Low Confidence',
-      barColor: '#ef4444'
+      barColor: '#ef4444',
+      cropConfidenceStr: '0%',
+      cropConfidenceScore: 0.0
     };
   }
 
+  // 1. Disease Confidence
   let rawScore = 0;
-  if (typeof result.confidence_score === 'number' && !isNaN(result.confidence_score)) {
+  if (typeof result.disease_confidence === 'number' && !isNaN(result.disease_confidence)) {
+    rawScore = result.disease_confidence;
+  } else if (typeof result.confidence_score === 'number' && !isNaN(result.confidence_score)) {
     rawScore = result.confidence_score;
   } else if (result.confidence) {
-    const parsed = parseFloat(result.confidence);
+    const str = String(result.confidence).trim();
+    const parsed = parseFloat(str);
     if (!isNaN(parsed)) {
-      rawScore = parsed > 1.0 ? parsed / 100 : parsed;
+      rawScore = str.endsWith('%') ? parsed / 100 : (parsed > 1.0 ? parsed / 100 : parsed);
     }
   }
 
-  // Bound within [0.0, 1.0]
-  rawScore = Math.max(0.0, Math.min(1.0, rawScore));
-  const percentNum = Math.round(rawScore * 100);
-  const percentStr = `${percentNum}%`;
+  // 2. Crop Confidence
+  let cropScore = 0;
+  if (typeof result.crop_confidence === 'number' && !isNaN(result.crop_confidence)) {
+    cropScore = result.crop_confidence;
+  } else if (typeof result.top_crop_confidence === 'number' && !isNaN(result.top_crop_confidence)) {
+    cropScore = result.top_crop_confidence;
+  } else {
+    cropScore = rawScore;
+  }
 
-  // Safety gate: exactly 65% is required for confirmed diagnosis
+  rawScore = Math.max(0.0, Math.min(1.0, rawScore));
+  cropScore = Math.max(0.0, Math.min(1.0, cropScore));
+
+  const percentNum = rawScore * 100;
+  let percentStr = '';
+  if (percentNum <= 0) {
+    percentStr = '0%';
+  } else if (percentNum < 1.0) {
+    percentStr = `${percentNum.toFixed(2)}%`;
+  } else {
+    percentStr = `${Math.round(percentNum)}%`;
+  }
+
+  const cropPercentNum = cropScore * 100;
+  let cropPercentStr = '';
+  if (cropPercentNum <= 0) {
+    cropPercentStr = '0%';
+  } else if (cropPercentNum < 1.0) {
+    cropPercentStr = `${cropPercentNum.toFixed(2)}%`;
+  } else {
+    cropPercentStr = `${Math.round(cropPercentNum)}%`;
+  }
+
+  // Safety gate: exactly 65% disease confidence is required for confirmed diagnosis
   const isLowConfidence = rawScore < 0.65;
 
   let tier = 'Low Confidence';
-  let barColor = '#ef4444'; // amber/red warning
+  let barColor = '#ef4444';
 
   if (rawScore >= 0.85) {
     tier = 'High Confidence';
-    barColor = '#10b981'; // emerald green
+    barColor = '#10b981';
   } else if (rawScore >= 0.65) {
     tier = 'Moderate Confidence';
-    barColor = '#f59e0b'; // golden amber
+    barColor = '#f59e0b';
   } else {
     tier = 'Low Confidence';
-    barColor = '#ef4444'; // warning orange/red
+    barColor = '#ef4444';
   }
 
   return {
@@ -214,7 +275,9 @@ export function resolveConfidence(result) {
     percentNum,
     isLowConfidence,
     tier,
-    barColor
+    barColor,
+    cropConfidenceScore: cropScore,
+    cropConfidenceStr: cropPercentStr
   };
 }
 

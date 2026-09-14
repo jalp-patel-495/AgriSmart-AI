@@ -94,9 +94,20 @@ export default function ResultView({
     }
   };
 
+  const isQualityFailed = result.status === 'image_quality_insufficient' || result.quality_ok === false;
+  const isOODOrUnsupported = result.is_ood === true || result.is_supported === false || result.status === 'uncertain';
+  const isSafeGateTriggered = isLowConfidence || isQualityFailed || isOODOrUnsupported;
+
   // Determine precautions array based on state
   let activePrecautions = [];
-  if (isLowConfidence) {
+  if (isQualityFailed) {
+    activePrecautions = [
+      'Upload a clearer, high-resolution leaf image in bright daylight',
+      'Ensure the leaf is in sharp focus without camera blur or shake',
+      'Frame a single leaf occupying the center against a plain, neutral background',
+      'Avoid harsh flash glare, dark shadows, or multiple cluttered objects'
+    ];
+  } else if (isSafeGateTriggered) {
     activePrecautions = SAFE_LOW_CONFIDENCE_PRECAUTIONS;
   } else if (isHealthy) {
     activePrecautions = HEALTHY_MONITORING_PRECAUTIONS;
@@ -110,10 +121,12 @@ export default function ResultView({
 
   const handleAssistantClick = () => {
     if (!onNavigateToAssistant) return;
-    if (isLowConfidence) {
+    if (isSafeGateTriggered) {
       onNavigateToAssistant({
         isLowConfidence: true,
-        safePrompt: 'The model was unable to confidently identify the disease. Please upload a clearer image.',
+        safePrompt: isQualityFailed
+          ? 'The image quality was insufficient for foliar analysis. Please guide the farmer on capturing a clearer leaf photo.'
+          : 'The model was unable to confidently identify the crop disease or detected an out-of-distribution leaf. Please ask the farmer for a clearer image.',
         crop: resolvedCrop || 'Undetermined'
       });
     } else {
@@ -147,9 +160,23 @@ export default function ResultView({
         </div>
       </div>
 
-      {/* State Badge & Crop Resolution */}
+      {/* State Badge & Safe Crop Resolution */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        {isLowConfidence ? (
+        {isQualityFailed ? (
+          <span
+            className="result-header-badge"
+            style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fde047', border: '1px solid rgba(245, 158, 11, 0.35)' }}
+          >
+            ⚠️ Image Quality Insufficient
+          </span>
+        ) : isOODOrUnsupported ? (
+          <span
+            className="result-header-badge"
+            style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.35)' }}
+          >
+            {result.is_supported === false ? '🛡️ Unsupported Crop' : '⚠️ Low Confidence'}
+          </span>
+        ) : isLowConfidence ? (
           <span
             className="result-header-badge"
             style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.35)' }}
@@ -172,22 +199,50 @@ export default function ResultView({
           </span>
         )}
 
-        {/* Crop Information: "Possible Crop" for <65%, "Crop" for >=65%, "Undetermined" only if unmapped */}
-        <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          {isLowConfidence ? (
-            resolvedCrop ? (
-              <>Possible Crop: <strong style={{ color: '#fef08a' }}>{resolvedCrop}</strong></>
-            ) : (
+        {/* Crop Information: Preserves detected supported crop; only Undetermined on quality fail or Unsupported on genuine OOD */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+            {isQualityFailed ? (
               <>Crop: <strong style={{ color: '#9ca3af' }}>Undetermined</strong></>
-            )
-          ) : (
-            <>Crop: <strong style={{ color: '#fff' }}>{resolvedCrop || result.crop || 'Undetermined'}</strong></>
+            ) : (result.is_ood || result.is_supported === false) ? (
+              <>Crop: <strong style={{ color: '#fca5a5' }}>Unsupported / Unknown</strong></>
+            ) : (
+              <>Detected Crop: <strong style={{ color: '#fff' }}>{result.crop || resolvedCrop || 'Undetermined'}</strong></>
+            )}
+          </span>
+          {result.crop_confidence != null && !isQualityFailed && !result.is_ood && result.is_supported !== false && (
+            <span style={{ fontSize: '0.76rem', color: '#93c5fd', marginTop: '0.1rem' }}>
+              Crop Confidence: <strong>{Math.round(result.crop_confidence * 100)}%</strong>
+            </span>
           )}
-        </span>
+        </div>
       </div>
 
       {/* Main Condition Heading */}
-      {isLowConfidence ? (
+      {isQualityFailed ? (
+        <div style={{ marginTop: '0.65rem' }}>
+          <h2 className="disease-main-title" style={{ color: '#fde047', fontSize: '1.4rem' }}>
+            Image Quality Insufficient
+          </h2>
+          <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginTop: '0.2rem' }}>
+            Disease: <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>Not confidently identified</span>
+          </div>
+          {result.message && (
+            <div style={{ fontSize: '0.82rem', color: '#fde047', marginTop: '0.35rem' }}>
+              ℹ️ {result.message}
+            </div>
+          )}
+        </div>
+      ) : (result.is_ood || result.is_supported === false) ? (
+        <div style={{ marginTop: '0.65rem' }}>
+          <h2 className="disease-main-title" style={{ color: '#fca5a5', fontSize: '1.4rem' }}>
+            Unsupported / Unknown Crop
+          </h2>
+          <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginTop: '0.2rem' }}>
+            Disease: <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>Not confidently identified</span>
+          </div>
+        </div>
+      ) : isLowConfidence ? (
         <div style={{ marginTop: '0.65rem' }}>
           <h2 className="disease-main-title" style={{ color: '#fca5a5', fontSize: '1.4rem' }}>
             Low Confidence — Further Inspection Needed
@@ -199,7 +254,7 @@ export default function ResultView({
       ) : isHealthy ? (
         <div style={{ marginTop: '0.65rem' }}>
           <h2 className="disease-main-title" style={{ color: '#34d399', fontSize: '1.5rem' }}>
-            {resolvedCrop ? `${resolvedCrop} Healthy` : 'Healthy Foliage'}
+            {resolvedCrop || result.crop ? `${resolvedCrop || result.crop} Healthy` : 'Healthy Foliage'}
           </h2>
           <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginTop: '0.2rem' }}>
             Result: <strong style={{ color: '#6ee7b7' }}>Healthy</strong>
@@ -210,13 +265,29 @@ export default function ResultView({
           <h2 className="disease-main-title">
             {result.disease}
           </h2>
+          {result.is_multilabel && result.diseases && result.diseases.length > 1 && (
+            <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+                🌿 Multi-Label Co-Infection Detected ({result.diseases.length} Symptoms)
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {result.diseases.map((d, i) => (
+                  <span key={i} style={{ fontSize: '0.78rem', padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#e5e7eb' }}>
+                    <strong>{d.name}</strong>: {Math.round(d.confidence * 100)}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Improved Confidence Visualization (Safety Gate at 65%) */}
       <div style={{ marginTop: '1rem', padding: '0.75rem 0.85rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>AI Diagnostic Confidence:</span>
+          <span style={{ color: 'var(--text-secondary)' }}>
+            {result.crop_confidence != null ? 'Disease Confidence:' : 'AI Diagnostic Confidence:'}
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span
               style={{
@@ -251,8 +322,8 @@ export default function ResultView({
         </div>
       </div>
 
-      {/* Causal Pathogen (High confidence diseased only; strictly suppressed for <65% and healthy) */}
-      {!isLowConfidence && !isHealthy && (
+      {/* Causal Pathogen (High confidence diseased only; strictly suppressed for <65%, OOD, and healthy) */}
+      {!isSafeGateTriggered && !isHealthy && (
         <div className="result-section">
           <div className="section-label">🔬 Causal Pathogen</div>
           <div className="section-body" style={{ fontStyle: 'italic', color: '#f3f4f6' }}>
@@ -265,7 +336,9 @@ export default function ResultView({
       <div className="result-section">
         <div className="section-label">🔍 Observable Foliar Symptoms</div>
         <div className="section-body" style={{ color: '#f3f4f6' }}>
-          {isLowConfidence ? (
+          {isQualityFailed ? (
+            'Image quality is insufficient to evaluate leaf symptoms. Please upload a clear, well-lit single leaf in natural daylight.'
+          ) : isSafeGateTriggered ? (
             'Unable to determine symptoms with high confidence. Please provide a clearer, well-lit specimen.'
           ) : isHealthy ? (
             'Crisp emerald foliage with uniform color, intact cuticle, and no necrotic pustules or lesions.'
@@ -279,15 +352,19 @@ export default function ResultView({
       <div
         className="result-section"
         style={{
-          borderLeft: isLowConfidence ? '3px solid #ef4444' : '3px solid #10b981',
-          background: isLowConfidence ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)'
+          borderLeft: isSafeGateTriggered ? '3px solid #ef4444' : '3px solid #10b981',
+          background: isSafeGateTriggered ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)'
         }}
       >
         <div
           className="section-label"
-          style={{ color: isLowConfidence ? '#fca5a5' : '#34d399' }}
+          style={{ color: isSafeGateTriggered ? '#fca5a5' : '#34d399' }}
         >
-          {isLowConfidence ? '🛡️ Recommended Precautions & Image Guidelines' : '🛡️ Recommended Precautions & Action Plan'}
+          {isQualityFailed
+            ? '🛡️ Image Quality Guidelines & Action Required'
+            : isSafeGateTriggered
+            ? '🛡️ Recommended Precautions & Inspection Guidelines'
+            : '🛡️ Recommended Precautions & Action Plan'}
         </div>
         <ul className="precaution-checklist">
           {activePrecautions.map((precaution, idx) => (
@@ -311,7 +388,7 @@ export default function ResultView({
       </div>
 
       {/* Curative Agronomic Treatment (Strictly suppressed for <65% and healthy) */}
-      {!isLowConfidence && !isHealthy && result.treatment && (
+      {!isSafeGateTriggered && !isHealthy && result.treatment && (
         <div className="result-section" style={{ borderLeft: '3px solid #3b82f6' }}>
           <div className="section-label" style={{ color: '#93c5fd' }}>💊 Curative Agronomic Treatment</div>
           <div className="section-body" style={{ color: '#dbeafe' }}>{result.treatment}</div>
@@ -382,8 +459,8 @@ export default function ResultView({
         </div>
       )}
 
-      {/* Alternative Differential Diagnoses (STRICTLY HIDDEN for <65% confidence and healthy) */}
-      {!isLowConfidence && !isHealthy && result.top_predictions && result.top_predictions.length > 1 && (
+      {/* Alternative Differential Diagnoses (STRICTLY HIDDEN for <65% confidence, OOD, and healthy) */}
+      {!isSafeGateTriggered && !isHealthy && result.top_predictions && result.top_predictions.length > 1 && (
         <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Top Alternative Differential Diagnoses:

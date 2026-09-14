@@ -1,0 +1,136 @@
+{
+  "crop_names": [
+    "Apple",
+    "Blueberry",
+    "Cherry",
+    "Corn",
+    "Grape",
+    "Orange",
+    "Peach",
+    "Pepper, bell",
+    "Potato",
+    "Raspberry",
+    "Soybean",
+    "Squash",
+    "Strawberry",
+    "Tomato"
+  ],
+  "crop_to_id": {
+    "Apple": 0,
+    "Blueberry": 1,
+    "Cherry": 2,
+    "Corn": 3,
+    "Grape": 4,
+    "Orange": 5,
+    "Peach": 6,
+    "Pepper, bell": 7,
+    "Potato": 8,
+    "Raspberry": 9,
+    "Soybean": 10,
+    "Squash": 11,
+    "Strawberry": 12,
+    "Tomato": 13
+  },
+  "id_to_crop": {
+    "0": "Apple",
+    "1": "Blueberry",
+    "2": "Cherry",
+    "3": "Corn",
+    "4": "Grape",
+    "5": "Orange",
+    "6": "Peach",
+    "7": "Pepper, bell",
+    "8": "Potato",
+    "9": "Raspberry",
+    "10": "Soybean",
+    "11": "Squash",
+    "12": "Strawberry",
+    "13": "Tomato"
+  },
+  "crops": [
+    {
+      "id": 0,
+      "name": "Apple",
+      "scientific_name": "Malus domestica",
+      "family": "Rosaceae"
+    },
+    {
+      "id": 1,
+      "name": "Blueberry",
+      "scientific_name": "Vaccinium corymbosum",
+      "family": "Ericaceae"
+    },
+    {
+      "id": 2,
+      "name": "Cherry",
+      "scientific_name": "Prunus avium / Prunus cerasus",
+      "family": "Rosaceae"
+    },
+    {
+      "id": 3,
+      "name": "Corn",
+      "scientific_name": "Zea mays",
+      "family": "Poaceae"
+    },
+    {
+      "id": 4,
+      "name": "Grape",
+      "scientific_name": "Vitis vinifera",
+      "family": "Vitaceae"
+    },
+    {
+      "id": 5,
+      "name": "Orange",
+      "scientific_name": "Citrus sinensis",
+      "family": "Rutaceae"
+    },
+    {
+      "id": 6,
+      "name": "Peach",
+      "scientific_name": "Prunus persica",
+      "family": "Rosaceae"
+    },
+    {
+      "id": 7,
+      "name": "Pepper, bell",
+      "scientific_name": "Capsicum annuum",
+      "family": "Solanaceae"
+    },
+    {
+      "id": 8,
+      "name": "Potato",
+      "scientific_name": "Solanum tuberosum",
+      "family": "Solanaceae"
+    },
+    {
+      "id": 9,
+      "name": "Raspberry",
+      "scientific_name": "Rubus idaeus",
+      "family": "Rosaceae"
+    },
+    {
+      "id": 10,
+      "name": "Soybean",
+      "scientific_name": "Glycine max",
+      "family": "Fabaceae"
+    },
+    {
+      "id": 11,
+      "name": "Squash",
+      "scientific_name": "Cucurbita pepo",
+      "family": "Cucurbitaceae"
+    },
+    {
+      "id": 12,
+      "name": "Strawberry",
+      "scientific_name": "Fragaria \u00d7 ananassa",
+      "family": "Rosaceae"
+    },
+    {
+      "id": 13,
+      "name": "Tomato",
+      "scientific_name": "Solanum lycopersicum",
+      "family": "Solanaceae"
+    }
+  ]
+}

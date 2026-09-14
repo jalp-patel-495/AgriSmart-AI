@@ -1,0 +1,81 @@
+{
+  "model_name": "AgriSmart Universal Multi-Crop Disease Classifier",
+  "architecture": "efficientnet_b0",
+  "framework": "PyTorch",
+  "total_supported_crops": 14,
+  "total_supported_classes": 38,
+  "supported_crops": [
+    "Apple",
+    "Blueberry",
+    "Cherry",
+    "Corn",
+    "Grape",
+    "Orange",
+    "Peach",
+    "Pepper, bell",
+    "Potato",
+    "Raspberry",
+    "Soybean",
+    "Squash",
+    "Strawberry",
+    "Tomato"
+  ],
+  "safety_gate": "65% disease confidence floor strictly enforced",
+  "dataset_sources": [
+    "PlantVillage (54,305 images)",
+    "PlantDoc (2,585 in-the-wild images)"
+  ],
+  "training_timestamp": "2026-09-13 20:37:36",
+  "best_metrics": {
+    "architecture": "efficientnet_b0",
+    "crop_macro_f1": 0.9421,
+    "crop_accuracy": 0.9518,
+    "disease_accuracy": 0.9342,
+    "field_robustness": 0.5769,
+    "composite_score": 0.8302,
+    "val_metrics": {
+      "crop_accuracy": 0.9605,
+      "crop_macro_f1": 0.9623,
+      "crop_per_class_f1": [
+        0.9787,
+        1.0,
+        0.9565,
+        1.0,
+        0.96,
+        1.0,
+        0.9167,
+        0.9565,
+        0.9189,
+        1.0,
+        1.0,
+        1.0,
+        0.8182,
+        0.9672
+      ],
+      "disease_accuracy": 0.9298,
+      "total_eval_samples": 228
+    },
+    "test_metrics": {
+      "crop_accuracy": 0.9518,
+      "crop_macro_f1": 0.9421,
+      "crop_per_class_f1": [
+        0.902,
+        0.9091,
+        0.9091,
+        0.9787,
+        0.9796,
+        1.0,
+        0.88,
+        0.9565,
+        0.9444,
+        0.9091,
+        0.9231,
+        0.9231,
+        1.0,
+        0.9748
+      ],
+      "disease_accuracy": 0.9342,
+      "total_eval_samples": 228
+    }
+  }
+}

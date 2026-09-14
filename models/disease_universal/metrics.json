@@ -1,0 +1,213 @@
+{
+  "selected_architecture": "efficientnet_b0",
+  "architectures_comparison": {
+    "efficientnet_b0": {
+      "architecture": "efficientnet_b0",
+      "crop_macro_f1": 0.9421,
+      "crop_accuracy": 0.9518,
+      "disease_accuracy": 0.9342,
+      "field_robustness": 0.5769,
+      "composite_score": 0.8302,
+      "val_metrics": {
+        "crop_accuracy": 0.9605,
+        "crop_macro_f1": 0.9623,
+        "crop_per_class_f1": [
+          0.9787,
+          1.0,
+          0.9565,
+          1.0,
+          0.96,
+          1.0,
+          0.9167,
+          0.9565,
+          0.9189,
+          1.0,
+          1.0,
+          1.0,
+          0.8182,
+          0.9672
+        ],
+        "disease_accuracy": 0.9298,
+        "total_eval_samples": 228
+      },
+      "test_metrics": {
+        "crop_accuracy": 0.9518,
+        "crop_macro_f1": 0.9421,
+        "crop_per_class_f1": [
+          0.902,
+          0.9091,
+          0.9091,
+          0.9787,
+          0.9796,
+          1.0,
+          0.88,
+          0.9565,
+          0.9444,
+          0.9091,
+          0.9231,
+          0.9231,
+          1.0,
+          0.9748
+        ],
+        "disease_accuracy": 0.9342,
+        "total_eval_samples": 228
+      }
+    },
+    "resnet18": {
+      "architecture": "resnet18",
+      "crop_macro_f1": 0.9208,
+      "crop_accuracy": 0.9211,
+      "disease_accuracy": 0.886,
+      "field_robustness": 0.5,
+      "composite_score": 0.7841,
+      "val_metrics": {
+        "crop_accuracy": 0.9254,
+        "crop_macro_f1": 0.9131,
+        "crop_per_class_f1": [
+          0.8519,
+          0.8333,
+          0.8571,
+          0.9583,
+          0.96,
+          0.9231,
+          0.8696,
+          0.8696,
+          0.9189,
+          1.0,
+          1.0,
+          0.9091,
+          0.8571,
+          0.9748
+        ],
+        "disease_accuracy": 0.8596,
+        "total_eval_samples": 228
+      },
+      "test_metrics": {
+        "crop_accuracy": 0.9211,
+        "crop_macro_f1": 0.9208,
+        "crop_per_class_f1": [
+          0.8889,
+          0.9091,
+          0.8182,
+          0.9796,
+          0.9796,
+          1.0,
+          0.9091,
+          0.8571,
+          0.8718,
+          1.0,
+          0.8333,
+          1.0,
+          0.9231,
+          0.9217
+        ],
+        "disease_accuracy": 0.886,
+        "total_eval_samples": 228
+      }
+    },
+    "mobilenet_v3": {
+      "architecture": "mobilenet_v3",
+      "crop_macro_f1": 0.9794,
+      "crop_accuracy": 0.9781,
+      "disease_accuracy": 0.9298,
+      "field_robustness": 0.4808,
+      "composite_score": 0.8149,
+      "val_metrics": {
+        "crop_accuracy": 0.9781,
+        "crop_macro_f1": 0.9705,
+        "crop_per_class_f1": [
+          0.9583,
+          0.9231,
+          0.9565,
+          1.0,
+          0.9796,
+          1.0,
+          1.0,
+          0.96,
+          1.0,
+          1.0,
+          0.9091,
+          1.0,
+          0.9091,
+          0.9917
+        ],
+        "disease_accuracy": 0.9079,
+        "total_eval_samples": 228
+      },
+      "test_metrics": {
+        "crop_accuracy": 0.9781,
+        "crop_macro_f1": 0.9794,
+        "crop_per_class_f1": [
+          0.9583,
+          1.0,
+          0.9167,
+          1.0,
+          0.9796,
+          1.0,
+          0.9167,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9565,
+          0.9833
+        ],
+        "disease_accuracy": 0.9298,
+        "total_eval_samples": 228
+      }
+    }
+  },
+  "best_metrics": {
+    "architecture": "efficientnet_b0",
+    "crop_macro_f1": 0.9421,
+    "crop_accuracy": 0.9518,
+    "disease_accuracy": 0.9342,
+    "field_robustness": 0.5769,
+    "composite_score": 0.8302,
+    "val_metrics": {
+      "crop_accuracy": 0.9605,
+      "crop_macro_f1": 0.9623,
+      "crop_per_class_f1": [
+        0.9787,
+        1.0,
+        0.9565,
+        1.0,
+        0.96,
+        1.0,
+        0.9167,
+        0.9565,
+        0.9189,
+        1.0,
+        1.0,
+        1.0,
+        0.8182,
+        0.9672
+      ],
+      "disease_accuracy": 0.9298,
+      "total_eval_samples": 228
+    },
+    "test_metrics": {
+      "crop_accuracy": 0.9518,
+      "crop_macro_f1": 0.9421,
+      "crop_per_class_f1": [
+        0.902,
+        0.9091,
+        0.9091,
+        0.9787,
+        0.9796,
+        1.0,
+        0.88,
+        0.9565,
+        0.9444,
+        0.9091,
+        0.9231,
+        0.9231,
+        1.0,
+        0.9748
+      ],
+      "disease_accuracy": 0.9342,
+      "total_eval_samples": 228
+    }
+  }
+}

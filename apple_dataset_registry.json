@@ -1,0 +1,78 @@
+{
+  "crop": "Apple",
+  "crop_id": 0,
+  "scientific_name": "Malus domestica",
+  "description": "Comprehensive Apple foliar disease dataset registry combining controlled lab and in-the-wild field datasets",
+  "datasets": [
+    {
+      "dataset": "Plant Pathology 2021 - FGVC8",
+      "source": "Cornell University & CVPR FGVC8 Workshop (Kaggle)",
+      "source_url": "https://www.kaggle.com/competitions/plant-pathology-2021-fgvc8",
+      "license": "Competition Terms / Academic Research Use",
+      "crop": "Apple",
+      "disease_classes": [
+        "Healthy",
+        "Scab",
+        "Frog Eye Leaf Spot",
+        "Rust",
+        "Powdery Mildew",
+        "Complex"
+      ],
+      "label_type": "Multi-label",
+      "image_count": 18634,
+      "condition": "In-the-wild field (natural lighting, complex canopy, varying maturity)",
+      "split": "Train (14,906), Test (3,728)",
+      "notes": "Used specifically for training and calibrating Apple multi-label disease detection and real-field foliar robustness."
+    },
+    {
+      "dataset": "PlantVillage (Apple subset)",
+      "source": "Crowdsourced & Penn State University",
+      "source_url": "https://github.com/spMohanty/PlantVillage-Dataset",
+      "license": "CC0 1.0 Universal (Public Domain)",
+      "crop": "Apple",
+      "disease_classes": [
+        "Apple Scab",
+        "Black Rot (Frog Eye)",
+        "Cedar Apple Rust",
+        "Healthy"
+      ],
+      "label_type": "Single-label",
+      "image_count": 3171,
+      "condition": "Controlled laboratory (standardized grey/black background)",
+      "split": "Train (2,536), Validation (635)",
+      "notes": "Provides high-purity single-pathogen foliar symptoms for baseline representation."
+    },
+    {
+      "dataset": "PlantDoc (Apple subset)",
+      "source": "ACM CoDS-COMAD 2020",
+      "source_url": "https://github.com/pratikkayal/PlantDoc-Dataset",
+      "license": "CC BY 4.0",
+      "crop": "Apple",
+      "disease_classes": [
+        "Apple Scab Leaf",
+        "Apple Leaf (Healthy)",
+        "Apple Rust Leaf"
+      ],
+      "label_type": "Single-label / Object detection boxes",
+      "image_count": 483,
+      "condition": "In-the-wild agricultural field conditions",
+      "split": "Independent field test",
+      "notes": "Held-out independent field test benchmark for validating real-world robustness."
+    }
+  ],
+  "semantic_label_alignment": {
+    "PlantVillage: Apple___Apple_scab": "Scab",
+    "PlantVillage: Apple___Black_rot": "Frog Eye Leaf Spot",
+    "PlantVillage: Apple___Cedar_apple_rust": "Rust",
+    "PlantVillage: Apple___healthy": "Healthy",
+    "PlantDoc: Apple Scab Leaf": "Scab",
+    "PlantDoc: Apple rust leaf": "Rust",
+    "PlantDoc: Apple leaf": "Healthy",
+    "FGVC8: scab": "Scab",
+    "FGVC8: frog_eye_leaf_spot": "Frog Eye Leaf Spot",
+    "FGVC8: rust": "Rust",
+    "FGVC8: powdery_mildew": "Powdery Mildew",
+    "FGVC8: complex": "Complex",
+    "FGVC8: healthy": "Healthy"
+  }
+}

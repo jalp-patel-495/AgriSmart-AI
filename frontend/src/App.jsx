@@ -16,7 +16,7 @@ import StakeholderDashboard from './components/StakeholderDashboard';
 import FarmerStakeholdersView from './components/FarmerStakeholdersView';
 import { checkBackendHealth, predictCropDisease } from './services/api';
 import { authApi } from './services/authApi';
-import { resolveCrop, CANONICAL_CLASSES } from './utils/cropDiseaseResolver';
+import { resolveCrop, CANONICAL_CLASSES, SUPPORTED_CROPS, TOTAL_SUPPORTED_CROPS, TOTAL_SUPPORTED_CLASSES } from './utils/cropDiseaseResolver';
 import { fetchWeatherIntelligence } from './services/weatherIntelligenceService';
 
 /**
@@ -149,10 +149,12 @@ export default function App() {
 
   // Dynamic context synchronized across all farm modules
   const farmContext = {
-    crop: isLowConf
-      ? (resolvedCrop ? `Possible Crop: ${resolvedCrop}` : 'Undetermined')
-      : (resolvedCrop || result?.crop || currentUser?.preferred_crop || 'Tomato'),
-    disease: isLowConf
+    crop: (result?.status === 'image_quality_insufficient' || result?.quality_ok === false)
+      ? 'Undetermined'
+      : (result?.is_ood || result?.is_supported === false || result?.crop === 'Unsupported / Unknown')
+        ? 'Unsupported / Unknown'
+        : (resolvedCrop || (result?.crop && result.crop !== 'Undetermined' && result.crop !== 'Unsupported / Unknown' ? result.crop : null) || currentUser?.preferred_crop || 'Tomato'),
+    disease: (isLowConf || result?.status === 'uncertain' || result?.status === 'image_quality_insufficient' || result?.is_ood || result?.is_supported === false)
       ? 'Not confidently identified'
       : (result?.disease || (liveWeather?.weather_risk === 'HIGH' ? 'Foliar Risk Alert' : 'Healthy Field')),
     confidence: result?.confidence || (result ? '90%' : 'High'),
@@ -207,24 +209,26 @@ export default function App() {
       const data = await predictCropDisease(file);
       setResult(data);
       try {
-        const existing = JSON.parse(localStorage.getItem('agrismart_recent_analyses') || '[]');
-        const isLowConfEntry = (typeof data.confidence_score === 'number' && data.confidence_score < 0.65) ||
-                               (typeof data.confidence === 'string' && parseFloat(data.confidence) < 65);
+        const confRes = resolveConfidence(data);
+        const isLowConfEntry = confRes.isLowConfidence;
         const entryCrop = resolveCrop(data);
         const newEntry = {
           id: Date.now(),
           date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          crop: isLowConfEntry
-            ? (entryCrop ? `Possible Crop: ${entryCrop}` : 'Undetermined')
-            : (entryCrop || data.crop || 'Crop'),
+          crop: (data.status === 'image_quality_insufficient' || data.quality_ok === false)
+            ? 'Undetermined'
+            : (data.is_ood || data.is_supported === false)
+              ? 'Unsupported / Unknown'
+              : (entryCrop || data.crop || 'Undetermined'),
           disease: isLowConfEntry ? 'Not confidently identified' : (data.disease || 'Condition'),
-          confidence: data.confidence || '0%',
+          confidence: data.confidence || confRes.percentStr,
           confidence_score: data.confidence_score,
           status: isLowConfEntry ? 'Low Confidence' : (data.status || 'Analyzed'),
           pathogen: isLowConfEntry ? null : (data.pathogen || null),
           treatment: isLowConfEntry ? null : (data.treatment || null),
           imageName: file?.name || 'leaf_photo.jpg'
         };
+        const existing = JSON.parse(localStorage.getItem('agrismart_recent_analyses') || '[]');
         localStorage.setItem('agrismart_recent_analyses', JSON.stringify([newEntry, ...existing.slice(0, 9)]));
       } catch (storageErr) {
         console.warn('Could not cache recent analysis:', storageErr);
@@ -341,34 +345,43 @@ export default function App() {
                     <div>
                       <h2 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>Disease Detection Studio</h2>
                       <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.92rem' }}>
-                        Field-ready visual diagnostic tool validated on <strong>21,749 verified specimens</strong> across <strong>19 classes</strong> and <strong>7 crop species</strong>.
+                        AI-powered plant leaf disease detection across supported crop and disease classes.
                       </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.4rem', fontSize: '0.8rem', color: '#9ca3af' }}>
+                        <span style={{ color: '#34d399', fontWeight: 600 }}>🌾 {TOTAL_SUPPORTED_CROPS} Supported Crops</span>
+                        <span>•</span>
+                        <span style={{ color: '#60a5fa', fontWeight: 600 }}>🔬 {TOTAL_SUPPORTED_CLASSES} Disease & Healthy Classes</span>
+                        <span>•</span>
+                        <span style={{ color: '#f59e0b' }}>📚 PlantVillage & PlantDoc Datasets</span>
+                      </div>
                     </div>
 
-                    {/* Supported Crops compact info section */}
+                    {/* Supported Crops dynamic catalog section */}
                     <div style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
+                      flexDirection: 'column',
+                      gap: '0.35rem',
                       background: 'rgba(16, 185, 129, 0.08)',
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '999px',
+                      padding: '0.5rem 0.85rem',
+                      borderRadius: '8px',
                       border: '1px solid rgba(16, 185, 129, 0.25)',
-                      flexWrap: 'wrap'
+                      maxWidth: '650px'
                     }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Supported Crops:
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {['Apple', 'Corn', 'Potato', 'Tomato', 'Grape', 'Bell Pepper', 'Peach'].map((c) => (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Supported Crop Staples ({SUPPORTED_CROPS.length}):
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                        {SUPPORTED_CROPS.map((c) => (
                           <span
                             key={c}
                             style={{
-                              fontSize: '0.78rem',
+                              fontSize: '0.74rem',
                               color: '#a7f3d0',
                               fontWeight: 500,
                               background: 'rgba(16, 185, 129, 0.16)',
-                              padding: '0.15rem 0.5rem',
+                              padding: '0.12rem 0.45rem',
                               borderRadius: '4px'
                             }}
                           >
