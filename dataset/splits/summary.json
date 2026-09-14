@@ -1,12 +1,13 @@
 {
-  "total_images": 15014,
+  "total_images": 54305,
   "target_dimensions": "224x224",
   "split_distribution": {
-    "train": 10505,
-    "val": 2247,
-    "test": 2262
+    "train": 37997,
+    "val": 8129,
+    "test": 8179
   },
-  "classes_count": 13,
+  "classes_count": 38,
+  "crops_count": 14,
   "class_breakdown": {
     "Apple___Apple_scab": {
       "class_id": 0,
@@ -26,8 +27,17 @@
       "test_count": 94,
       "total": 621
     },
-    "Apple___healthy": {
+    "Apple___Cedar_apple_rust": {
       "class_id": 2,
+      "crop": "Apple",
+      "status": "Diseased",
+      "train_count": 192,
+      "val_count": 41,
+      "test_count": 42,
+      "total": 275
+    },
+    "Apple___healthy": {
+      "class_id": 3,
       "crop": "Apple",
       "status": "Healthy",
       "train_count": 1151,
@@ -35,8 +45,44 @@
       "test_count": 248,
       "total": 1645
     },
-    "Corn___Common_rust": {
-      "class_id": 3,
+    "Blueberry___healthy": {
+      "class_id": 4,
+      "crop": "Blueberry",
+      "status": "Healthy",
+      "train_count": 1051,
+      "val_count": 225,
+      "test_count": 226,
+      "total": 1502
+    },
+    "Cherry_(including_sour)___Powdery_mildew": {
+      "class_id": 5,
+      "crop": "Cherry",
+      "status": "Diseased",
+      "train_count": 736,
+      "val_count": 157,
+      "test_count": 159,
+      "total": 1052
+    },
+    "Cherry_(including_sour)___healthy": {
+      "class_id": 6,
+      "crop": "Cherry",
+      "status": "Healthy",
+      "train_count": 597,
+      "val_count": 128,
+      "test_count": 129,
+      "total": 854
+    },
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+      "class_id": 7,
+      "crop": "Corn",
+      "status": "Diseased",
+      "train_count": 359,
+      "val_count": 76,
+      "test_count": 78,
+      "total": 513
+    },
+    "Corn_(maize)___Common_rust_": {
+      "class_id": 8,
       "crop": "Corn",
       "status": "Diseased",
       "train_count": 834,
@@ -44,8 +90,8 @@
       "test_count": 180,
       "total": 1192
     },
-    "Corn___Northern_Leaf_Blight": {
-      "class_id": 4,
+    "Corn_(maize)___Northern_Leaf_Blight": {
+      "class_id": 9,
       "crop": "Corn",
       "status": "Diseased",
       "train_count": 689,
@@ -53,8 +99,8 @@
       "test_count": 149,
       "total": 985
     },
-    "Corn___healthy": {
-      "class_id": 5,
+    "Corn_(maize)___healthy": {
+      "class_id": 10,
       "crop": "Corn",
       "status": "Healthy",
       "train_count": 813,
@@ -62,8 +108,89 @@
       "test_count": 175,
       "total": 1162
     },
+    "Grape___Black_rot": {
+      "class_id": 11,
+      "crop": "Grape",
+      "status": "Diseased",
+      "train_count": 826,
+      "val_count": 177,
+      "test_count": 177,
+      "total": 1180
+    },
+    "Grape___Esca_(Black_Measles)": {
+      "class_id": 12,
+      "crop": "Grape",
+      "status": "Diseased",
+      "train_count": 968,
+      "val_count": 207,
+      "test_count": 208,
+      "total": 1383
+    },
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+      "class_id": 13,
+      "crop": "Grape",
+      "status": "Diseased",
+      "train_count": 753,
+      "val_count": 161,
+      "test_count": 162,
+      "total": 1076
+    },
+    "Grape___healthy": {
+      "class_id": 14,
+      "crop": "Grape",
+      "status": "Healthy",
+      "train_count": 296,
+      "val_count": 63,
+      "test_count": 64,
+      "total": 423
+    },
+    "Orange___Haunglongbing_(Citrus_greening)": {
+      "class_id": 15,
+      "crop": "Orange",
+      "status": "Diseased",
+      "train_count": 3854,
+      "val_count": 826,
+      "test_count": 827,
+      "total": 5507
+    },
+    "Peach___Bacterial_spot": {
+      "class_id": 16,
+      "crop": "Peach",
+      "status": "Diseased",
+      "train_count": 1607,
+      "val_count": 344,
+      "test_count": 346,
+      "total": 2297
+    },
+    "Peach___healthy": {
+      "class_id": 17,
+      "crop": "Peach",
+      "status": "Healthy",
+      "train_count": 251,
+      "val_count": 54,
+      "test_count": 55,
+      "total": 360
+    },
+    "Pepper,_bell___Bacterial_spot": {
+      "class_id": 18,
+      "crop": "Pepper, bell",
+      "status": "Diseased",
+      "train_count": 697,
+      "val_count": 149,
+      "test_count": 151,
+      "total": 997
+    },
+    "Pepper,_bell___healthy": {
+      "class_id": 19,
+      "crop": "Pepper, bell",
+      "status": "Healthy",
+      "train_count": 1034,
+      "val_count": 221,
+      "test_count": 223,
+      "total": 1478
+    },
     "Potato___Early_blight": {
-      "class_id": 6,
+      "class_id": 20,
       "crop": "Potato",
       "status": "Diseased",
       "train_count": 700,
@@ -72,7 +199,7 @@
       "total": 1000
     },
     "Potato___Late_blight": {
-      "class_id": 7,
+      "class_id": 21,
       "crop": "Potato",
       "status": "Diseased",
       "train_count": 700,
@@ -81,7 +208,7 @@
       "total": 1000
     },
     "Potato___healthy": {
-      "class_id": 8,
+      "class_id": 22,
       "crop": "Potato",
       "status": "Healthy",
       "train_count": 106,
@@ -89,8 +216,53 @@
       "test_count": 24,
       "total": 152
     },
+    "Raspberry___healthy": {
+      "class_id": 23,
+      "crop": "Raspberry",
+      "status": "Healthy",
+      "train_count": 259,
+      "val_count": 55,
+      "test_count": 57,
+      "total": 371
+    },
+    "Soybean___healthy": {
+      "class_id": 24,
+      "crop": "Soybean",
+      "status": "Healthy",
+      "train_count": 3563,
+      "val_count": 763,
+      "test_count": 764,
+      "total": 5090
+    },
+    "Squash___Powdery_mildew": {
+      "class_id": 25,
+      "crop": "Squash",
+      "status": "Diseased",
+      "train_count": 1284,
+      "val_count": 275,
+      "test_count": 276,
+      "total": 1835
+    },
+    "Strawberry___Leaf_scorch": {
+      "class_id": 26,
+      "crop": "Strawberry",
+      "status": "Diseased",
+      "train_count": 776,
+      "val_count": 166,
+      "test_count": 167,
+      "total": 1109
+    },
+    "Strawberry___healthy": {
+      "class_id": 27,
+      "crop": "Strawberry",
+      "status": "Healthy",
+      "train_count": 319,
+      "val_count": 68,
+      "test_count": 69,
+      "total": 456
+    },
     "Tomato___Bacterial_spot": {
-      "class_id": 9,
+      "class_id": 28,
       "crop": "Tomato",
       "status": "Diseased",
       "train_count": 1488,
@@ -99,7 +271,7 @@
       "total": 2127
     },
     "Tomato___Early_blight": {
-      "class_id": 10,
+      "class_id": 29,
       "crop": "Tomato",
       "status": "Diseased",
       "train_count": 700,
@@ -108,7 +280,7 @@
       "total": 1000
     },
     "Tomato___Late_blight": {
-      "class_id": 11,
+      "class_id": 30,
       "crop": "Tomato",
       "status": "Diseased",
       "train_count": 1336,
@@ -116,14 +288,154 @@
       "test_count": 287,
       "total": 1909
     },
+    "Tomato___Leaf_Mold": {
+      "class_id": 31,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 666,
+      "val_count": 142,
+      "test_count": 144,
+      "total": 952
+    },
+    "Tomato___Septoria_leaf_spot": {
+      "class_id": 32,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 1239,
+      "val_count": 265,
+      "test_count": 267,
+      "total": 1771
+    },
+    "Tomato___Spider_mites Two-spotted_spider_mite": {
+      "class_id": 33,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 1173,
+      "val_count": 251,
+      "test_count": 252,
+      "total": 1676
+    },
+    "Tomato___Target_Spot": {
+      "class_id": 34,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 982,
+      "val_count": 210,
+      "test_count": 212,
+      "total": 1404
+    },
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+      "class_id": 35,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 3749,
+      "val_count": 803,
+      "test_count": 805,
+      "total": 5357
+    },
+    "Tomato___Tomato_mosaic_virus": {
+      "class_id": 36,
+      "crop": "Tomato",
+      "status": "Diseased",
+      "train_count": 261,
+      "val_count": 55,
+      "test_count": 57,
+      "total": 373
+    },
     "Tomato___healthy": {
-      "class_id": 12,
+      "class_id": 37,
       "crop": "Tomato",
       "status": "Healthy",
       "train_count": 1113,
       "val_count": 238,
       "test_count": 240,
       "total": 1591
+    }
+  },
+  "crop_breakdown": {
+    "Apple": {
+      "train_count": 2218,
+      "val_count": 474,
+      "test_count": 479,
+      "total": 3171
+    },
+    "Blueberry": {
+      "train_count": 1051,
+      "val_count": 225,
+      "test_count": 226,
+      "total": 1502
+    },
+    "Cherry": {
+      "train_count": 1333,
+      "val_count": 285,
+      "test_count": 288,
+      "total": 1906
+    },
+    "Corn": {
+      "train_count": 2695,
+      "val_count": 575,
+      "test_count": 582,
+      "total": 3852
+    },
+    "Grape": {
+      "train_count": 2843,
+      "val_count": 608,
+      "test_count": 611,
+      "total": 4062
+    },
+    "Orange": {
+      "train_count": 3854,
+      "val_count": 826,
+      "test_count": 827,
+      "total": 5507
+    },
+    "Peach": {
+      "train_count": 1858,
+      "val_count": 398,
+      "test_count": 401,
+      "total": 2657
+    },
+    "Pepper, bell": {
+      "train_count": 1731,
+      "val_count": 370,
+      "test_count": 374,
+      "total": 2475
+    },
+    "Potato": {
+      "train_count": 1506,
+      "val_count": 322,
+      "test_count": 324,
+      "total": 2152
+    },
+    "Raspberry": {
+      "train_count": 259,
+      "val_count": 55,
+      "test_count": 57,
+      "total": 371
+    },
+    "Soybean": {
+      "train_count": 3563,
+      "val_count": 763,
+      "test_count": 764,
+      "total": 5090
+    },
+    "Squash": {
+      "train_count": 1284,
+      "val_count": 275,
+      "test_count": 276,
+      "total": 1835
+    },
+    "Strawberry": {
+      "train_count": 1095,
+      "val_count": 234,
+      "test_count": 236,
+      "total": 1565
+    },
+    "Tomato": {
+      "train_count": 12707,
+      "val_count": 2719,
+      "test_count": 2734,
+      "total": 18160
     }
   }
 }

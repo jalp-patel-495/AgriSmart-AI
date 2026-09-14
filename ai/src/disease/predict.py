@@ -144,11 +144,13 @@ def load_disease_model_artifacts(
     # Resolve model checkpoint
     candidates_models = [
         Path(model_path) if model_path else None,
-        ai_root / "models" / "disease" / "best_model_robust.pt",
-        root_dir / "models" / "disease" / "best_model_robust.pt",
-        ai_root / "models" / "disease" / "best_model.pt",
-        root_dir / "ai" / "models" / "disease" / "best_model.pt",
+        root_dir / "models" / "disease" / "plantvillage_model.pt",
         root_dir / "models" / "disease" / "best_model.pt",
+        ai_root / "models" / "disease" / "plantvillage_model.pt",
+        ai_root / "models" / "disease" / "best_model.pt",
+        root_dir / "models" / "disease" / "best_model_robust.pt",
+        ai_root / "models" / "disease" / "best_model_robust.pt",
+        root_dir / "ai" / "models" / "disease" / "best_model.pt",
         root_dir / "ai_model" / "models" / "production_model.pth",
         root_dir / "ai_model" / "models" / "best_model.pth"
     ]

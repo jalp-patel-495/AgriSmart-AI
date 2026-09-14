@@ -1,12 +1,75 @@
-"""
-AgriSmart AI – Image Preprocessing & Augmentation Pipelines
-Provides reproducible torchvision transformation pipelines for training and validation.
-"""
-from typing import Tuple
+import albumentations as A
+import cv2
+import numpy as np
+import torch
 import torchvision.transforms as T
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
+
+
+class AlbumentationsTransformWrapper:
+    """Wraps an Albumentations Compose pipeline into a PyTorch-compatible callable."""
+    def __init__(self, transform: A.Compose):
+        self.transform = transform
+
+    def __call__(self, img) -> torch.Tensor:
+        if not isinstance(img, np.ndarray):
+            img = np.array(img)
+        augmented = self.transform(image=img)
+        res = augmented["image"]
+        if isinstance(res, np.ndarray):
+            tensor = torch.from_numpy(res.transpose(2, 0, 1)).float()
+        else:
+            tensor = res
+        return tensor
+
+
+def get_albumentations_train_transforms(image_size: int = 224) -> AlbumentationsTransformWrapper:
+    """
+    Returns training transform pipeline using Albumentations:
+    - HorizontalFlip (p=0.5)
+    - RandomRotate90 (p=0.5)
+    - ShiftScaleRotate (p=0.5, translation, scale, rotation)
+    - RandomBrightnessContrast (p=0.5, gentle brightness & contrast jitter)
+    - Resize (image_size x image_size)
+    - Normalize with ImageNet mean and std
+    """
+    pipeline = A.Compose([
+        A.Resize(image_size, image_size, interpolation=cv2.INTER_AREA),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.3),
+        A.RandomRotate90(p=0.5),
+        A.Affine(
+            scale=(0.9, 1.1),
+            translate_percent=(-0.06, 0.06),
+            rotate=(-25, 25),
+            border_mode=cv2.BORDER_REFLECT,
+            p=0.5
+        ),
+        A.RandomBrightnessContrast(
+            brightness_limit=0.15,
+            contrast_limit=0.15,
+            p=0.5
+        ),
+        A.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+    ])
+    return AlbumentationsTransformWrapper(pipeline)
+
+
+def get_albumentations_val_transforms(image_size: int = 224) -> AlbumentationsTransformWrapper:
+    """
+    Returns validation/test transform pipeline using Albumentations:
+    - Resize (image_size x image_size)
+    - Normalize with ImageNet mean and std
+    - Zero random augmentations
+    """
+    pipeline = A.Compose([
+        A.Resize(image_size, image_size, interpolation=cv2.INTER_AREA),
+        A.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+    ])
+    return AlbumentationsTransformWrapper(pipeline)
+
 
 
 def get_train_transforms(image_size: int = 224) -> T.Compose:

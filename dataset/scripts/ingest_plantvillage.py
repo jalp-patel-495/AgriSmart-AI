@@ -27,52 +27,51 @@ DEFAULT_STAGING_DIR = DATASET_DIR / ".plantvillage_cache"
 
 REPO_URL = "https://github.com/spMohanty/PlantVillage-Dataset.git"
 
-# Core 13 canonical classes mapping: PlantVillage folder name -> AgriSmart AI folder name
-CORE_CLASS_MAPPING: Dict[str, str] = {
-    "Apple___Apple_scab": "Apple___Apple_scab",
-    "Apple___Black_rot": "Apple___Black_rot",
-    "Apple___healthy": "Apple___healthy",
-    "Corn_(maize)___Common_rust_": "Corn___Common_rust",
-    "Corn_(maize)___Northern_Leaf_Blight": "Corn___Northern_Leaf_Blight",
-    "Corn_(maize)___healthy": "Corn___healthy",
-    "Potato___Early_blight": "Potato___Early_blight",
-    "Potato___Late_blight": "Potato___Late_blight",
-    "Potato___healthy": "Potato___healthy",
-    "Tomato___Bacterial_spot": "Tomato___Bacterial_spot",
-    "Tomato___Early_blight": "Tomato___Early_blight",
-    "Tomato___Late_blight": "Tomato___Late_blight",
-    "Tomato___healthy": "Tomato___healthy",
-}
+# 38 Canonical PlantVillage original class folder names (spMohanty/PlantVillage-Dataset)
+ORIGINAL_PLANTVILLAGE_38_CLASSES: list = [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___Cedar_apple_rust",
+    "Apple___healthy",
+    "Blueberry___healthy",
+    "Cherry_(including_sour)___Powdery_mildew",
+    "Cherry_(including_sour)___healthy",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Northern_Leaf_Blight",
+    "Corn_(maize)___healthy",
+    "Grape___Black_rot",
+    "Grape___Esca_(Black_Measles)",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+    "Grape___healthy",
+    "Orange___Haunglongbing_(Citrus_greening)",
+    "Peach___Bacterial_spot",
+    "Peach___healthy",
+    "Pepper,_bell___Bacterial_spot",
+    "Pepper,_bell___healthy",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Raspberry___healthy",
+    "Soybean___healthy",
+    "Squash___Powdery_mildew",
+    "Strawberry___Leaf_scorch",
+    "Strawberry___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___Spider_mites Two-spotted_spider_mite",
+    "Tomato___Target_Spot",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "Tomato___Tomato_mosaic_virus",
+    "Tomato___healthy"
+]
 
-# Full 38 classes mapping
-ALL_CLASS_MAPPING: Dict[str, str] = {
-    **CORE_CLASS_MAPPING,
-    "Apple___Cedar_apple_rust": "Apple___Cedar_apple_rust",
-    "Blueberry___healthy": "Blueberry___healthy",
-    "Cherry_(including_sour)___Powdery_mildew": "Cherry___Powdery_mildew",
-    "Cherry_(including_sour)___healthy": "Cherry___healthy",
-    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Corn___Cercospora_leaf_spot",
-    "Grape___Black_rot": "Grape___Black_rot",
-    "Grape___Esca_(Black_Measles)": "Grape___Esca_Black_Measles",
-    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Grape___Leaf_blight",
-    "Grape___healthy": "Grape___healthy",
-    "Orange___Haunglongbing_(Citrus_greening)": "Orange___Citrus_greening",
-    "Peach___Bacterial_spot": "Peach___Bacterial_spot",
-    "Peach___healthy": "Peach___healthy",
-    "Pepper,_bell___Bacterial_spot": "Pepper_bell___Bacterial_spot",
-    "Pepper,_bell___healthy": "Pepper_bell___healthy",
-    "Raspberry___healthy": "Raspberry___healthy",
-    "Soybean___healthy": "Soybean___healthy",
-    "Squash___Powdery_mildew": "Squash___Powdery_mildew",
-    "Strawberry___Leaf_scorch": "Strawberry___Leaf_scorch",
-    "Strawberry___healthy": "Strawberry___healthy",
-    "Tomato___Leaf_Mold": "Tomato___Leaf_Mold",
-    "Tomato___Septoria_leaf_spot": "Tomato___Septoria_leaf_spot",
-    "Tomato___Spider_mites Two-spotted_spider_mite": "Tomato___Spider_mites",
-    "Tomato___Target_Spot": "Tomato___Target_Spot",
-    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Tomato___Yellow_Leaf_Curl_Virus",
-    "Tomato___Tomato_mosaic_virus": "Tomato___Mosaic_virus",
-}
+# Preserve exact original PlantVillage folder structure without renaming
+ALL_CLASS_MAPPING: Dict[str, str] = {c: c for c in ORIGINAL_PLANTVILLAGE_38_CLASSES}
+
 
 
 def run_cmd(cmd: list, cwd: Path = None) -> None:
@@ -172,9 +171,9 @@ def main():
     parser = argparse.ArgumentParser(description="Ingest spMohanty/PlantVillage-Dataset into AgriSmart AI")
     parser.add_argument(
         "--mode",
-        choices=["core", "all"],
-        default="core",
-        help="Choose 'core' for the 13 canonical AgriSmart AI classes, or 'all' for all 38 classes."
+        choices=["all", "core"],
+        default="all",
+        help="Choose 'all' for all 38 PlantVillage classes, or 'core' for 13 classes."
     )
     parser.add_argument(
         "--staging-dir",

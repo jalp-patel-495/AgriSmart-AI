@@ -16,14 +16,21 @@ import torch.nn.functional as F
 from ai.src.disease.ood_detector import evaluate_ood_status
 
 
-# The 7 canonical supported crop staples
+# The 14 canonical PlantVillage supported crops
 SUPPORTED_CROPS = [
     "Apple",
-    "Bell Pepper",
+    "Blueberry",
+    "Cherry",
     "Corn",
     "Grape",
+    "Orange",
     "Peach",
+    "Bell Pepper",
     "Potato",
+    "Raspberry",
+    "Soybean",
+    "Squash",
+    "Strawberry",
     "Tomato"
 ]
 
@@ -41,16 +48,30 @@ def build_crop_classes_mapping(class_names: List[str]) -> Tuple[Dict[str, List[i
         matched_crop = None
         if "apple" in c_low:
             matched_crop = "Apple"
-        elif "bell_pepper" in c_low or "pepper" in c_low:
-            matched_crop = "Bell Pepper"
+        elif "blueberry" in c_low:
+            matched_crop = "Blueberry"
+        elif "cherry" in c_low:
+            matched_crop = "Cherry"
         elif "corn" in c_low or "maize" in c_low:
             matched_crop = "Corn"
         elif "grape" in c_low:
             matched_crop = "Grape"
+        elif "orange" in c_low:
+            matched_crop = "Orange"
         elif "peach" in c_low:
             matched_crop = "Peach"
+        elif "bell_pepper" in c_low or "pepper" in c_low:
+            matched_crop = "Bell Pepper"
         elif "potato" in c_low:
             matched_crop = "Potato"
+        elif "raspberry" in c_low:
+            matched_crop = "Raspberry"
+        elif "soybean" in c_low:
+            matched_crop = "Soybean"
+        elif "squash" in c_low:
+            matched_crop = "Squash"
+        elif "strawberry" in c_low:
+            matched_crop = "Strawberry"
         elif "tomato" in c_low:
             matched_crop = "Tomato"
 

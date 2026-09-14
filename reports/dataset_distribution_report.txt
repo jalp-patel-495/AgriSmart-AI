@@ -1,0 +1,74 @@
+===========================================================================
+AgriSmart AI – PlantVillage Full Dataset Validation & Distribution Report
+===========================================================================
+Total Valid Images       : 54305
+Number of Crops          : 14
+Number of Classes        : 38
+Train Partition (70%)    : 37997 (69.97%)
+Validation Partition (15%): 8129 (14.97%)
+Test Partition (15%)     : 8179 (15.06%)
+===========================================================================
+
+DISTRIBUTION PER CROP:
+-------------------------------------------------------
+Crop                      Train    Val      Test     Total   
+-------------------------------------------------------
+Apple                     2218     474      479      3171    
+Blueberry                 1051     225      226      1502    
+Cherry                    1333     285      288      1906    
+Corn                      2695     575      582      3852    
+Grape                     2843     608      611      4062    
+Orange                    3854     826      827      5507    
+Peach                     1858     398      401      2657    
+Pepper, bell              1731     370      374      2475    
+Potato                    1506     322      324      2152    
+Raspberry                 259      55       57       371     
+Soybean                   3563     763      764      5090    
+Squash                    1284     275      276      1835    
+Strawberry                1095     234      236      1565    
+Tomato                    12707    2719     2734     18160   
+-------------------------------------------------------
+
+DISTRIBUTION PER CLASS (38 CANONICAL CLASSES):
+---------------------------------------------------------------------------
+Class Name                                         Train   Val     Test    Total  
+---------------------------------------------------------------------------
+Apple___Apple_scab                                 441     94      95      630    
+Apple___Black_rot                                  434     93      94      621    
+Apple___Cedar_apple_rust                           192     41      42      275    
+Apple___healthy                                    1151    246     248     1645   
+Blueberry___healthy                                1051    225     226     1502   
+Cherry_(including_sour)___Powdery_mildew           736     157     159     1052   
+Cherry_(including_sour)___healthy                  597     128     129     854    
+Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot 359     76      78      513    
+Corn_(maize)___Common_rust_                        834     178     180     1192   
+Corn_(maize)___Northern_Leaf_Blight                689     147     149     985    
+Corn_(maize)___healthy                             813     174     175     1162   
+Grape___Black_rot                                  826     177     177     1180   
+Grape___Esca_(Black_Measles)                       968     207     208     1383   
+Grape___Leaf_blight_(Isariopsis_Leaf_Spot)         753     161     162     1076   
+Grape___healthy                                    296     63      64      423    
+Orange___Haunglongbing_(Citrus_greening)           3854    826     827     5507   
+Peach___Bacterial_spot                             1607    344     346     2297   
+Peach___healthy                                    251     54      55      360    
+Pepper,_bell___Bacterial_spot                      697     149     151     997    
+Pepper,_bell___healthy                             1034    221     223     1478   
+Potato___Early_blight                              700     150     150     1000   
+Potato___Late_blight                               700     150     150     1000   
+Potato___healthy                                   106     22      24      152    
+Raspberry___healthy                                259     55      57      371    
+Soybean___healthy                                  3563    763     764     5090   
+Squash___Powdery_mildew                            1284    275     276     1835   
+Strawberry___Leaf_scorch                           776     166     167     1109   
+Strawberry___healthy                               319     68      69      456    
+Tomato___Bacterial_spot                            1488    319     320     2127   
+Tomato___Early_blight                              700     150     150     1000   
+Tomato___Late_blight                               1336    286     287     1909   
+Tomato___Leaf_Mold                                 666     142     144     952    
+Tomato___Septoria_leaf_spot                        1239    265     267     1771   
+Tomato___Spider_mites Two-spotted_spider_mite      1173    251     252     1676   
+Tomato___Target_Spot                               982     210     212     1404   
+Tomato___Tomato_Yellow_Leaf_Curl_Virus             3749    803     805     5357   
+Tomato___Tomato_mosaic_virus                       261     55      57      373    
+Tomato___healthy                                   1113    238     240     1591   
+===========================================================================

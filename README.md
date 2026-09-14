@@ -6,18 +6,25 @@ AgriSmart AI is an end-to-end intelligent agricultural diagnosis and advisory sy
 
 ## 🌾 System Architecture & Modules
 
-### 1. Core Module: Crop Disease Diagnostics
-- **Architecture**: EfficientNet-B0 transfer learning model trained on 21,749 verified agricultural leaf specimens (PlantVillage dataset, CC-BY-SA-3.0).
-- **Scope**: **19 classes across 7 staple crops**:
-  - **Apple** (Apple Scab, Black Rot, Healthy)
-  - **Bell Pepper** (Bacterial Spot, Healthy)
-  - **Corn** (Common Rust, Northern Leaf Blight, Healthy)
-  - **Grape** (Black Rot, Healthy)
-  - **Peach** (Bacterial Spot, Healthy)
-  - **Potato** (Early Blight, Late Blight, Healthy)
-  - **Tomato** (Bacterial Spot, Early Blight, Late Blight, Healthy)
-- **Performance**: **93.68% Validation Accuracy**, **0.9190 Validation Macro-F1**, 35.95 ms inference latency.
+### 1. Core Module: Crop Disease Diagnostics (PlantVillage 38-Class Pipeline)
+- **Architecture**: MobileNetV3 / EfficientNet transfer learning models trained on verified agricultural leaf specimens from the canonical **PlantVillage Dataset** ([spMohanty/PlantVillage-Dataset](https://github.com/spMohanty/PlantVillage-Dataset)).
+- **Scope**: **38 classes across all 14 crops**:
+  - **Apple**: Apple Scab, Black Rot, Cedar Apple Rust, Healthy
+  - **Blueberry**: Healthy
+  - **Cherry**: Powdery Mildew, Healthy
+  - **Corn (Maize)**: Cercospora Leaf Spot (Gray Leaf Spot), Common Rust, Northern Leaf Blight, Healthy
+  - **Grape**: Black Rot, Esca (Black Measles), Leaf Blight (Isariopsis Leaf Spot), Healthy
+  - **Orange**: Huanglongbing (Citrus Greening)
+  - **Peach**: Bacterial Spot, Healthy
+  - **Bell Pepper**: Bacterial Spot, Healthy
+  - **Potato**: Early Blight, Late Blight, Healthy
+  - **Raspberry**: Healthy
+  - **Soybean**: Healthy
+  - **Squash**: Powdery Mildew
+  - **Strawberry**: Leaf Scorch, Healthy
+  - **Tomato**: Bacterial Spot, Early Blight, Late Blight, Leaf Mold, Septoria Leaf Spot, Spider Mites (Two-Spotted Spider Mite), Target Spot, Tomato Mosaic Virus, Tomato Yellow Leaf Curl Virus, Healthy
 - **Safety Gate**: Strict **65% Confidence Threshold**. For predictions under 65%, the system prompts the farmer for a clearer leaf image in diffuse natural daylight and strictly suppresses unverified pathogen identification and chemical spray recommendations.
+
 
 ### 2. Bonus Module A: Crop Recommendation (22-Crop Production Model)
 - **Architecture**: Random Forest Classifier trained on 2,200 real district agro-climatic soil records.
@@ -159,7 +166,107 @@ npm run dev
 ```
 Access the application in your browser at `http://localhost:5173`.
 
-### 4. Running Automated Tests
+### 4. PlantVillage Full-Dataset Pipeline (Ingestion, Preprocessing, Training & Evaluation)
+
+The project natively integrates the complete canonical **PlantVillage Dataset** ([spMohanty/PlantVillage-Dataset](https://github.com/spMohanty/PlantVillage-Dataset)) covering **54,305 leaf images across 38 disease and healthy classes and all 14 crops**.
+
+#### A. Ingest Full PlantVillage Dataset (54,305 Images)
+Ingests the entire canonical dataset without artificial per-class caps:
+```bash
+# Ingest all 38 classes (full canonical dataset ~54k images)
+python dataset/scripts/ingest_plantvillage.py --mode all
+```
+
+#### B. Preprocess, Augment & Create Stratified Splits
+Validates image integrity across 16 threads using OpenCV (0 corrupted), standardizes to 224×224 RGB, applies Albumentations augmentations (flips, rotations, affine scaling, noise) dynamically for training, and exports a leak-free 70% Train (37,997) / 15% Val (8,129) / 15% Test (8,179) split:
+```bash
+python dataset/scripts/dataset_prep.py --img-size 224
+```
+Manifests and reports generated:
+- `dataset/splits/train.csv` (37,997 samples)
+- `dataset/splits/val.csv` (8,129 samples)
+- `dataset/splits/test.csv` (8,179 samples)
+- `dataset/splits/summary.json`
+- `reports/dataset_distribution_report.txt`
+
+#### C. Train Crop Disease Classifier (Two-Stage Transfer Learning)
+Trains a transfer-learning model (**MobileNetV3-Large** / **EfficientNet-B0**) with ImageNet pretrained weights using a 2-stage fine-tuning schedule:
+- **Stage 1 (Head Warmup)**: Frozen backbone, AdamW optimizer (`lr=1e-3`), Cosine Annealing scheduler.
+- **Stage 2 (Fine-tuning)**: Upper backbone unfreezing, lower learning rate (`lr=1e-4`), Cosine Annealing scheduler.
+- **Class Imbalance**: Inverse-frequency weighted cross-entropy loss to counter the 36:1 imbalance between largest (`Orange Huanglongbing`: 5,507) and smallest (`Potato healthy`: 152) classes.
+- **Hardware Acceleration**: Automatic CUDA GPU detection with mixed precision (AMP fp16) on NVIDIA RTX GPUs, and multi-threaded CPU fallback.
+
+```bash
+# Full dataset training (configurable epochs and batch size)
+python scripts/train_plantvillage.py \
+  --architecture mobilenet_v3_large \
+  --epochs-stage1 8 \
+  --epochs-stage2 20 \
+  --batch-size 32
+```
+Checkpoints are saved automatically based on peak validation Macro-F1:
+- `models/disease/best_model.pt`
+- `models/disease/plantvillage_model.pt`
+- `models/disease/class_names.json`
+- `models/disease/model_config.json`
+
+#### D. Evaluate Model & Benchmark on Unseen Test Partition
+Evaluates the 8,179 unseen test samples, calculates Accuracy, Macro & Weighted Precision, Recall, F1-scores, latency benchmark (ms/image), and exports a high-resolution 38×38 confusion matrix heatmap:
+```bash
+python scripts/evaluate_plantvillage.py --checkpoint models/disease/best_model.pt
+```
+Outputs are saved to:
+- `reports/plantvillage_evaluation_report.json`
+- `reports/plantvillage_confusion_matrix.png`
+- `reports/plantvillage_classification_report.txt`
+
+#### E. Hardware & Training Time Specifications
+- **GPU (CUDA with Mixed Precision)**: ~1.5 minutes per epoch on NVIDIA RTX 3050 6GB (~35–45 minutes total for full two-stage training).
+- **CPU (Multi-threaded)**: ~22 minutes per epoch on 16-core CPU.
+- **Inference Latency**: ~9.4 ms per image on local CPU.
+- **Total Parameters**: 5.4M (MobileNetV3-Large).
+
+#### E. Leaf Prediction API Endpoint
+- **Method & Route**: `POST /api/v1/predict`
+- **Request**: Multipart Form-Data with file field `file` (JPEG/PNG/WebP image).
+- **Example cURL**:
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/predict" \
+     -F "file=@sample_leaf.jpg"
+```
+- **Response Format**:
+```json
+{
+  "success": true,
+  "message": "Crop leaf image analyzed successfully.",
+  "crop": "Apple",
+  "disease": "Apple Scab",
+  "confidence": "94%",
+  "confidence_score": 0.9412,
+  "status": "Diseased",
+  "pathogen": "Venturia inaequalis (Fungus)",
+  "symptoms": "Olive-green to dark brown velvety lesions on leaf surfaces...",
+  "precautions": [
+    "Rake and destroy fallen leaves in autumn",
+    "Prune tree canopies to improve airflow and solar penetration"
+  ],
+  "treatment": "Apply protective copper or sulfur fungicides at green-tip stage.",
+  "top_predictions": [
+    {
+      "class_id": 0,
+      "disease": "Apple Scab",
+      "crop": "Apple",
+      "confidence": "94%",
+      "confidence_score": 0.9412
+    }
+  ],
+  "processing_time_ms": 12.4
+}
+```
+
+---
+
+### 5. Running Automated Tests
 ```bash
 # Run complete test suite (65 comprehensive tests)
 py -3.13 -m unittest tests/test_farmer_stakeholder_ecosystem.py tests/test_stakeholder_rbac.py tests/test_rbac.py
