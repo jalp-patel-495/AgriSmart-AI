@@ -1,0 +1,78 @@
+{
+  "dataset": "Plant Pathology 2021 - FGVC8",
+  "crop": "Apple",
+  "scientific_name": "Malus domestica",
+  "is_multilabel": true,
+  "canonical_classes": [
+    {
+      "id": "healthy",
+      "name": "Healthy",
+      "is_disease": false,
+      "pathogen": "None",
+      "symptoms": "Uniform green foliage without fungal lesions, necrotic spots, or powdery growth.",
+      "management": "Maintain standard cultural practices, balanced nutrition, and canopy aeration."
+    },
+    {
+      "id": "scab",
+      "name": "Apple Scab",
+      "is_disease": true,
+      "pathogen": "Venturia inaequalis (fungus)",
+      "symptoms": "Olive-green to dark brown or black velvety spots on leaf surface, leaf deformation and early drop.",
+      "management": "Apply protectant fungicides (Captan, Mancozeb) at green tip; prune to improve air circulation; rake and destroy fallen leaves."
+    },
+    {
+      "id": "frog_eye_leaf_spot",
+      "name": "Frog Eye Leaf Spot",
+      "is_disease": true,
+      "pathogen": "Botryosphaeria obtusa (fungus)",
+      "symptoms": "Small purple spots that enlarge into circular lesions with light brown/tan centers and prominent dark purple-brown margins resembling a frog's eye.",
+      "management": "Prune out dead wood, twigs, and mummified fruits which harbor overwintering inoculum; apply protective fungicides in early season."
+    },
+    {
+      "id": "rust",
+      "name": "Cedar Apple Rust",
+      "is_disease": true,
+      "pathogen": "Gymnosporangium juniperi-virginianae (fungus)",
+      "symptoms": "Bright yellow-orange or reddish circular spots on upper leaf surface, with small tube-like aecia forming on leaf undersides later in season.",
+      "management": "Eradicate nearby red cedar and juniper hosts within 1-2 miles; apply sterol inhibitor fungicides during pink bud to petal fall."
+    },
+    {
+      "id": "powdery_mildew",
+      "name": "Powdery Mildew",
+      "is_disease": true,
+      "pathogen": "Podosphaera leucotricha (fungus)",
+      "symptoms": "White to light gray powdery fungal mycelial patches on young leaves, shoots, and blossoms; leaf curling and stunted shoot growth.",
+      "management": "Prune infected shoots (silver tips) during dormant season; apply sulfur or myclobutanil fungicides at tight cluster stage."
+    },
+    {
+      "id": "complex",
+      "name": "Complex Foliar Disease",
+      "is_disease": true,
+      "pathogen": "Multiple concurrent fungal pathogens or secondary opportunistic infections",
+      "symptoms": "Overlapping necrotic lesions, multiple symptom manifestations on the same leaf surface, combined chlorosis and necrosis.",
+      "management": "Broad-spectrum integrated pest and disease management; laboratory leaf tissue culture if pathogen identification is ambiguous."
+    }
+  ],
+  "observed_combinations": [
+    "scab",
+    "frog_eye_leaf_spot",
+    "rust",
+    "powdery_mildew",
+    "complex",
+    "healthy",
+    "scab frog_eye_leaf_spot",
+    "scab frog_eye_leaf_spot complex",
+    "frog_eye_leaf_spot complex",
+    "rust frog_eye_leaf_spot",
+    "rust complex",
+    "powdery_mildew complex"
+  ],
+  "label_mapping_to_universal": {
+    "scab": "Apple___Apple_scab",
+    "frog_eye_leaf_spot": "Apple___Black_rot",
+    "rust": "Apple___Cedar_apple_rust",
+    "healthy": "Apple___healthy",
+    "powdery_mildew": "Apple___Powdery_mildew",
+    "complex": "Apple___Complex"
+  }
+}
