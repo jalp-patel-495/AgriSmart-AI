@@ -16,8 +16,43 @@ from backend.app.schemas.weather import (
     FarmLocationPreset,
 )
 
-# Major Agricultural Farm Hubs for quick selection
+# Major Agricultural Farm Hubs for quick selection (All Indian States & Global Basins)
 FARM_PRESETS: List[FarmLocationPreset] = [
+    # --- GUJARAT ---
+    FarmLocationPreset(
+        name="Anand Agronomy Region",
+        region="Gujarat",
+        country="India",
+        latitude=22.5645,
+        longitude=72.9289,
+        primary_crops=["Tomato", "Potato", "Tobacco", "Cotton"]
+    ),
+    FarmLocationPreset(
+        name="Saurashtra Groundnut Belt (Junagadh)",
+        region="Gujarat",
+        country="India",
+        latitude=21.5222,
+        longitude=70.4579,
+        primary_crops=["Groundnut", "Cotton", "Sesame", "Cumin"]
+    ),
+    FarmLocationPreset(
+        name="North Gujarat Spices Basin (Mehsana)",
+        region="Gujarat",
+        country="India",
+        latitude=23.5880,
+        longitude=72.3693,
+        primary_crops=["Mustard", "Cumin", "Castor", "Fennel"]
+    ),
+    FarmLocationPreset(
+        name="South Gujarat Sugarcane Corridor (Navsari)",
+        region="Gujarat",
+        country="India",
+        latitude=20.9467,
+        longitude=72.9520,
+        primary_crops=["Sugarcane", "Mango", "Banana", "Rice"]
+    ),
+
+    # --- MAHARASHTRA ---
     FarmLocationPreset(
         name="Nashik Agricultural Belt",
         region="Maharashtra",
@@ -27,21 +62,373 @@ FARM_PRESETS: List[FarmLocationPreset] = [
         primary_crops=["Tomato", "Grapes", "Onion"]
     ),
     FarmLocationPreset(
+        name="Vidarbha Cotton & Soybean Basin (Nagpur)",
+        region="Maharashtra",
+        country="India",
+        latitude=21.1458,
+        longitude=79.0882,
+        primary_crops=["Cotton", "Soybean", "Orange", "Pigeon Pea"]
+    ),
+    FarmLocationPreset(
+        name="Western Maharashtra Sugarcane Belt (Kolhapur)",
+        region="Maharashtra",
+        country="India",
+        latitude=16.7050,
+        longitude=74.2433,
+        primary_crops=["Sugarcane", "Rice", "Soybean", "Turmeric"]
+    ),
+    FarmLocationPreset(
+        name="Marathwada Pulse Basin (Latur)",
+        region="Maharashtra",
+        country="India",
+        latitude=18.4088,
+        longitude=76.5604,
+        primary_crops=["Soybean", "Pigeon Pea", "Gram", "Jowar"]
+    ),
+
+    # --- PUNJAB ---
+    FarmLocationPreset(
         name="Ludhiana Farm Basin",
         region="Punjab",
         country="India",
         latitude=30.9010,
         longitude=75.8573,
-        primary_crops=["Corn", "Wheat", "Potato"]
+        primary_crops=["Corn", "Wheat", "Potato", "Rice"]
     ),
     FarmLocationPreset(
-        name="Anand Agronomy Region",
-        region="Gujarat",
+        name="Malwa Cotton Belt (Bathinda)",
+        region="Punjab",
         country="India",
-        latitude=22.5645,
-        longitude=72.9289,
-        primary_crops=["Tomato", "Potato", "Tobacco"]
+        latitude=30.2110,
+        longitude=74.9455,
+        primary_crops=["Cotton", "Wheat", "Mustard", "Guar"]
     ),
+
+    # --- HARYANA ---
+    FarmLocationPreset(
+        name="Karnal Basmati Plain",
+        region="Haryana",
+        country="India",
+        latitude=29.6857,
+        longitude=76.9905,
+        primary_crops=["Rice", "Wheat", "Sugarcane", "Mustard"]
+    ),
+    FarmLocationPreset(
+        name="Hisar Agricultural Basin",
+        region="Haryana",
+        country="India",
+        latitude=29.1492,
+        longitude=75.7217,
+        primary_crops=["Cotton", "Mustard", "Wheat", "Gram"]
+    ),
+
+    # --- UTTAR PRADESH ---
+    FarmLocationPreset(
+        name="Western UP Sugarcane Belt (Meerut)",
+        region="Uttar Pradesh",
+        country="India",
+        latitude=28.9845,
+        longitude=77.7064,
+        primary_crops=["Sugarcane", "Potato", "Wheat", "Mustard"]
+    ),
+    FarmLocationPreset(
+        name="Eastern Gangetic Plains (Varanasi)",
+        region="Uttar Pradesh",
+        country="India",
+        latitude=25.3176,
+        longitude=82.9739,
+        primary_crops=["Rice", "Wheat", "Vegetables", "Gram"]
+    ),
+    FarmLocationPreset(
+        name="Central UP Multi-Crop Belt (Lucknow)",
+        region="Uttar Pradesh",
+        country="India",
+        latitude=26.8467,
+        longitude=80.9462,
+        primary_crops=["Mango", "Wheat", "Rice", "Pea"]
+    ),
+
+    # --- MADHYA PRADESH ---
+    FarmLocationPreset(
+        name="Malwa Soybean Plateau (Indore)",
+        region="Madhya Pradesh",
+        country="India",
+        latitude=22.7196,
+        longitude=75.8577,
+        primary_crops=["Soybean", "Wheat", "Gram", "Garlic"]
+    ),
+    FarmLocationPreset(
+        name="Narmada Valley Wheat Basin (Hoshangabad)",
+        region="Madhya Pradesh",
+        country="India",
+        latitude=22.7519,
+        longitude=77.7289,
+        primary_crops=["Wheat", "Soybean", "Gram", "Moong"]
+    ),
+
+    # --- RAJASTHAN ---
+    FarmLocationPreset(
+        name="Ganganagar Canal Basin",
+        region="Rajasthan",
+        country="India",
+        latitude=29.9038,
+        longitude=73.8772,
+        primary_crops=["Cotton", "Wheat", "Mustard", "Kinnow"]
+    ),
+    FarmLocationPreset(
+        name="Hadoti Coriander & Mustard Belt (Kota)",
+        region="Rajasthan",
+        country="India",
+        latitude=25.2138,
+        longitude=75.8648,
+        primary_crops=["Mustard", "Soybean", "Coriander", "Wheat"]
+    ),
+
+    # --- KARNATAKA ---
+    FarmLocationPreset(
+        name="Shimoga Rice & Arecanut Zone",
+        region="Karnataka",
+        country="India",
+        latitude=13.9299,
+        longitude=75.5681,
+        primary_crops=["Rice", "Arecanut", "Maize", "Banana"]
+    ),
+    FarmLocationPreset(
+        name="Bijapur Dryland Horticulture (Vijayapura)",
+        region="Karnataka",
+        country="India",
+        latitude=16.8302,
+        longitude=75.7100,
+        primary_crops=["Jowar", "Grapes", "Pomegranate", "Sunflower"]
+    ),
+
+    # --- ANDHRA PRADESH ---
+    FarmLocationPreset(
+        name="Krishna-Godavari Delta (Vijayawada)",
+        region="Andhra Pradesh",
+        country="India",
+        latitude=16.5062,
+        longitude=80.6480,
+        primary_crops=["Rice", "Sugarcane", "Mango", "Banana"]
+    ),
+    FarmLocationPreset(
+        name="Guntur Chilli & Tobacco Belt",
+        region="Andhra Pradesh",
+        country="India",
+        latitude=16.3067,
+        longitude=80.4365,
+        primary_crops=["Chilli", "Cotton", "Tobacco", "Turmeric"]
+    ),
+
+    # --- TELANGANA ---
+    FarmLocationPreset(
+        name="Nizamabad Turmeric & Rice Basin",
+        region="Telangana",
+        country="India",
+        latitude=18.6725,
+        longitude=78.0941,
+        primary_crops=["Turmeric", "Rice", "Maize", "Soybean"]
+    ),
+    FarmLocationPreset(
+        name="Warangal Cotton & Chilli Zone",
+        region="Telangana",
+        country="India",
+        latitude=17.9689,
+        longitude=79.5941,
+        primary_crops=["Cotton", "Chilli", "Rice", "Groundnut"]
+    ),
+
+    # --- TAMIL NADU ---
+    FarmLocationPreset(
+        name="Cauvery Delta Rice Bowl (Thanjavur)",
+        region="Tamil Nadu",
+        country="India",
+        latitude=10.7870,
+        longitude=79.1378,
+        primary_crops=["Rice", "Banana", "Sugarcane", "Coconut"]
+    ),
+    FarmLocationPreset(
+        name="Coimbatore Cash Crop & Coconut Belt",
+        region="Tamil Nadu",
+        country="India",
+        latitude=11.0168,
+        longitude=76.9558,
+        primary_crops=["Cotton", "Coconut", "Tomato", "Turmeric"]
+    ),
+
+    # --- KERALA ---
+    FarmLocationPreset(
+        name="Kuttanad Wetland Basin ('Rice Bowl of Kerala')",
+        region="Kerala",
+        country="India",
+        latitude=9.4214,
+        longitude=76.4389,
+        primary_crops=["Rice", "Coconut", "Banana", "Spices"]
+    ),
+    FarmLocationPreset(
+        name="Wayanad Spice Plateau",
+        region="Kerala",
+        country="India",
+        latitude=11.6854,
+        longitude=76.1320,
+        primary_crops=["Pepper", "Coffee", "Tea", "Cardamom"]
+    ),
+
+    # --- WEST BENGAL ---
+    FarmLocationPreset(
+        name="Burdwan Rice Basin ('Rice Bowl of Bengal')",
+        region="West Bengal",
+        country="India",
+        latitude=23.2324,
+        longitude=87.8615,
+        primary_crops=["Rice", "Potato", "Jute", "Mustard"]
+    ),
+    FarmLocationPreset(
+        name="Darjeeling High-Altitude Plantation",
+        region="West Bengal",
+        country="India",
+        latitude=27.0410,
+        longitude=88.2663,
+        primary_crops=["Tea", "Orange", "Ginger", "Cardamom"]
+    ),
+
+    # --- BIHAR ---
+    FarmLocationPreset(
+        name="Muzaffarpur Maize & Horticulture Basin",
+        region="Bihar",
+        country="India",
+        latitude=26.1209,
+        longitude=85.3647,
+        primary_crops=["Maize", "Rice", "Wheat", "Potato"]
+    ),
+    FarmLocationPreset(
+        name="Nalanda Vegetable & Pulse Basin",
+        region="Bihar",
+        country="India",
+        latitude=25.1357,
+        longitude=85.4578,
+        primary_crops=["Potato", "Vegetables", "Pulses", "Wheat"]
+    ),
+
+    # --- ODISHA ---
+    FarmLocationPreset(
+        name="Mahanadi Delta Rice Basin (Cuttack)",
+        region="Odisha",
+        country="India",
+        latitude=20.4625,
+        longitude=85.8828,
+        primary_crops=["Rice", "Jute", "Pulses", "Vegetables"]
+    ),
+    FarmLocationPreset(
+        name="Sambalpur Hirakud Irrigated Basin",
+        region="Odisha",
+        country="India",
+        latitude=21.4669,
+        longitude=83.9812,
+        primary_crops=["Rice", "Sugarcane", "Groundnut", "Mustard"]
+    ),
+
+    # --- ASSAM ---
+    FarmLocationPreset(
+        name="Brahmaputra Valley Tea & Paddy (Jorhat)",
+        region="Assam",
+        country="India",
+        latitude=26.7509,
+        longitude=94.2037,
+        primary_crops=["Tea", "Rice", "Jute", "Mustard"]
+    ),
+
+    # --- HIMACHAL PRADESH ---
+    FarmLocationPreset(
+        name="Kullu-Shimla Apple & Temperate Fruit Belt",
+        region="Himachal Pradesh",
+        country="India",
+        latitude=31.1048,
+        longitude=77.1734,
+        primary_crops=["Apple", "Peach", "Cherry", "Almond"]
+    ),
+
+    # --- JAMMU & KASHMIR ---
+    FarmLocationPreset(
+        name="Kashmir Valley Saffron & Apple Basin (Srinagar)",
+        region="Jammu & Kashmir",
+        country="India",
+        latitude=34.0837,
+        longitude=74.7973,
+        primary_crops=["Apple", "Walnut", "Cherry", "Saffron"]
+    ),
+
+    # --- UTTARAKHAND ---
+    FarmLocationPreset(
+        name="Terai Agri Basin (Pantnagar)",
+        region="Uttarakhand",
+        country="India",
+        latitude=29.0222,
+        longitude=79.4897,
+        primary_crops=["Wheat", "Rice", "Sugarcane", "Mustard"]
+    ),
+
+    # --- CHHATTISGARH ---
+    FarmLocationPreset(
+        name="Raipur Central Rice Basin",
+        region="Chhattisgarh",
+        country="India",
+        latitude=21.2514,
+        longitude=81.6296,
+        primary_crops=["Rice", "Gram", "Soybean", "Linseed"]
+    ),
+
+    # --- JHARKHAND ---
+    FarmLocationPreset(
+        name="Ranchi Plateau Agri Basin",
+        region="Jharkhand",
+        country="India",
+        latitude=23.3441,
+        longitude=85.3096,
+        primary_crops=["Tomato", "Vegetables", "Rice", "Pulses"]
+    ),
+
+    # --- GOA ---
+    FarmLocationPreset(
+        name="Goa Coastal Cashew & Coconut Zone",
+        region="Goa",
+        country="India",
+        latitude=15.2993,
+        longitude=74.1240,
+        primary_crops=["Cashew", "Coconut", "Rice", "Arecanut"]
+    ),
+
+    # --- SIKKIM ---
+    FarmLocationPreset(
+        name="Sikkim Organic Cardamom & Ginger Belt",
+        region="Sikkim",
+        country="India",
+        latitude=27.3389,
+        longitude=88.6065,
+        primary_crops=["Cardamom", "Ginger", "Orange", "Maize"]
+    ),
+
+    # --- TRIPURA ---
+    FarmLocationPreset(
+        name="Tripura Paddy & Rubber Basin (Agartala)",
+        region="Tripura",
+        country="India",
+        latitude=23.8315,
+        longitude=91.2868,
+        primary_crops=["Rice", "Rubber", "Pineapple", "Jute"]
+    ),
+
+    # --- LADAKH ---
+    FarmLocationPreset(
+        name="Ladakh Cold Desert Agronomy (Leh)",
+        region="Ladakh",
+        country="India",
+        latitude=34.1526,
+        longitude=77.5771,
+        primary_crops=["Barley", "Apricot", "Seabuckthorn", "Vegetables"]
+    ),
+
+    # --- INTERNATIONAL BASINS ---
     FarmLocationPreset(
         name="Salinas Valley ('Salad Bowl')",
         region="California",
@@ -65,6 +452,46 @@ FARM_PRESETS: List[FarmLocationPreset] = [
         latitude=46.6021,
         longitude=-120.5059,
         primary_crops=["Apple", "Corn", "Cherries"]
+    ),
+    FarmLocationPreset(
+        name="Iowa Corn & Grain Belt (Des Moines)",
+        region="Iowa",
+        country="USA",
+        latitude=41.5868,
+        longitude=-93.6250,
+        primary_crops=["Corn", "Soybean", "Wheat"]
+    ),
+    FarmLocationPreset(
+        name="Pampas Grain Basin (Buenos Aires)",
+        region="Buenos Aires",
+        country="Argentina",
+        latitude=-34.6037,
+        longitude=-58.3816,
+        primary_crops=["Soybean", "Wheat", "Corn"]
+    ),
+    FarmLocationPreset(
+        name="Po Valley Agro-Region (Bologna)",
+        region="Emilia-Romagna",
+        country="Italy",
+        latitude=44.4949,
+        longitude=11.3426,
+        primary_crops=["Wheat", "Tomato", "Maize", "Grapes"]
+    ),
+    FarmLocationPreset(
+        name="Nile Delta Agricultural Basin (Cairo)",
+        region="Lower Egypt",
+        country="Egypt",
+        latitude=30.8761,
+        longitude=31.0263,
+        primary_crops=["Cotton", "Rice", "Wheat", "Citrus"]
+    ),
+    FarmLocationPreset(
+        name="Murray-Darling Basin (New South Wales)",
+        region="New South Wales",
+        country="Australia",
+        latitude=-34.5000,
+        longitude=144.5000,
+        primary_crops=["Wheat", "Grapes", "Citrus", "Cotton"]
     ),
 ]
 

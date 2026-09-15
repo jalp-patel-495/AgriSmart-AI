@@ -3,6 +3,7 @@ import {
   fetchWeatherIntelligence,
   getFarmPresets,
 } from '../services/weatherIntelligenceService';
+import LocationSearchDropdown from './common/LocationSearchDropdown';
 
 const SUPPORTED_CROPS = [
   'All Crops',
@@ -195,68 +196,15 @@ export default function WeatherDashboard({ onNavigateToDiagnose, onWeatherUpdate
         </div>
       )}
 
-      {/* Active Location Display */}
-      {selectedLocation && (
-        <div
-          style={{
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(52, 211, 153, 0.3)',
-            borderRadius: '0.75rem',
-            padding: '0.75rem 1.25rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>📍</span>
-            <strong style={{ color: '#fff', fontSize: '1rem' }}>
-              {isGpsMode ? 'Your Field' : selectedLocation.name}
-            </strong>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              (Latitude: {Number(selectedLocation.latitude).toFixed(4)}°, Longitude: {Number(selectedLocation.longitude).toFixed(4)}°)
-            </span>
-          </div>
-          {isGpsMode && (
-            <span
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#34d399',
-                padding: '0.25rem 0.65rem',
-                borderRadius: '999px',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-              }}
-            >
-              GPS Verified
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Preset Farm Hubs Chips */}
-      <div className="presets-bar">
-        <span className="presets-label">Agricultural Basin Presets:</span>
-        <div className="presets-scroll">
-          {presets.map((preset, idx) => {
-            const isSelected = !isGpsMode && selectedLocation?.name === preset.name;
-            return (
-              <button
-                key={idx}
-                className={`preset-chip ${isSelected ? 'active' : ''}`}
-                onClick={() => handleSelectPreset(preset)}
-              >
-                📍 {preset.name} ({preset.region})
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Searchable Location & Agricultural Basin Dropdown */}
+      <LocationSearchDropdown
+        presets={presets}
+        selectedLocation={selectedLocation}
+        isGpsMode={isGpsMode}
+        onSelectPreset={handleSelectPreset}
+        onDetectGps={handleDetectGps}
+        isDetectingGps={isDetectingGps}
+      />
 
       {/* 2. Crop Risk Filter Bar (14 Supported Crops) */}
       <div className="crop-filter-row">
