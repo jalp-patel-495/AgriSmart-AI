@@ -20,7 +20,7 @@ This repository strictly complies with all specifications outlined in the **GitH
 | **7.2.3**| Dataset & license | Canonical PlantVillage Dataset (54,305 images, 38 classes, CC-BY-SA 3.0) |
 | **7.2.4**| Reported metrics for every model | Macro-F1: **0.9190** (19-class) / **0.9142** (38-class), Accuracy: **93.68%**, confusion matrix embedded |
 | **7.2.5**| Architecture & known limitations | Detailed in Section 1 & Section 6 of this document |
-| **7.2.6**| Demo video & deployed app link | [Live](https://agrismart-ai2026.vercel.app/) \| [Demo Video](https://youtu.be/5m0CMk2zGmI) |
+| **7.2.6**| Demo video & deployed app link | [Deployed app link](https://agrismart-ai2026.vercel.app/) \| [Demo Video](https://youtu.be/5m0CMk2zGmI) |
 
 ---
 
