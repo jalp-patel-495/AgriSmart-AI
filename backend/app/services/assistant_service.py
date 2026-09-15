@@ -13,8 +13,10 @@ from backend.app.schemas.assistant import (
     ChatResponse,
     QuickPromptItem,
 )
+from backend.app.core.config import settings
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+OPENAI_API_KEY = getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+GEMINI_API_KEY = getattr(settings, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
 
 
 def build_system_prompt(context: Any) -> str:
@@ -60,6 +62,31 @@ def build_system_prompt(context: Any) -> str:
         base_prompt += context_str
 
     return base_prompt
+
+
+def call_openai_api(prompt: str, user_query: str, history: List[Any]) -> str:
+    """Calls OpenAI Chat Completions API with agronomic system context."""
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    messages = [{"role": "system", "content": prompt}]
+    for msg in history[-6:]:
+        r = "user" if getattr(msg, "role", "user") == "user" else "assistant"
+        messages.append({"role": r, "content": getattr(msg, "content", "")})
+    messages.append({"role": "user", "content": user_query})
+
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": messages,
+        "temperature": 0.35,
+        "max_tokens": 800,
+    }
+    response = requests.post(url, headers=headers, json=payload, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
 
 def call_gemini_api(prompt: str, user_query: str, history: List[Any]) -> str:
@@ -291,8 +318,22 @@ def get_assistant_response(req: ChatRequest) -> ChatResponse:
     response_text = ""
     followups = []
 
-    # Attempt Gemini 1.5 Flash if API key is provided
-    if GEMINI_API_KEY:
+    # 1. Attempt OpenAI GPT-4o-mini if OPENAI_API_KEY is configured
+    if OPENAI_API_KEY:
+        try:
+            response_text = call_openai_api(system_prompt, req.message, req.history)
+            model_name = "OpenAI GPT-4o-mini (Cloud Intelligence)"
+            followups = [
+                "What organic spray works best for this?",
+                "How does current weather impact this disease?",
+                "What is the recommended irrigation schedule?"
+            ]
+        except Exception as e:
+            print(f"[!] OpenAI API call failed: {e}. Falling back to Agronomic Engine.")
+            response_text, followups = fallback_agronomic_engine(req.message, context)
+            model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
+    # 2. Attempt Gemini 1.5 Flash if GEMINI_API_KEY is configured
+    elif GEMINI_API_KEY:
         try:
             response_text = call_gemini_api(system_prompt, req.message, req.history)
             model_name = "Gemini 1.5 Flash (Google Cloud)"
@@ -304,8 +345,11 @@ def get_assistant_response(req: ChatRequest) -> ChatResponse:
         except Exception as e:
             print(f"[!] Gemini API call failed: {e}. Falling back to Agronomic Engine.")
             response_text, followups = fallback_agronomic_engine(req.message, context)
+            model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
+    # 3. Built-in Agronomic Engine
     else:
         response_text, followups = fallback_agronomic_engine(req.message, context)
+        model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
 
     context_dict = {}
     if context:
