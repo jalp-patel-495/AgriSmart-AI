@@ -39,6 +39,23 @@ export const authApi = {
   },
 
   /**
+   * Helper to safely parse JSON responses
+   */
+  async _safeParse(res, fallbackError) {
+    let data = null;
+    try {
+      const text = await res.text();
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {
+      data = null;
+    }
+    if (!res.ok) {
+      throw new Error((data && data.detail) || fallbackError || `Server error (${res.status})`);
+    }
+    return data;
+  },
+
+  /**
    * User Signup / Registration.
    */
   async signup(userData) {
@@ -48,11 +65,7 @@ export const authApi = {
       body: JSON.stringify(userData),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || 'Registration failed. Please check your details.');
-    }
-
+    const data = await this._safeParse(res, 'Registration failed. Please check your details.');
     this.saveUser(data);
     return data;
   },
@@ -67,11 +80,7 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || 'Invalid email or password.');
-    }
-
+    const data = await this._safeParse(res, 'Invalid email or password.');
     this.saveUser(data);
     return data;
   },
@@ -86,11 +95,7 @@ export const authApi = {
       body: JSON.stringify({ role }),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || 'Demo login failed.');
-    }
-
+    const data = await this._safeParse(res, 'Demo login failed.');
     this.saveUser(data);
     return data;
   },
