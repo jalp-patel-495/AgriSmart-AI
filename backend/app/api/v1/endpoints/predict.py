@@ -75,8 +75,13 @@ def get_universal_pipeline():
         return _UNIVERSAL_PIPELINE
     try:
         from ai.src.disease_universal.pipeline import UniversalDiseasePipeline
-        _UNIVERSAL_PIPELINE = UniversalDiseasePipeline()
-        print("[OK] AgriSmart Universal 14-Plant Disease Pipeline loaded successfully.")
+        pipe = UniversalDiseasePipeline()
+        if getattr(pipe, "model", None) is not None:
+            _UNIVERSAL_PIPELINE = pipe
+            print("[OK] AgriSmart Universal 14-Plant Disease Pipeline loaded successfully.")
+        else:
+            print("[*] Universal model checkpoints not present on disk; using production 38-class classifier.")
+            _UNIVERSAL_PIPELINE = None
     except Exception as e:
         print(f"[!] Warning: Could not initialize UniversalDiseasePipeline: {e}")
         _UNIVERSAL_PIPELINE = None
@@ -221,72 +226,73 @@ async def predict_crop_disease(
 
     # Primary Stage: Universal 14-Plant Pipeline
     uni_pipeline = get_universal_pipeline()
-    if uni_pipeline is not None:
+    if uni_pipeline is not None and getattr(uni_pipeline, "model", None) is not None:
         try:
             uni_res = uni_pipeline.process_image(contents, disease_safety_threshold=0.65)
-            duration_ms = uni_res.get("processing_time_ms", round((time.time() - start_time) * 1000, 2))
+            if uni_res.get("success", False) and not uni_res.get("error") and uni_res.get("status") != "Error":
+                duration_ms = uni_res.get("processing_time_ms", round((time.time() - start_time) * 1000, 2))
 
-            top_predictions = [
-                TopPredictionItem(
-                    class_id=p["class_id"],
-                    disease=p["disease"],
-                    crop=p["crop"],
-                    confidence=p["confidence"],
-                    confidence_score=p["confidence_score"]
+                top_predictions = [
+                    TopPredictionItem(
+                        class_id=p["class_id"],
+                        disease=p["disease"],
+                        crop=p["crop"],
+                        confidence=p["confidence"],
+                        confidence_score=p["confidence_score"]
+                    )
+                    for p in uni_res.get("top_predictions", [])
+                ]
+
+                raw_disease_conf = float(uni_res.get("disease_confidence", 0.0))
+                raw_crop_conf = float(uni_res.get("crop_confidence", 0.0))
+                conf_str = uni_res.get("confidence", f"{int(round(raw_disease_conf * 100))}%")
+
+                # Persist observation for authenticated farmer
+                try:
+                    token = extract_token_from_request(request)
+                    if token:
+                        farmer_user = verify_session_token_and_get_user(token, db)
+                        if farmer_user:
+                            diag_rec = DiseaseDiagnosisRecord(
+                                farmer_id=farmer_user.id,
+                                crop=uni_res["crop"],
+                                disease=uni_res["disease"],
+                                confidence=round(raw_disease_conf, 4),
+                                confidence_str=conf_str,
+                                status=uni_res["status"],
+                                pathogen=uni_res.get("pathogen"),
+                                symptoms=uni_res.get("symptoms", "Foliar assessment"),
+                                treatment=uni_res.get("treatment"),
+                                image_filename=file.filename or "leaf_upload.jpg"
+                            )
+                            db.add(diag_rec)
+                            db.commit()
+                except Exception as e:
+                    db.rollback()
+                    print(f"[!] Warning: Failed to persist disease diagnosis: {e}")
+
+                return PredictionResponse(
+                    success=uni_res.get("success", True),
+                    message=f"Analyzed {uni_res['crop']}: {uni_res['disease']}",
+                    disease=uni_res["disease"],
+                    crop=uni_res["crop"],
+                    confidence=conf_str,
+                    confidence_score=round(raw_disease_conf, 4),
+                    status=uni_res["status"],
+                    pathogen=uni_res.get("pathogen"),
+                    symptoms=uni_res.get("symptoms", "Visible foliar lesions"),
+                    precautions=uni_res.get("precautions", []),
+                    treatment=uni_res.get("treatment"),
+                    top_predictions=top_predictions,
+                    processing_time_ms=duration_ms,
+                    crop_confidence=round(raw_crop_conf, 4),
+                    disease_confidence=round(raw_disease_conf, 4),
+                    quality_ok=uni_res.get("quality_ok", True),
+                    is_supported=uni_res.get("is_supported", True),
+                    is_ood=uni_res.get("is_ood", False),
+                    ood_score=uni_res.get("ood_score", 0.0),
+                    ood_status=uni_res.get("ood_status", "in_distribution")
                 )
-                for p in uni_res.get("top_predictions", [])
-            ]
-
-            raw_disease_conf = float(uni_res.get("disease_confidence", 0.0))
-            raw_crop_conf = float(uni_res.get("crop_confidence", 0.0))
-            conf_str = uni_res.get("confidence", f"{int(round(raw_disease_conf * 100))}%")
-
-            # Persist observation for authenticated farmer
-            try:
-                token = extract_token_from_request(request)
-                if token:
-                    farmer_user = verify_session_token_and_get_user(token, db)
-                    if farmer_user:
-                        diag_rec = DiseaseDiagnosisRecord(
-                            farmer_id=farmer_user.id,
-                            crop=uni_res["crop"],
-                            disease=uni_res["disease"],
-                            confidence=round(raw_disease_conf, 4),
-                            confidence_str=conf_str,
-                            status=uni_res["status"],
-                            pathogen=uni_res.get("pathogen"),
-                            symptoms=uni_res.get("symptoms", "Foliar assessment"),
-                            treatment=uni_res.get("treatment"),
-                            image_filename=file.filename or "leaf_upload.jpg"
-                        )
-                        db.add(diag_rec)
-                        db.commit()
-            except Exception as e:
-                db.rollback()
-                print(f"[!] Warning: Failed to persist disease diagnosis: {e}")
-
-            return PredictionResponse(
-                success=uni_res.get("success", True),
-                message=f"Analyzed {uni_res['crop']}: {uni_res['disease']}",
-                disease=uni_res["disease"],
-                crop=uni_res["crop"],
-                confidence=conf_str,
-                confidence_score=round(raw_disease_conf, 4),
-                status=uni_res["status"],
-                pathogen=uni_res.get("pathogen"),
-                symptoms=uni_res.get("symptoms", "Visible foliar lesions"),
-                precautions=uni_res.get("precautions", []),
-                treatment=uni_res.get("treatment"),
-                top_predictions=top_predictions,
-                processing_time_ms=duration_ms,
-                crop_confidence=round(raw_crop_conf, 4),
-                disease_confidence=round(raw_disease_conf, 4),
-                quality_ok=uni_res.get("quality_ok", True),
-                is_supported=uni_res.get("is_supported", True),
-                is_ood=uni_res.get("is_ood", False),
-                ood_score=uni_res.get("ood_score", 0.0),
-                ood_status=uni_res.get("ood_status", "in_distribution")
-            )
         except Exception as e:
             print(f"[!] Universal pipeline forward pass error: {e}. Executing legacy model fallback.")
 
