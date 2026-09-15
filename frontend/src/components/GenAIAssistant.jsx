@@ -180,31 +180,10 @@ export default function GenAIAssistant({ farmContext }) {
 
   return (
     <div className="assistant-container">
-      {/* Header & Active Context Bar */}
-      <div className="assistant-header-card panel-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>🤖</span> GenAI Agricultural Assistant
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.15rem' }}>
-              Conversational agronomist powered by Gemini API and real-time field context.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="ai-model-tag">
-              ⚡ Gemini 1.5 & RAG Agronomy Engine
-            </span>
-            <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={clearChat}>
-              🔄 Clear Chat
-            </button>
-          </div>
-        </div>
-
-        {/* Live Context Pills */}
-        <div className="active-context-bar">
-          <span className="context-label">Active Field Context:</span>
+      {/* Live Context Pills & Clear Action */}
+      <div className="active-context-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span className="context-label">Field Context:</span>
           <div className="context-pills">
             <span className="ctx-pill">
               🌱 Crop: <strong>{farmContext?.crop || 'Tomato'}</strong>
@@ -226,6 +205,14 @@ export default function GenAIAssistant({ farmContext }) {
             )}
           </div>
         </div>
+        <button
+          className="btn-secondary"
+          style={{ padding: '0.25rem 0.65rem', fontSize: '0.72rem', borderRadius: '6px' }}
+          onClick={clearChat}
+          title="Clear Conversation"
+        >
+          🔄 Clear Chat
+        </button>
       </div>
 
       {/* Suggested Quick Questions Bar */}
