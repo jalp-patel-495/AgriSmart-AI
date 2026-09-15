@@ -8,7 +8,8 @@ const BASE_URL = '';
 /**
  * Send query to conversational AI assistant with active farm context
  */
-export async function sendChatMessage(message, history = [], context = null) {
+export async function sendChatMessage(message, history = [], context = null, apiKey = null) {
+  const activeKey = apiKey || localStorage.getItem('agrismart_user_api_key') || undefined;
   const res = await fetch(`${BASE_URL}/api/v1/assistant/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -16,6 +17,7 @@ export async function sendChatMessage(message, history = [], context = null) {
       message,
       history,
       context,
+      api_key: activeKey,
     }),
   });
 

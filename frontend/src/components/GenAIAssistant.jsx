@@ -16,6 +16,8 @@ export default function GenAIAssistant({ farmContext }) {
   const [quickPrompts, setQuickPrompts] = useState([]);
   const [followups, setFollowups] = useState([]);
   const [isListening, setIsListening] = useState(false);
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [customKey, setCustomKey] = useState(localStorage.getItem('agrismart_user_api_key') || '');
 
   const messagesEndRef = useRef(null);
 
@@ -180,56 +182,70 @@ export default function GenAIAssistant({ farmContext }) {
 
   return (
     <div className="assistant-container">
-      {/* Live Context Pills & Clear Action */}
-      <div className="active-context-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span className="context-label">Field Context:</span>
-          <div className="context-pills">
-            <span className="ctx-pill">
-              🌱 Crop: <strong>{farmContext?.crop || 'Tomato'}</strong>
-            </span>
-            {farmContext?.disease && (
-              <span className="ctx-pill ctx-pill-alert">
-                🔬 Diagnosis: <strong>{farmContext.disease} ({farmContext.confidence || '92%'})</strong>
-              </span>
-            )}
-            {farmContext?.temperature && (
-              <span className="ctx-pill">
-                🌦️ Weather: <strong>{farmContext.temperature}°C, {farmContext.humidity}% RH</strong>
-              </span>
-            )}
-            {farmContext?.irrigation_status && (
-              <span className="ctx-pill">
-                💧 Irrigation: <strong>{farmContext.irrigation_status}</strong>
-              </span>
-            )}
-          </div>
+      {/* Chat Top Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0.5rem', marginBottom: '0.25rem' }}>
+        <span style={{ fontSize: '0.72rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span className="live-dot" /> AI Assistant Online
+        </span>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '6px', color: '#94a3b8' }}
+            onClick={() => setShowKeyConfig((prev) => !prev)}
+            title="Configure Custom OpenAI or Gemini API Key"
+          >
+            🔑 API Key
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '6px', color: '#94a3b8' }}
+            onClick={clearChat}
+            title="Clear Conversation"
+          >
+            🔄 Clear Chat
+          </button>
         </div>
-        <button
-          className="btn-secondary"
-          style={{ padding: '0.25rem 0.65rem', fontSize: '0.72rem', borderRadius: '6px' }}
-          onClick={clearChat}
-          title="Clear Conversation"
-        >
-          🔄 Clear Chat
-        </button>
       </div>
 
-      {/* Suggested Quick Questions Bar */}
-      <div className="quick-prompts-bar">
-        <span className="quick-prompts-label">Common Questions:</span>
-        <div className="quick-prompts-scroll">
-          {quickPrompts.map((item, idx) => (
-            <button
-              key={idx}
-              className="quick-prompt-chip"
-              onClick={() => handleSend(item.prompt)}
-            >
-              <span>{item.icon}</span> {item.prompt}
-            </button>
-          ))}
+      {/* Optional Custom API Key Drawer */}
+      {showKeyConfig && (
+        <div style={{ display: 'flex', gap: '0.4rem', padding: '0.4rem 0.5rem', background: '#051b11', borderRadius: '6px', marginBottom: '0.4rem', border: '1px solid #14532d', alignItems: 'center' }}>
+          <input
+            type="password"
+            placeholder="Paste OpenAI (sk-...) or Gemini (AIza...) key"
+            value={customKey}
+            onChange={(e) => setCustomKey(e.target.value)}
+            style={{ flex: 1, background: '#022c22', border: '1px solid #166534', color: '#ecfdf5', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', outline: 'none' }}
+          />
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ padding: '0.3rem 0.7rem', fontSize: '0.72rem', borderRadius: '4px', width: 'auto' }}
+            onClick={() => {
+              if (customKey.trim()) {
+                localStorage.setItem('agrismart_user_api_key', customKey.trim());
+                alert('Custom API Key saved successfully!');
+              } else {
+                localStorage.removeItem('agrismart_user_api_key');
+                alert('Cleared custom key. AgriSmart Knowledge Engine will be active.');
+              }
+              setShowKeyConfig(false);
+            }}
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ padding: '0.3rem 0.5rem', fontSize: '0.72rem', borderRadius: '4px' }}
+            onClick={() => setShowKeyConfig(false)}
+          >
+            ✕
+          </button>
         </div>
-      </div>
+      )}
 
       {/* Chat Messages Stream */}
       <div className="chat-stream-box panel-card">

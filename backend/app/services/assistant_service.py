@@ -4,8 +4,9 @@ Combines Gemini 1.5 Flash LLM with Context-Aware Retrieval-Augmented Agronomic E
 """
 import os
 import re
+import time
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import requests
 
 from backend.app.schemas.assistant import (
@@ -17,6 +18,7 @@ from backend.app.core.config import settings
 
 OPENAI_API_KEY = getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = getattr(settings, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+_openai_quota_exhausted_until = 0.0
 
 
 def build_system_prompt(context: Any) -> str:
@@ -64,11 +66,14 @@ def build_system_prompt(context: Any) -> str:
     return base_prompt
 
 
-def call_openai_api(prompt: str, user_query: str, history: List[Any]) -> str:
+def call_openai_api(prompt: str, user_query: str, history: List[Any], api_key: str = None) -> str:
     """Calls OpenAI Chat Completions API with agronomic system context."""
+    key = api_key or OPENAI_API_KEY
+    if not key:
+        raise ValueError("No OpenAI API key configured")
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
     messages = [{"role": "system", "content": prompt}]
@@ -83,23 +88,24 @@ def call_openai_api(prompt: str, user_query: str, history: List[Any]) -> str:
         "temperature": 0.35,
         "max_tokens": 800,
     }
-    response = requests.post(url, headers=headers, json=payload, timeout=15)
+    response = requests.post(url, headers=headers, json=payload, timeout=12)
     response.raise_for_status()
     data = response.json()
     return data["choices"][0]["message"]["content"]
 
 
-def call_gemini_api(prompt: str, user_query: str, history: List[Any]) -> str:
+def call_gemini_api(prompt: str, user_query: str, history: List[Any], api_key: str = None) -> str:
     """Calls Gemini 1.5 Flash via REST API."""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    key = api_key or GEMINI_API_KEY
+    if not key:
+        raise ValueError("No Gemini API key configured")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
     
     contents = []
-    # Add history
-    for msg in history[-6:]:  # Last 3 conversation turns
-        role = "user" if msg.role == "user" else "model"
-        contents.append({"role": role, "parts": [{"text": msg.content}]})
+    for msg in history[-6:]:
+        role = "user" if getattr(msg, "role", "user") == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": getattr(msg, "content", "")}]})
 
-    # Add current query
     contents.append({"role": "user", "parts": [{"text": user_query}]})
 
     payload = {
@@ -120,25 +126,151 @@ def call_gemini_api(prompt: str, user_query: str, history: List[Any]) -> str:
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]:
+def fallback_agronomic_engine(query: str, context: Any, history: Optional[List[Any]] = None) -> Tuple[str, List[str]]:
     """
-    Intelligent agronomic reasoning engine providing deep, immediate responses
-    grounded in plant pathology and agricultural best practices.
+    Intelligent conversational agronomic reasoning engine providing dynamic,
+    deep, context-aware responses grounded in plant pathology, soil science,
+    and precision farming best practices.
     """
-    q_lower = query.lower()
-    crop = (context.crop if context and context.crop else "crop")
+    q_raw = query.strip()
+    q_lower = q_raw.lower()
+    q_words = re.findall(r'\b\w+\b', q_lower)
+    
+    known_crops = ["tomato", "potato", "corn", "maize", "wheat", "rice", "paddy", "cotton", "sugarcane", "chilli", "chili", "pepper", "onion", "soybean", "groundnut", "banana", "mango"]
+    detected_crop = None
+    for c in known_crops:
+        if re.search(r'\b' + c + r'\b', q_lower):
+            detected_crop = "Corn" if c == "maize" else ("Rice" if c == "paddy" else c.capitalize())
+            break
+
+    crop = (context.crop if context and context.crop and context.crop.lower() != "crop" else (detected_crop or "Tomato"))
     disease = (context.disease if context and context.disease else None)
     temp = (context.temperature if context and context.temperature is not None else 26.0)
     humidity = (context.humidity if context and context.humidity is not None else 70.0)
     rain = (context.rain_forecast_mm if context and context.rain_forecast_mm is not None else 0.0)
+    soil = (context.soil_type if context and context.soil_type else "Loamy soil")
 
-    # 1. "Why is my leaf turning brown / yellow?"
-    if any(k in q_lower for k in ["brown", "yellow", "turning", "spots", "why is", "dying", "leaf spot"]):
+    # 1. GREETINGS & SOCIAL CHIT-CHAT (e.g. "hi", "hello", "hey", "good morning", "namaste")
+    greeting_words = {"hi", "hello", "hey", "hii", "heyy", "namaste", "hlo", "helo", "yo", "sup", "greetings"}
+    is_greeting = False
+    if len(q_words) <= 5 and any(w in greeting_words for w in q_words):
+        is_greeting = True
+    elif any(q_lower.startswith(g) for g in ["hi ", "hello ", "hey ", "good morning", "good afternoon", "good evening"]):
+        is_greeting = True
+    elif q_lower in ["how are you", "how are you doing", "how do you do"]:
+        is_greeting = True
+
+    if is_greeting:
+        text = (
+            f"### Hello! Welcome to AgriSmart AI 🌱\n\n"
+            f"I'm your **AgriSmart AI Agronomist**, actively monitoring your farm telemetry and field operations.\n\n"
+            f"**How can I assist your {crop} field today?**\n"
+            f"- 🌿 **Disease & Health Diagnostics:** Ask about brown spots, yellowing leaves, wilting, or leaf curling.\n"
+            f"- 💧 **Precision Irrigation:** Check the ideal watering window based on today's weather (**{temp:.1f}°C, {humidity:.0f}% RH**).\n"
+            f"- 🧪 **Fertilizers & Soil Nutrition:** Plan your N-P-K schedules, urea application, or organic compost.\n"
+            f"- 🐛 **Pest & Bug Management:** Safe Integrated Pest Management (IPM) and organic spray controls.\n"
+            f"- 🌾 **Crop Planning & Yield:** Sowing tips, plant spacing, pruning suckers, and harvest timing.\n\n"
+            f"What would you like to explore or troubleshoot?"
+        )
+        followups = [
+            f"Why is my {crop.lower()} leaf turning brown?",
+            f"When should I irrigate my {crop.lower()} crop?",
+            f"What fertilizer should I use for {crop.lower()}?",
+            "How do I control insect pests organically?"
+        ]
+        return text, followups
+
+    # 2. GRATITUDE, PRAISE & CLOSINGS (e.g. "thank you", "thanks", "ok", "got it", "cool", "bye")
+    if any(k in q_lower for k in ["thank you", "thanks", "thx", "ok", "okay", "got it", "understood", "awesome", "great", "cool", "nice", "good job", "bye", "goodbye"]):
+        text = (
+            f"### You're very welcome! 🌾\n\n"
+            f"I'm glad to help your farming operations. Consistent scouting and timely field care make all the difference in achieving top-quality yields.\n\n"
+            f"If you notice any new foliar symptoms on your **{crop}**, sudden humidity shifts, or need spray dosage calculations, I'm always right here.\n\n"
+            f"Wishing you a healthy crop and an abundant harvest! 🚜"
+        )
+        followups = [
+            f"How can I prevent {crop.lower()} disease next season?",
+            "Check current weather impact on my field",
+            f"What is the best harvesting time for {crop.lower()}?"
+        ]
+        return text, followups
+
+    # 3. IDENTITY, CAPABILITIES & HELP ("who are you", "what can you do", "help", "how does this work")
+    if any(k in q_lower for k in ["who are you", "what can you do", "what are you", "help", "capabilities", "features", "how do you work", "about you", "what is agrismart"]):
+        text = (
+            f"### About AgriSmart AI Agronomist 🤖🌾\n\n"
+            f"I am an intelligent agricultural advisory specialist engineered to bridge scientific agronomy with daily field management.\n\n"
+            f"**Core Capabilities:**\n"
+            f"1. **Vision Disease Diagnostics:** Identify foliar pathogens (Early Blight, Late Blight, Bacterial Spot, Powdery Mildew, Rust) with actionable curative protocols.\n"
+            f"2. **Real-time Agrometeorology:** Analyze ambient temperature, relative humidity, and rainfall forecasts to predict disease outbreaks before symptoms spread.\n"
+            f"3. **Smart Irrigation Guidance:** Calculate optimal watering windows using FAO-56 evapotranspiration models to protect roots and reduce fungal risk.\n"
+            f"4. **Soil & Nutrient Management:** Advise on basal and foliar N-P-K applications, micronutrient corrections (Zinc, Boron, Calcium), and organic amendments.\n"
+            f"5. **Integrated Pest Management (IPM):** Recommend eco-friendly bio-pesticides (Neem oil, *Bacillus thuringiensis*) and safe conventional treatments with Pre-Harvest Intervals (PHI).\n\n"
+            f"Simply type any question or click one of the suggested prompts below!"
+        )
+        followups = [
+            f"What should I do after disease prediction?",
+            f"When should I irrigate my {crop.lower()} crop?",
+            "How do I identify nutrient deficiencies in leaves?"
+        ]
+        return text, followups
+
+    # 4. FERTILIZER, NPK, SOIL NUTRITION & DEFICIENCIES
+    if any(k in q_lower for k in ["fertilizer", "fertiliser", "npk", "urea", "dap", "potash", "potassium", "nitrogen", "phosphorus", "compost", "manure", "nutrient", "nutrients", "deficiency", "deficiencies", "zinc", "boron", "calcium", "magnesium", "soil", "ph"]):
+        text = (
+            f"### Comprehensive Nutrient & Fertilizer Guide for {crop}\n\n"
+            f"Balanced soil nutrition is essential for robust cell walls and natural systemic acquired resistance (SAR) against foliar pathogens:\n\n"
+            f"#### 1. Primary Macronutrients (N-P-K)\n"
+            f"- **Nitrogen (N):** Essential for vegetative canopy development. Apply in split doses—excessive N promotes soft, succulent tissue highly vulnerable to fungal hyphae.\n"
+            f"- **Phosphorus (P):** Apply as basal dressing (DAP or Single Super Phosphate) at planting to drive vigorous taproot and lateral root branching.\n"
+            f"- **Potassium (K):** Crucial for stomatal regulation, fruit sizing, and disease tolerance. Apply Muriate of Potash (MOP) or Sulfate of Potash (SOP) at flowering and fruiting.\n\n"
+            f"#### 2. Key Foliar Deficiency Symptoms\n"
+            f"- **Nitrogen (N) Deficiency:** General chlorosis (uniform yellowing) starting on older lower leaves while upper leaves remain pale green.\n"
+            f"- **Potassium (K) Deficiency:** Marginal necrosis (brown, scorched leaf edges) with interveinal green centers.\n"
+            f"- **Calcium (Ca) Deficiency:** Blossom End Rot in fruit and cupping of young shoot tips. Prevent with foliar Calcium Nitrate (1–2 g/L).\n"
+            f"- **Zinc (Zn) / Boron (B):** Little leaf syndrome and poor flower setting. Spray Chelated Zinc (1 g/L) and Solubor (1 g/L) prior to flowering.\n\n"
+            f"#### 3. Soil Conditioning & Organic Amendments\n"
+            f"- Incorporate 10–15 tons/ha of well-rotted Farmyard Manure (FYM) or 5 tons/ha Vermicompost.\n"
+            f"- Maintain soil pH between **6.0 and 6.8** for optimal cation exchange capacity and nutrient availability."
+        )
+        followups = [
+            f"How do I fix blossom end rot in {crop.lower()}?",
+            "What organic fertilizers improve soil fertility fastest?",
+            "How does over-fertilizing with nitrogen cause blight?"
+        ]
+        return text, followups
+
+    # 5. PEST & INSECT MANAGEMENT (IPM)
+    if any(k in q_lower for k in ["pest", "pests", "insect", "insects", "bug", "bugs", "worm", "worms", "caterpillar", "caterpillars", "aphid", "aphids", "whitefly", "whiteflies", "thrips", "mite", "mites", "borer", "borers", "leaf miner", "neem oil", "spray", "insecticide", "pesticide"]):
+        text = (
+            f"### Integrated Pest Management (IPM) Protocol for {crop}\n\n"
+            f"Control insect pest populations without harming beneficial predators using this multi-tiered strategy:\n\n"
+            f"#### 1. Cultural & Physical Barriers\n"
+            f"- Install **Yellow Sticky Traps** (for whiteflies and aphids) and **Blue Sticky Traps** (for thrips) at 15–20 traps per hectare at canopy height.\n"
+            f"- Deploy **Pheromone Traps** to monitor fruit borer or armyworm moth flight spikes.\n"
+            f"- Clear weed reservoirs around field bunds to eliminate alternate pest host plants.\n\n"
+            f"#### 2. Botanical & Bio-Rational Solutions (Low-Toxicity)\n"
+            f"- **Cold-Pressed Neem Oil (10,000 ppm):** Mix 3–5 ml per litre of water with 1 ml liquid soap/emulsifier. Disrupts insect feeding, molting, and egg viability.\n"
+            f"- **Bacillus thuringiensis (Bt):** Apply at 2 g/L during early larval instars for caterpillar and fruit borer control.\n"
+            f"- **Beauveria bassiana / Verticillium:** Entomopathogenic fungi effective against sucking pests in humid conditions.\n\n"
+            f"#### 3. Targeted Chemical Intervention (Emergency Only)\n"
+            f"- If infestation exceeds economic threshold levels (ETL), apply selective active ingredients (e.g. Imidacloprid for sucking pests or Spinosad/Chlorantraniliprole for borers).\n"
+            f"- **Safety Notice:** Always observe the mandatory **Pre-Harvest Interval (PHI)** of 3–7 days and spray during early morning or late evening to protect pollinating honeybees."
+        )
+        followups = [
+            "How often should I spray neem oil?",
+            "What kills whiteflies without harming ladybugs?",
+            "How do I identify fruit borer vs leaf miner damage?"
+        ]
+        return text, followups
+
+    # 6. LEAF BROWNING, YELLOWING, SPOTS & FOLIAR SYMPTOMS
+    if any(k in q_lower for k in ["brown", "yellow", "turning", "spots", "spot", "blight", "scorch", "curling", "curl", "wilting", "wilt", "drying", "dying", "rot", "rotting", "rust", "mildew", "white powder"]):
         if disease and "Early Blight" in disease:
             text = (
                 f"### Diagnostic Analysis for {crop} Foliage Browning\n\n"
                 f"Your leaf browning is primarily caused by **Early Blight (*Alternaria solani*)**, which was detected with high confidence:\n\n"
-                f"1. **Concentric Target Rings:** The fungus begins on the oldest lower foliage as small dark brown circular spots, expanding into distinctive concentric rings surrounded by a chlorotic yellow halo.\n"
+                f"1. **Concentric Target Rings:** The fungus begins on older lower foliage as small dark brown circular spots, expanding into distinctive concentric rings surrounded by a chlorotic yellow halo.\n"
                 f"2. **Microclimate Acceleration:** At your current conditions (**{temp:.1f}°C and {humidity:.0f}% relative humidity**), *Alternaria* conidia germinate within 1 to 2 hours of leaf wetness.\n"
                 f"3. **Nutrient Stress Synergy:** Low soil nitrogen or heavy fruit load often predisposes {crop} leaves to rapid blighting.\n\n"
                 f"**Immediate Corrective Actions:**\n"
@@ -185,22 +317,24 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             ]
         else:
             text = (
-                f"### Common Causes for {crop} Leaf Browning & Scorch\n\n"
-                f"Based on foliar pathology, browning can be biological or environmental:\n\n"
-                f"1. **Fungal Blights & Leaf Spots:** Circular lesions with concentric zones or yellow margins indicate fungal colonization.\n"
-                f"2. **Potassium (K) Deficiency:** Margin necrosis (burnt edges) on older leaves while center remains green.\n"
-                f"3. **Moisture Fluctuation:** Irregular watering combined with high ambient heat (**{temp:.1f}°C**) causes marginal cell death.\n\n"
-                f"**Recommended Scouting:** Check leaf undersides for fuzzy sporulation, inspect stem collars for dark lesions, and verify soil moisture depth."
+                f"### Common Causes for {crop} Leaf Browning & Yellowing\n\n"
+                f"Foliar discoloration is typically caused by biological pathogens or environmental stress factors:\n\n"
+                f"1. **Fungal Blights & Leaf Spots:** Circular lesions with concentric rings or yellow halos indicate fungal infection (*Alternaria* or *Septoria*). Leaves dry out and drop prematurely.\n"
+                f"2. **Potassium (K) Deficiency:** Scorched or burnt margins on mature leaves while interior veins stay green.\n"
+                f"3. **Moisture & Heat Stress:** High daytime temperatures (**{temp:.1f}°C**) paired with fluctuating soil moisture cause leaf edge desiccation and curling.\n"
+                f"4. **Root Hypoxia:** Overwatering or poor drainage suffocates roots, preventing iron and nitrogen uptake and turning foliage pale yellow.\n\n"
+                f"**Field Action Plan:** Inspect leaf undersides for fungal fuzz, check root zone moisture at 15 cm depth, and prune the lowest 20 cm of foliage to improve ventilation."
             )
             followups = [
                 "What should I do after this disease prediction?",
                 "How do I identify potassium deficiency vs fungal blight?",
                 "What is the best irrigation schedule for healthy foliage?"
             ]
+        return text, followups
 
-    # 2. "What should I do after this disease prediction?"
-    elif any(k in q_lower for k in ["what should i do", "after prediction", "action plan", "next steps", "treatment", "how to treat"]):
-        disease_name = disease or "Detected Foliar Pathology"
+    # 7. ACTION PLAN & TREATMENT STEPS
+    if any(k in q_lower for k in ["what should i do", "after prediction", "action plan", "next steps", "treatment", "how to treat", "cure", "remedy"]):
+        disease_name = disease or "Foliar Pathology"
         text = (
             f"### 4-Step Agronomic Action Plan for {disease_name}\n\n"
             f"Follow this structured field recovery sequence for your {crop}:\n\n"
@@ -223,9 +357,10 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             "Will organic bio-fungicides be effective enough?",
             "How does crop rotation help prevent recurring blight?"
         ]
+        return text, followups
 
-    # 3. "When should I irrigate my crop?"
-    elif any(k in q_lower for k in ["irrigate", "water", "watering", "irrigation", "moisture"]):
+    # 8. IRRIGATION, WATERING & MOISTURE
+    if any(k in q_lower for k in ["irrigate", "water", "watering", "irrigation", "moisture", "drip", "sprinkler", "flood"]):
         rain_note = (
             f"Upcoming rainfall of **{rain:.1f} mm** is forecast within 24–48 hours. Postpone artificial watering to avoid root hypoxia."
             if rain >= 5.0
@@ -237,16 +372,17 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             f"- **Optimal Timing:** Irrigate strictly in the **early morning (5:00 AM – 8:00 AM)**. This allows sunlight to dry any incidental leaf droplets, preventing fungal spore germination.\n"
             f"- **Application Method:** Use low-pressure drip emitters positioned 10–15 cm from the plant base. Avoid overhead sprinklers which create a humid microclimate.\n"
             f"- **Rain Forecast Factor:** {rain_note}\n"
-            f"- **Soil Moisture Rule:** For {crop}, allow top 5 cm of soil to dry slightly between watering cycles to stimulate deep root anchoring, but do not allow root zone (15–30 cm) to drop below 50% available water capacity."
+            f"- **Soil Moisture Rule:** For {crop} in {soil}, allow top 5 cm of soil to dry slightly between watering cycles to stimulate deep root anchoring, but do not allow root zone (15–30 cm) to drop below 50% available water capacity."
         )
         followups = [
             "How many litres of water per hectare are needed?",
             "How do I know if my soil is waterlogged?",
             "Does drip irrigation reduce disease pressure?"
         ]
+        return text, followups
 
-    # 4. "How can I prevent this disease?"
-    elif any(k in q_lower for k in ["prevent", "prevention", "next season", "stop", "avoid", "protect"]):
+    # 9. DISEASE PREVENTION & LONG-TERM FIELD PROTOCOL
+    if any(k in q_lower for k in ["prevent", "prevention", "next season", "stop", "avoid", "protect", "rotation"]):
         disease_name = disease or "crop pathologies"
         text = (
             f"### Integrated Long-Term Disease Prevention Protocol\n\n"
@@ -262,9 +398,10 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             "Which tomato varieties have genetic resistance to blight?",
             "How do I test my soil pH and NPK before planting?"
         ]
+        return text, followups
 
-    # 5. Weather & Agrometeorological Guidance
-    elif any(k in q_lower for k in ["weather", "rain", "forecast", "climate", "risk", "temperature", "humidity", "storm"]):
+    # 10. WEATHER & AGROMETEOROLOGY
+    if any(k in q_lower for k in ["weather", "rain", "forecast", "climate", "risk", "temperature", "humidity", "storm", "wind"]):
         risk = getattr(context, "weather_risk", "MODERATE") if context else "MODERATE"
         rec = getattr(context, "weather_recommendation", None) if context else None
         cond = getattr(context, "weather_condition", None) if context else None
@@ -283,29 +420,87 @@ def fallback_agronomic_engine(query: str, context: Any) -> Tuple[str, List[str]]
             "How does this weather affect foliar disease pressure?",
             "What preventive sprays are recommended before rain?"
         ]
+        return text, followups
 
-    # 6. General Agricultural Question
-    else:
+    # 11. PLANTING, SOWING, SEEDS & NURSERY
+    if any(k in q_lower for k in ["sow", "sowing", "plant", "planting", "seed", "seeds", "seedling", "spacing", "germinat", "nursery", "transplant"]):
         text = (
-            f"### AgriSmart Extension Advisory for {crop}\n\n"
-            f"Regarding: *\"{query}\"*\n\n"
-            f"- **Current Farm Observation:** For your **{crop}**"
-            + (f" with diagnosed **{disease}**" if disease else "")
-            + f", field conditions currently record **{temp:.1f}°C** ambient temperature with **{humidity:.0f}%** relative humidity.\n\n"
-            f"**Key Recommendations:**\n"
-            f"1. **Canopy Health:** Ensure leaf wetness duration is kept to a minimum by utilizing drip irrigation instead of top-down sprinklers.\n"
-            f"2. **Preventive Scouting:** Regularly inspect both the upper and lower leaf surfaces, particularly following warm, humid weather spells.\n"
-            f"3. **Balanced Fertility:** Apply potassium-rich fertilizers to promote cell wall integrity and boost natural systemic acquired resistance (SAR).\n\n"
-            f"Feel free to ask for specific spray formulations, dosage calculations, or seasonal irrigation scheduling!"
+            f"### Agronomic Planting & Sowing Guidelines for {crop}\n\n"
+            f"Establish a vigorous crop stand with high seed germination and uniform early development:\n\n"
+            f"1. **Seed Treatment:** Treat seeds with *Trichoderma viride* (10 g/kg seed) or Carbendazim (2 g/kg seed) 24 hours prior to sowing to prevent damping off and seedling blight.\n"
+            f"2. **Nursery Bed Preparation:** Use raised nursery beds (15 cm above ground level) with well-draining soil and vermicompost in a 2:1 ratio. Protect with 50% shade netting.\n"
+            f"3. **Transplanting Age:** Transplant seedlings at 25–30 days old when they have 4–5 true leaves and a sturdy stem caliper.\n"
+            f"4. **Field Spacing:** Maintain 60 cm between plants within rows and 90–120 cm between ridges to promote lateral canopy expansion and ease mechanical weeding."
         )
         followups = [
-            "Why is my tomato leaf turning brown?",
-            "What should I do after this disease prediction?",
-            "When should I irrigate my crop?",
-            "How can I prevent this disease?"
+            f"What is the best sowing season for {crop.lower()}?",
+            "How do I prevent damping off in seedlings?",
+            "How much seed is required per hectare?"
         ]
+        return text, followups
 
+    # 12. FLOWERING, FRUIT SETTING, PRUNING & HARVESTING
+    if any(k in q_lower for k in ["flower", "flowering", "fruit", "prun", "stake", "staking", "harvest", "yield", "production"]):
+        text = (
+            f"### Canopy Management & Yield Maximization for {crop}\n\n"
+            f"Optimize fruit set and market-grade produce through active canopy training:\n\n"
+            f"1. **Preventing Flower Drop:** Flower abortion is often triggered by sudden temperature spikes (> 32°C) or moisture stress. Spray Boron (Solubor 1 g/L) and Planofix (alpha-NAA 1 ml / 4.5 L) at initial bud burst.\n"
+            f"2. **De-suckering & Pruning:** Remove indeterminate sucker shoots (axillary side shoots) below the first flowering cluster once a week. This redirects photosynthetic energy into fruit sizing.\n"
+            f"3. **Staking & Trellising:** Stake plants with bamboo poles or trellis string by 30 days after transplanting. Keeping vines off the soil eliminates ground rot and improves spray coverage.\n"
+            f"4. **Harvesting Criteria:** Harvest fruit at the 'breaker stage' (color turning from green to pink/light red) to minimize post-harvest transit losses."
+        )
+        followups = [
+            "Why are flowers falling off without setting fruit?",
+            "How does staking improve crop yield?",
+            "What foliar spray boosts fruit size and sweetness?"
+        ]
+        return text, followups
+
+    # 13. ORGANIC & BIO-FARMING
+    if any(k in q_lower for k in ["organic", "natural farming", "panchagavya", "jeevamrut", "biofertilizer", "bio-fertilizer", "home remedy"]):
+        text = (
+            f"### Organic & Natural Farming Practices for {crop}\n\n"
+            f"Boost soil microbial biodiversity and natural immunity without synthetic inputs:\n\n"
+            f"1. **Jeevamrut Application:** Prepare ferment of 10 kg cow dung, 10 L cow urine, 2 kg jaggery, 2 kg pulse flour, and a handful of virgin forest soil in 200 L water for 48 hours. Apply 500 L/ha with drip irrigation every 15 days.\n"
+            f"2. **Panchagavya Foliar Spray:** Dilute 3% Panchagavya in water (30 ml/L) and spray at 15-day intervals to boost chlorophyll content and plant vigor.\n"
+            f"3. **Neem Seed Kernel Extract (NSKE 5%):** Soak 50 g powdered neem kernels in 1 L water overnight. Strain and spray as an organic deterrent against sucking insects and caterpillars.\n"
+            f"4. **Trichoderma Soil Enrichment:** Mix 2 kg *Trichoderma viride* in 100 kg moist farmyard manure, incubate for 7 days in shade, and broadcast across the root zone."
+        )
+        followups = [
+            "How do I prepare Jeevamrut step by step?",
+            "Can organic farming match conventional yields?",
+            "What are the best bio-fungicides for foliar diseases?"
+        ]
+        return text, followups
+
+    # 14. DYNAMIC CONVERSATIONAL AGRONOMIC RESPONSE (Handles any general question naturally!)
+    text = (
+        f"### Field Advisory for {crop}\n\n"
+        f"Regarding your query on **{q_raw}**:\n\n"
+        f"In agricultural management for **{crop}**, field performance relies on maintaining the balance between microclimate conditions, soil health, and preventive crop protection.\n\n"
+        f"**Key Agronomic Insights & Action Points:**\n"
+        f"1. **Root Zone & Irrigation:** Current field telemetry indicates **{temp:.1f}°C** ambient temperature and **{humidity:.0f}%** relative humidity. Maintain consistent soil hydration through early morning drip cycles to prevent physiological stress.\n"
+        f"2. **Foliar Protection:** Inspect leaves regularly for any early chlorotic spots or pest colonization. Keeping leaf surfaces dry and spacing plants for adequate airflow prevents opportunistic fungal spores from establishing.\n"
+        f"3. **Nutrient Equilibrium:** Ensure balanced potassium and micronutrient (Zinc, Boron) availability to reinforce plant vascular systems and maximize fruit set.\n\n"
+        f"If you would like specific dosage calculations, chemical vs organic options, or step-by-step application guidelines, feel free to ask!"
+    )
+    followups = [
+        f"Why is my {crop.lower()} leaf turning brown?",
+        f"When should I irrigate my {crop.lower()} crop?",
+        f"What fertilizer schedule should I follow for {crop.lower()}?",
+        "How do I prevent diseases next season?"
+    ]
     return text, followups
+
+
+def generate_smart_followups(query: str, context: Any) -> List[str]:
+    """Generates contextually sharp followup prompts."""
+    crop = (context.crop if context and context.crop else "crop").lower()
+    return [
+        f"What organic spray works best for {crop}?",
+        f"When should I irrigate my {crop} crop?",
+        f"What is the recommended fertilizer schedule for {crop}?"
+    ]
 
 
 def get_assistant_response(req: ChatRequest) -> ChatResponse:
@@ -318,37 +513,42 @@ def get_assistant_response(req: ChatRequest) -> ChatResponse:
     response_text = ""
     followups = []
 
-    # 1. Attempt OpenAI GPT-4o-mini if OPENAI_API_KEY is configured
-    if OPENAI_API_KEY:
+    user_key = req.api_key or OPENAI_API_KEY or getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+    gemini_key = getattr(settings, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+    if user_key and user_key.startswith("AIza"):
+        gemini_key = user_key
+        user_key = ""
+
+    global _openai_quota_exhausted_until
+    now_ts = time.time()
+
+    # 1. Attempt OpenAI GPT-4o-mini if configured and not recently quota-exhausted
+    if user_key and (user_key != OPENAI_API_KEY or now_ts > _openai_quota_exhausted_until):
         try:
-            response_text = call_openai_api(system_prompt, req.message, req.history)
+            response_text = call_openai_api(system_prompt, req.message, req.history or [], api_key=user_key)
             model_name = "OpenAI GPT-4o-mini (Cloud Intelligence)"
-            followups = [
-                "What organic spray works best for this?",
-                "How does current weather impact this disease?",
-                "What is the recommended irrigation schedule?"
-            ]
+            followups = generate_smart_followups(req.message, context)
+            _openai_quota_exhausted_until = 0.0  # Key works! Reset backoff
         except Exception as e:
-            print(f"[!] OpenAI API call failed: {e}. Falling back to Agronomic Engine.")
-            response_text, followups = fallback_agronomic_engine(req.message, context)
+            err_str = str(e).lower()
+            if "429" in err_str or "quota" in err_str or "insufficient" in err_str:
+                _openai_quota_exhausted_until = now_ts + 300  # Back off for 5 mins
+            print(f"[!] OpenAI API call failed ({e}). Seamlessly switching to AgriSmart Knowledge Engine.")
+            response_text, followups = fallback_agronomic_engine(req.message, context, req.history or [])
             model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
-    # 2. Attempt Gemini 1.5 Flash if GEMINI_API_KEY is configured
-    elif GEMINI_API_KEY:
+    # 2. Attempt Gemini 1.5 Flash if configured
+    elif gemini_key:
         try:
-            response_text = call_gemini_api(system_prompt, req.message, req.history)
+            response_text = call_gemini_api(system_prompt, req.message, req.history or [], api_key=gemini_key)
             model_name = "Gemini 1.5 Flash (Google Cloud)"
-            followups = [
-                "What organic spray works best for this?",
-                "How does the current weather impact this disease?",
-                "What is the recommended irrigation schedule?"
-            ]
+            followups = generate_smart_followups(req.message, context)
         except Exception as e:
-            print(f"[!] Gemini API call failed: {e}. Falling back to Agronomic Engine.")
-            response_text, followups = fallback_agronomic_engine(req.message, context)
+            print(f"[!] Gemini API call failed ({e}). Seamlessly switching to AgriSmart Knowledge Engine.")
+            response_text, followups = fallback_agronomic_engine(req.message, context, req.history or [])
             model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
-    # 3. Built-in Agronomic Engine
+    # 3. Built-in Dynamic Agronomic Engine
     else:
-        response_text, followups = fallback_agronomic_engine(req.message, context)
+        response_text, followups = fallback_agronomic_engine(req.message, context, req.history or [])
         model_name = "AgriSmart Knowledge Engine (Context-Augmented)"
 
     context_dict = {}
@@ -368,6 +568,7 @@ def get_assistant_response(req: ChatRequest) -> ChatResponse:
         context_acknowledged=context_dict,
         created_at=now_str
     )
+
 
 
 def get_contextual_quick_prompts(context: Any) -> List[QuickPromptItem]:

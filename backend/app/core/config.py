@@ -3,7 +3,11 @@ from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+# Ensure .env is loaded from root or backend directory
 load_dotenv()
+backend_env = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+if os.path.exists(backend_env):
+    load_dotenv(backend_env)
 
 
 class Settings(BaseModel):

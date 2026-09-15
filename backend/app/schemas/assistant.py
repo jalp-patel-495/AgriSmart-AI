@@ -31,6 +31,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., description="Farmer's natural language question")
     history: Optional[List[ChatMessage]] = Field(default_factory=list)
     context: Optional[ChatContext] = None
+    api_key: Optional[str] = Field(default=None, description="Optional custom OpenAI or Gemini API key")
 
 
 class ChatResponse(BaseModel):
