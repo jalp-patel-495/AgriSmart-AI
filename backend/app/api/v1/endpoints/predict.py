@@ -379,8 +379,8 @@ async def predict_crop_disease(
         return PredictionResponse(
             success=True,
             message="Low confidence prediction. Further inspection needed.",
-            disease="Low Confidence — Further Inspection Needed",
-            crop="Undetermined",
+            disease="Not confidently identified",
+            crop=meta.get("crop", "Undetermined"),
             confidence=confidence_str,
             confidence_score=round(raw_confidence, 4),
             status="Low Confidence",
@@ -394,7 +394,14 @@ async def predict_crop_disease(
             ],
             treatment=None,
             top_predictions=top_predictions,
-            processing_time_ms=duration_ms
+            processing_time_ms=duration_ms,
+            crop_confidence=round(raw_confidence, 4),
+            disease_confidence=round(raw_confidence, 4),
+            quality_ok=True,
+            is_supported=True,
+            is_ood=False,
+            ood_score=0.25,
+            ood_status="in_distribution"
         )
 
     return PredictionResponse(

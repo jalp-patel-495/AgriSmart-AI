@@ -1,521 +1,354 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import HomePage from './components/HomePage';
-import Dashboard from './components/Dashboard';
-import ImageUpload from './components/ImageUpload';
-import ResultView from './components/ResultView';
-import WeatherDashboard from './components/WeatherDashboard';
-import SmartFarmingDashboard from './components/SmartFarmingDashboard';
-import GenAIAssistant from './components/GenAIAssistant';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+
+// Layout & Route Guards
+import RoleLayout from './components/layout/RoleLayout';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+
+// Common / Auth
+import LoginPage from './components/common/LoginPage';
+import ProfileView from './components/common/ProfileView';
 import AuthModal from './components/AuthModal';
 import FloatingChatbotButton from './components/FloatingChatbotButton';
-import ExpertReviewView from './components/ExpertReviewView';
-import UserManagementView from './components/UserManagementView';
-import SystemMonitoringView from './components/SystemMonitoringView';
-import StakeholderDashboard from './components/StakeholderDashboard';
-import FarmerStakeholdersView from './components/FarmerStakeholdersView';
-import { checkBackendHealth, predictCropDisease } from './services/api';
+import HomePage from './components/HomePage';
+import Navbar from './components/Navbar';
+import GenAIAssistant from './components/GenAIAssistant';
+
+// Farmer Views
+import FarmerDashboard from './components/farmer/FarmerDashboard';
+import FarmerDiseaseDetection from './components/farmer/FarmerDiseaseDetection';
+import FarmerSmartIrrigation from './components/farmer/FarmerSmartIrrigation';
+import FarmerMyCrops from './components/farmer/FarmerMyCrops';
+import FarmerDiseaseHistory from './components/farmer/FarmerDiseaseHistory';
+import FarmerTreatments from './components/farmer/FarmerTreatments';
+import FarmerWeather from './components/farmer/FarmerWeather';
+
+// Stakeholder Views
+import StakeholderRoleDashboard from './components/stakeholder/StakeholderRoleDashboard';
+import StakeholderAnalyticsView from './components/stakeholder/StakeholderAnalyticsView';
+import StakeholderCropStatsView from './components/stakeholder/StakeholderCropStatsView';
+import StakeholderDiseaseTrendsView from './components/stakeholder/StakeholderDiseaseTrendsView';
+import StakeholderReportsView from './components/stakeholder/StakeholderReportsView';
+import StakeholderActivityView from './components/stakeholder/StakeholderActivityView';
+
+// Expert Views
+import ExpertDashboard from './components/expert/ExpertDashboard';
+import ExpertDiseaseCases from './components/expert/ExpertDiseaseCases';
+import ExpertFarmerQueries from './components/expert/ExpertFarmerQueries';
+import ExpertDiagnosisReview from './components/expert/ExpertDiagnosisReview';
+import ExpertTreatmentsView from './components/expert/ExpertTreatmentsView';
+
+// Admin Views
+import AdminDashboard from './components/admin/AdminDashboard';
+import AdminUserManagement from './components/admin/AdminUserManagement';
+import AdminCropManagement from './components/admin/AdminCropManagement';
+import AdminDiseaseManagement from './components/admin/AdminDiseaseManagement';
+import AdminDatasetAIView from './components/admin/AdminDatasetAIView';
+import AdminReportsView from './components/admin/AdminReportsView';
+import AdminSystemActivity from './components/admin/AdminSystemActivity';
+import AdminSettingsView from './components/admin/AdminSettingsView';
+
+// Services
 import { authApi } from './services/authApi';
-import { resolveCrop, CANONICAL_CLASSES, SUPPORTED_CROPS } from './utils/cropDiseaseResolver';
-import { fetchWeatherIntelligence } from './services/weatherIntelligenceService';
+import { checkBackendHealth } from './services/api';
 
 /**
- * Reusable RBAC Route Guard Component
- * Enforces role authorization and renders an explicit 403 Forbidden Barrier if insufficient.
+ * Automatically routes authenticated users to their specific role dashboard
  */
-export function RoleProtectedRoute({ currentUser, requiredRoles, children }) {
-  const userRole = (currentUser?.role || 'FARMER').toUpperCase();
-  const normalizedRequired = requiredRoles.map((r) => r.toUpperCase());
-  const hasAccess = normalizedRequired.includes(userRole);
-
-  if (!hasAccess) {
-    return (
-      <div className="auth-required-container" style={{ padding: '3rem 1rem' }}>
-        <div className="auth-required-card" style={{ borderColor: 'rgba(239, 68, 68, 0.45)', background: 'rgba(15, 23, 42, 0.95)' }}>
-          <div className="auth-required-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171' }}>🚫</div>
-          <h2 className="auth-required-title" style={{ color: '#fca5a5' }}>403 Forbidden • Access Denied</h2>
-          <p className="auth-required-desc">
-            Your authenticated role (<strong>{userRole}</strong>) does not have sufficient permission to access this module.
-            <br />
-            Required role: <strong style={{ color: '#93c5fd' }}>{normalizedRequired.join(' or ')}</strong>.
-          </p>
-          <div style={{ marginTop: '1.25rem', padding: '0.85rem', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', fontSize: '0.84rem', color: '#fca5a5' }}>
-            🔒 <strong>Strict Backend Security:</strong> Server-side API endpoints are protected and will reject direct requests with HTTP 403 Forbidden.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return children;
+function RoleDashboardRedirect({ currentUser }) {
+  const user = currentUser || authApi.getCurrentUser();
+  if (!user) return <Navigate to="/" replace />;
+  const role = (user.role || 'FARMER').toUpperCase();
+  if (role === 'AGRICULTURAL_STAKEHOLDER') return <Navigate to="/stakeholder/dashboard" replace />;
+  if (role === 'AGRICULTURAL_EXPERT') return <Navigate to="/expert/dashboard" replace />;
+  if (role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/farmer/dashboard" replace />;
 }
 
 export default function App() {
-  // Authentication state
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Active Session State
   const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
-  // Navigation: before login defaults to 'home', after login defaults by role
-  const [activeTab, setActiveTab] = useState(() => {
-    const user = authApi.getCurrentUser();
-    if (!user) return 'home';
-    if ((user.role || '').toUpperCase() === 'AGRICULTURAL_STAKEHOLDER') {
-      return 'stakeholder-dashboard';
-    }
-    return 'dashboard';
-  });
-  const [smartFarmingSubTab, setSmartFarmingSubTab] = useState('irrigation');
-  const [backendStatus, setBackendStatus] = useState('checking');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [classesData, setClassesData] = useState([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
-  const [pendingTab, setPendingTab] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [liveWeather, setLiveWeather] = useState(null);
+  const [authMode, setAuthMode] = useState('login');
+  const [backendStatus, setBackendStatus] = useState('checking');
 
-  const getTabTitle = (tab) => {
-    switch (tab) {
-      case 'dashboard': return 'Farmer Dashboard';
-      case 'stakeholder-dashboard': return 'Stakeholder Intelligence Dashboard';
-      case 'stakeholder-risks': return 'Regional Risk & Phytosanitary Alerts';
-      case 'stakeholder-copilot': return 'Agri Intelligence Copilot';
-      case 'regional-intelligence': return 'Regional Agricultural Intelligence';
-      case 'diagnose': return 'Disease Detection Studio';
-      case 'crop-recommendation': return 'Crop Recommendation Studio';
-      case 'smart-farming': return 'Smart Irrigation Hub';
-      case 'weather': return 'Weather Intelligence Engine';
-      case 'yield': return 'Yield Prediction';
-      case 'sustainability': return 'Sustainability Score';
-      case 'assistant': return 'Farmer Advisor';
-      case 'agentic-advisor': return 'Agentic Advisor';
-      case 'expert-review': return 'Expert Review';
-      case 'user-management': return 'User Management';
-      case 'system-monitoring': return 'System Monitoring';
-      default: return 'Protected Module';
-    }
-  };
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 4000);
-  };
-
-  const handleOpenAuth = (mode = 'login', targetTab = null) => {
-    setAuthMode(mode);
-    if (targetTab) {
-      setPendingTab(targetTab);
-    }
-    setAuthModalOpen(true);
-  };
-
-  const handleNavigateProtectedTab = (tab) => {
-    if (currentUser) {
-      setActiveTab(tab);
-    } else {
-      handleOpenAuth('login', tab);
-    }
-  };
+  // Backend Health Ping
+  useEffect(() => {
+    const verifyHealth = async () => {
+      try {
+        await checkBackendHealth();
+        setBackendStatus('online');
+      } catch (err) {
+        setBackendStatus('offline');
+      }
+    };
+    verifyHealth();
+  }, []);
 
   const handleAuthSuccess = (user) => {
     setCurrentUser(user);
-    showToast(`Welcome back, ${user.full_name}! Signed in successfully.`);
-    const userRole = (user.role || 'FARMER').toUpperCase();
-    if (userRole === 'AGRICULTURAL_STAKEHOLDER') {
-      setActiveTab(pendingTab || 'stakeholder-dashboard');
+    setAuthModalOpen(false);
+    const role = (user.role || 'FARMER').toUpperCase();
+    if (role === 'AGRICULTURAL_STAKEHOLDER') {
+      navigate('/stakeholder/dashboard');
+    } else if (role === 'AGRICULTURAL_EXPERT') {
+      navigate('/expert/dashboard');
+    } else if (role === 'ADMIN') {
+      navigate('/admin/dashboard');
     } else {
-      setActiveTab(pendingTab || 'dashboard');
+      navigate('/farmer/dashboard');
     }
-    setPendingTab(null);
   };
 
   const handleLogout = () => {
     authApi.logout();
     setCurrentUser(null);
-    setActiveTab('home');
-    showToast('Signed out successfully.');
+    navigate('/', { replace: true });
   };
 
-  // Scientific safety checks for farm context
-  const isLowConf = Boolean(
-    result && (
-      (typeof result.confidence_score === 'number' && result.confidence_score < 0.65) ||
-      (typeof result.confidence === 'string' && parseFloat(result.confidence) < 65)
-    )
-  );
-  const resolvedCrop = result ? resolveCrop(result) : null;
-
-  // Dynamic context synchronized across all farm modules
-  const farmContext = {
-    crop: isLowConf
-      ? (resolvedCrop ? `Possible Crop: ${resolvedCrop}` : 'Undetermined')
-      : (resolvedCrop || result?.crop || currentUser?.preferred_crop || 'Tomato'),
-    disease: isLowConf
-      ? 'Not confidently identified'
-      : (result?.disease || (liveWeather?.weather_risk === 'HIGH' ? 'Foliar Risk Alert' : 'Healthy Field')),
-    confidence: result?.confidence || (result ? '90%' : 'High'),
-    pathogen: isLowConf ? 'None' : (result?.pathogen || (result ? 'Detected Pathogen' : 'None')),
-    farmer_note: isLowConf
-      ? 'The model was unable to confidently identify the disease. Please upload a clearer image.'
-      : undefined,
-    temperature: liveWeather?.weather?.temperature ?? 28.0,
-    humidity: liveWeather?.weather?.humidity ?? 70.0,
-    rain_forecast_mm: liveWeather?.weather?.forecast_precipitation ?? 0.0,
-    irrigation_status: liveWeather?.irrigation_prediction === 'YES'
-      ? 'Irrigation Required (Low Soil Moisture)'
-      : (liveWeather?.irrigation_prediction === 'NO' ? 'Soil Moisture Adequate' : 'Optimal Hydration'),
-    soil_type: currentUser?.soil_type || 'Clay Loam',
-    n_p_k: '85-48-42 kg/ha',
-    farmer_name: currentUser?.full_name || 'Farmer',
-    farm_name: currentUser?.farm_name || 'Family Farm',
-    weather_risk: liveWeather?.weather_risk || 'LOW',
-    weather_condition: liveWeather?.weather?.weather_condition || 'Clear Sky',
-    weather_recommendation: liveWeather?.recommendation || 'Normal field operations.',
-  };
-
-  // Pre-load canonical 19 classes matching dataset/classes.json and best trained model
-  useEffect(() => {
-    setClassesData(CANONICAL_CLASSES);
-
-    // Initial weather intelligence load
-    fetchWeatherIntelligence()
-      .then((data) => {
-        if (data && data.status === 'success') {
-          setLiveWeather(data);
-        }
-      })
-      .catch((err) => console.warn('Weather auto-fetch deferred:', err));
-
-    // Check backend health via api service
-    checkBackendHealth().then((data) => {
-      if (data && data.status === 'healthy') {
-        setBackendStatus('online');
-      } else {
-        setBackendStatus('offline');
-      }
-    });
-  }, []);
-
-  const handleDiagnose = async (file) => {
-    setIsAnalyzing(true);
-    setResult(null);
-    setError(null);
-
-    try {
-      const data = await predictCropDisease(file);
-      setResult(data);
-      try {
-        const existing = JSON.parse(localStorage.getItem('agrismart_recent_analyses') || '[]');
-        const isLowConfEntry = (typeof data.confidence_score === 'number' && data.confidence_score < 0.65) ||
-                               (typeof data.confidence === 'string' && parseFloat(data.confidence) < 65);
-        const entryCrop = resolveCrop(data);
-        const newEntry = {
-          id: Date.now(),
-          date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          crop: isLowConfEntry
-            ? (entryCrop ? `Possible Crop: ${entryCrop}` : 'Undetermined')
-            : (entryCrop || data.crop || 'Crop'),
-          disease: isLowConfEntry ? 'Not confidently identified' : (data.disease || 'Condition'),
-          confidence: data.confidence || '0%',
-          confidence_score: data.confidence_score,
-          status: isLowConfEntry ? 'Low Confidence' : (data.status || 'Analyzed'),
-          pathogen: isLowConfEntry ? null : (data.pathogen || null),
-          treatment: isLowConfEntry ? null : (data.treatment || null),
-          imageName: file?.name || 'leaf_photo.jpg'
-        };
-        localStorage.setItem('agrismart_recent_analyses', JSON.stringify([newEntry, ...existing.slice(0, 9)]));
-      } catch (storageErr) {
-        console.warn('Could not cache recent analysis:', storageErr);
-      }
-    } catch (err) {
-      console.warn('Backend inference failed or offline, checking fallback:', err);
-      setError(err.message || 'AI inference request failed. Please check server connection.');
-    } finally {
-      setIsAnalyzing(false);
-    }
+  const handleProfileUpdated = (updatedUser) => {
+    setCurrentUser(updatedUser);
   };
 
   return (
-    <div className="app-container">
-      {/* Toast Notification Banner */}
-      {toastMessage && (
-        <div className="app-toast-banner">
-          <span className="toast-icon">🌱</span>
-          <span className="toast-text">{toastMessage}</span>
-          <button className="toast-close" onClick={() => setToastMessage(null)}>✕</button>
-        </div>
-      )}
-
-      {/* Global Navigation Header */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        backendStatus={backendStatus}
-        currentUser={currentUser}
-        onOpenAuth={handleOpenAuth}
-        onLogout={handleLogout}
-      />
-
-      {/* Main Content Area */}
-      <main className={`main-content ${!currentUser && activeTab === 'home' ? 'main-content-full' : ''}`}>
-        {/* Tab: Home Page (Only shown before login) */}
-        {!currentUser && activeTab === 'home' && (
-          <HomePage
-            onExploreDashboard={() => handleNavigateProtectedTab('dashboard')}
-            onOpenAuth={handleOpenAuth}
-            currentUser={currentUser}
-            onNavigateTab={handleNavigateProtectedTab}
-          />
-        )}
-
-        {/* Require Login Barrier: Displayed if guest tries to access any protected tab */}
-        {!currentUser && activeTab !== 'home' && (
-          <div className="auth-required-container">
-            <div className="auth-required-card">
-              <div className="auth-required-icon">🔒</div>
-              <h2 className="auth-required-title">Sign In Required</h2>
-              <p className="auth-required-desc">
-                Access to the <strong>{getTabTitle(activeTab)}</strong> requires an active account. Please sign in or create a free account to continue.
-              </p>
-              <div className="auth-required-btn-group">
-                <button
-                  className="auth-submit-btn"
-                  onClick={() => handleOpenAuth('login', activeTab)}
-                >
-                  Sign In to Access {getTabTitle(activeTab)} →
-                </button>
-                <button
-                  className="auth-secondary-btn"
-                  onClick={() => handleOpenAuth('signup', activeTab)}
-                >
-                  Create New Account
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Protected Pages (Rendered only after authentication) */}
-        {currentUser && (
-          <>
-            {/* Tab: Agricultural Stakeholder Modules */}
-            {(activeTab === 'stakeholder-dashboard' ||
-              activeTab === 'stakeholder-farmers' ||
-              activeTab === 'stakeholder-risks' ||
-              activeTab === 'stakeholder-copilot' ||
-              activeTab === 'regional-intelligence' ||
-              (activeTab === 'home' && (currentUser?.role || '').toUpperCase() === 'AGRICULTURAL_STAKEHOLDER')) && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['AGRICULTURAL_STAKEHOLDER', 'ADMIN']}>
-                <StakeholderDashboard
-                  currentUser={currentUser}
-                  activeView={activeTab}
-                  onNavigateTab={(tab) => setActiveTab(tab)}
-                />
-              </RoleProtectedRoute>
-            )}
-
-            {/* Tab: Farmer Dashboard */}
-            {(activeTab === 'dashboard' || (activeTab === 'home' && (currentUser?.role || '').toUpperCase() !== 'AGRICULTURAL_STAKEHOLDER')) && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['FARMER', 'ADMIN', 'AGRICULTURAL_EXPERT']}>
-                <Dashboard
-                  onStartDiagnose={() => setActiveTab('diagnose')}
-                  onNavigateTab={(tab, subTab = 'irrigation') => {
-                    if (subTab) setSmartFarmingSubTab(subTab);
-                    setActiveTab(tab);
-                  }}
-                  latestResult={result}
-                  currentUser={currentUser}
-                  classesData={classesData}
-                  onWeatherUpdate={setLiveWeather}
-                />
-              </RoleProtectedRoute>
-            )}
-
-            {/* Tab: Disease Detector Studio */}
-            {activeTab === 'diagnose' && (
+    <div className="app-root">
+      <Routes>
+        {/* Public Landing & Login */}
+        <Route
+          path="/"
+          element={
+            currentUser ? (
+              <RoleDashboardRedirect currentUser={currentUser} />
+            ) : (
               <div>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                      <h2 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>Disease Detection Studio</h2>
-                      <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.92rem' }}>
-                        AI-powered plant leaf disease detection across supported crop and disease classes.
-                      </p>
-                    </div>
-
-                    {/* Supported Crops compact info section */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      background: 'rgba(16, 185, 129, 0.08)',
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '999px',
-                      border: '1px solid rgba(16, 185, 129, 0.25)',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Supported Crops ({SUPPORTED_CROPS.length}):
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {SUPPORTED_CROPS.map((c) => (
-                          <span
-                            key={c}
-                            style={{
-                              fontSize: '0.78rem',
-                              color: '#a7f3d0',
-                              fontWeight: 500,
-                              background: 'rgba(16, 185, 129, 0.16)',
-                              padding: '0.15rem 0.5rem',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="workflow-grid">
-                  <ImageUpload onDiagnose={handleDiagnose} isAnalyzing={isAnalyzing} />
-                  <ResultView
-                    result={result}
-                    isAnalyzing={isAnalyzing}
-                    error={error}
-                    weatherData={liveWeather}
-                    onNavigateToWeather={() => setActiveTab('weather')}
-                    onNavigateToAssistant={() => setActiveTab('assistant')}
-                  />
-                </div>
+                <Navbar
+                  activeTab="home"
+                  setActiveTab={(tab) => {
+                    if (tab === 'login') {
+                      navigate('/login');
+                    } else if (tab === 'signup') {
+                      navigate('/signup');
+                    }
+                  }}
+                  backendStatus={backendStatus}
+                  currentUser={null}
+                  onOpenAuth={(mode) => {
+                    if (mode === 'signup') {
+                      navigate('/signup');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
+                  onLogout={handleLogout}
+                />
+                <HomePage
+                  onOpenAuth={(mode) => {
+                    if (mode === 'signup') {
+                      navigate('/signup');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
+                  onExploreClick={() => navigate('/login')}
+                />
               </div>
-            )}
+            )
+          }
+        />
 
-            {/* Tab: Weather Intelligence */}
-            {activeTab === 'weather' && (
-              <WeatherDashboard
-                onNavigateToDiagnose={() => setActiveTab('diagnose')}
-                onWeatherUpdate={setLiveWeather}
-              />
-            )}
+        <Route
+          path="/home"
+          element={<Navigate to="/" replace />}
+        />
 
-            {/* Tab: Smart Farming & Precision Irrigation */}
-            {activeTab === 'smart-farming' && (
-              <SmartFarmingDashboard initialSubTab="irrigation" />
-            )}
+        <Route
+          path="/login"
+          element={<LoginPage initialMode="login" onAuthSuccess={handleAuthSuccess} />}
+        />
 
-            {/* Tab: Crop Recommendation */}
-            {activeTab === 'crop-recommendation' && (
-              <SmartFarmingDashboard initialSubTab="crops" />
-            )}
+        <Route
+          path="/signup"
+          element={<LoginPage initialMode="signup" onAuthSuccess={handleAuthSuccess} />}
+        />
 
-            {/* Tab: Yield Prediction */}
-            {activeTab === 'yield' && (
-              <Dashboard
-                onStartDiagnose={() => setActiveTab('diagnose')}
-                onNavigateTab={(tab, subTab = 'irrigation') => {
-                  if (subTab) setSmartFarmingSubTab(subTab);
-                  setActiveTab(tab);
-                }}
-                latestResult={result}
+        <Route
+          path="/register"
+          element={<Navigate to="/signup" replace />}
+        />
+
+        {/* Universal Redirect */}
+        <Route
+          path="/dashboard"
+          element={<RoleDashboardRedirect currentUser={currentUser} />}
+        />
+
+        {/* =======================================================
+            1. FARMER PROTECTED ROUTES (/farmer/*)
+            ======================================================= */}
+        <Route
+          path="/farmer"
+          element={
+            <ProtectedRoute requiredRoles={['FARMER']}>
+              <RoleLayout
                 currentUser={currentUser}
-                classesData={classesData}
-                onWeatherUpdate={setLiveWeather}
-                initialModal="yield"
+                onLogout={handleLogout}
+                onRefreshUser={() => setCurrentUser(authApi.getCurrentUser())}
               />
-            )}
-
-            {/* Tab: Sustainability Score */}
-            {activeTab === 'sustainability' && (
-              <Dashboard
-                onStartDiagnose={() => setActiveTab('diagnose')}
-                onNavigateTab={(tab, subTab = 'irrigation') => {
-                  if (subTab) setSmartFarmingSubTab(subTab);
-                  setActiveTab(tab);
-                }}
-                latestResult={result}
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/farmer/dashboard" replace />} />
+          <Route path="dashboard" element={<FarmerDashboard />} />
+          <Route path="disease-detection" element={<FarmerDiseaseDetection />} />
+          <Route path="irrigation" element={<FarmerSmartIrrigation />} />
+          <Route path="my-crops" element={<FarmerMyCrops />} />
+          <Route path="disease-history" element={<FarmerDiseaseHistory />} />
+          <Route path="treatments" element={<FarmerTreatments />} />
+          <Route path="weather" element={<FarmerWeather />} />
+          <Route
+            path="profile"
+            element={
+              <ProfileView
                 currentUser={currentUser}
-                classesData={classesData}
-                onWeatherUpdate={setLiveWeather}
-                initialModal="sustainability"
+                onProfileUpdated={handleProfileUpdated}
+                onLogout={handleLogout}
               />
-            )}
+            }
+          />
+        </Route>
 
-            {/* Tab: Farmer Advisor / Kisan AI Co-Pilot */}
-            {activeTab === 'assistant' && (
-              <GenAIAssistant farmContext={farmContext} />
-            )}
-
-            {/* Tab: 🏢 Connected Organizations (Federated Partnerships) */}
-            {activeTab === 'organizations' && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['FARMER', 'ADMIN']}>
-                <FarmerStakeholdersView currentUser={currentUser} onShowToast={showToast} />
-              </RoleProtectedRoute>
-            )}
-
-            {/* Tab: Agentic Advisor (Module G) */}
-            {activeTab === 'agentic-advisor' && (
-              <Dashboard
-                onStartDiagnose={() => setActiveTab('diagnose')}
-                onNavigateTab={(tab, subTab = 'irrigation') => {
-                  if (subTab) setSmartFarmingSubTab(subTab);
-                  setActiveTab(tab);
-                }}
-                latestResult={result}
+        {/* =======================================================
+            2. STAKEHOLDER PROTECTED ROUTES (/stakeholder/*)
+            ======================================================= */}
+        <Route
+          path="/stakeholder"
+          element={
+            <ProtectedRoute requiredRoles={['AGRICULTURAL_STAKEHOLDER', 'ADMIN']}>
+              <RoleLayout
                 currentUser={currentUser}
-                classesData={classesData}
-                onWeatherUpdate={setLiveWeather}
-                focusSection="agentic"
+                onLogout={handleLogout}
+                onRefreshUser={() => setCurrentUser(authApi.getCurrentUser())}
               />
-            )}
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
+          <Route path="dashboard" element={<StakeholderRoleDashboard />} />
+          <Route path="analytics" element={<StakeholderAnalyticsView />} />
+          <Route path="crop-statistics" element={<StakeholderCropStatsView />} />
+          <Route path="disease-trends" element={<StakeholderDiseaseTrendsView />} />
+          <Route path="reports" element={<StakeholderReportsView />} />
+          <Route path="activity" element={<StakeholderActivityView />} />
+          <Route
+            path="profile"
+            element={
+              <ProfileView
+                currentUser={currentUser}
+                onProfileUpdated={handleProfileUpdated}
+                onLogout={handleLogout}
+              />
+            }
+          />
+        </Route>
 
-            {/* Tab: 👨‍🔬 Expert Review (RoleProtectedRoute: AGRICULTURAL_EXPERT + ADMIN) */}
-            {activeTab === 'expert-review' && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['AGRICULTURAL_EXPERT', 'ADMIN']}>
-                <ExpertReviewView currentUser={currentUser} />
-              </RoleProtectedRoute>
-            )}
+        {/* =======================================================
+            3. EXPERT PROTECTED ROUTES (/expert/*)
+            ======================================================= */}
+        <Route
+          path="/expert"
+          element={
+            <ProtectedRoute requiredRoles={['AGRICULTURAL_EXPERT', 'ADMIN']}>
+              <RoleLayout
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                onRefreshUser={() => setCurrentUser(authApi.getCurrentUser())}
+              />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/expert/dashboard" replace />} />
+          <Route path="dashboard" element={<ExpertDashboard />} />
+          <Route path="cases" element={<ExpertDiseaseCases />} />
+          <Route path="queries" element={<ExpertFarmerQueries />} />
+          <Route path="diagnosis-review" element={<ExpertDiagnosisReview />} />
+          <Route path="treatments" element={<ExpertTreatmentsView />} />
+          <Route
+            path="profile"
+            element={
+              <ProfileView
+                currentUser={currentUser}
+                onProfileUpdated={handleProfileUpdated}
+                onLogout={handleLogout}
+              />
+            }
+          />
+        </Route>
 
-            {/* Tab: 🛠️ User Management (RoleProtectedRoute: ADMIN only) */}
-            {activeTab === 'user-management' && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['ADMIN']}>
-                <UserManagementView currentUser={currentUser} onShowToast={showToast} />
-              </RoleProtectedRoute>
-            )}
+        {/* =======================================================
+            4. ADMIN PROTECTED ROUTES (/admin/*)
+            ======================================================= */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']}>
+              <RoleLayout
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                onRefreshUser={() => setCurrentUser(authApi.getCurrentUser())}
+              />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUserManagement />} />
+          <Route path="crops" element={<AdminCropManagement />} />
+          <Route path="diseases" element={<AdminDiseaseManagement />} />
+          <Route path="ai-model" element={<AdminDatasetAIView />} />
+          <Route path="reports" element={<AdminReportsView />} />
+          <Route path="activity" element={<AdminSystemActivity />} />
+          <Route path="settings" element={<AdminSettingsView />} />
+          <Route
+            path="profile"
+            element={
+              <ProfileView
+                currentUser={currentUser}
+                onProfileUpdated={handleProfileUpdated}
+                onLogout={handleLogout}
+              />
+            }
+          />
+        </Route>
 
-            {/* Tab: 🛠️ System Monitoring (RoleProtectedRoute: ADMIN only) */}
-            {activeTab === 'system-monitoring' && (
-              <RoleProtectedRoute currentUser={currentUser} requiredRoles={['ADMIN']}>
-                <SystemMonitoringView currentUser={currentUser} />
-              </RoleProtectedRoute>
-            )}
-          </>
-        )}
-      </main>
+        {/* Fallback 404 Route */}
+        <Route
+          path="*"
+          element={<RoleDashboardRedirect currentUser={currentUser} />}
+        />
+      </Routes>
 
-      {/* Floating Chatbot Button */}
+      {/* Floating Chatbot Assistant */}
       <FloatingChatbotButton
-        activeTab={activeTab}
-        onOpenAssistant={() => handleNavigateProtectedTab('assistant')}
+        activeTab="assistant"
+        onOpenAssistant={() => {
+          const role = (currentUser?.role || 'FARMER').toUpperCase();
+          if (role === 'FARMER') navigate('/farmer/dashboard');
+          else if (role === 'AGRICULTURAL_STAKEHOLDER') navigate('/stakeholder/dashboard');
+          else if (role === 'AGRICULTURAL_EXPERT') navigate('/expert/dashboard');
+          else navigate('/admin/dashboard');
+        }}
       />
 
-      {/* Authentication Modal (Login & Signup) */}
+      {/* Legacy AuthModal fallback if triggered */}
       <AuthModal
         isOpen={authModalOpen}
         initialMode={authMode}
         onClose={() => setAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
       />
-
-      {/* Footer (Rendered when not on Home Page which has its own footer) */}
-      {activeTab !== 'home' && (
-        <footer className="footer">
-          <p>AgriSmart AI © 2026 • Intelligent Agricultural Health & Early Warning Diagnostic System</p>
-        </footer>
-      )}
     </div>
   );
 }

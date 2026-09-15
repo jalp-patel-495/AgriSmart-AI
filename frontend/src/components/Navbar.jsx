@@ -373,6 +373,12 @@ export default function Navbar({
               >
                 Sign In
               </button>
+              <button
+                className="nav-signup-btn"
+                onClick={() => onOpenAuth('signup')}
+              >
+                Create Account
+              </button>
             </div>
           )}
         </div>

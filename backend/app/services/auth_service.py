@@ -134,6 +134,8 @@ def register_user(db: Session, req: UserSignupRequest) -> Tuple[User, str]:
         email=req.email.lower().strip(),
         password_hash=pwd_hash,
         salt=salt,
+        phone_number=req.phone_number.strip() if req.phone_number else None,
+        profile_image=req.profile_image.strip() if req.profile_image else None,
         farm_name=req.farm_name.strip() if req.farm_name else default_farm_name,
         farm_location=req.farm_location.strip() if req.farm_location else "Punjab, India",
         preferred_crop=req.preferred_crop.strip() if req.preferred_crop else "Wheat",
@@ -387,6 +389,10 @@ def update_user_profile(db: Session, req: UpdateProfileRequest) -> Tuple[User, s
         user.farm_location = req.farm_location.strip()
     if req.preferred_crop is not None:
         user.preferred_crop = req.preferred_crop.strip()
+    if req.phone_number is not None:
+        user.phone_number = req.phone_number.strip()
+    if req.profile_image is not None:
+        user.profile_image = req.profile_image.strip()
     if req.organization_name is not None:
         user.organization_name = req.organization_name.strip()
     if req.organization_type is not None:

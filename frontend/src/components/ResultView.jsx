@@ -4,10 +4,24 @@ import {
   resolveConfidence,
   isHealthyClass,
   resolvePathogen,
-  SAFE_LOW_CONFIDENCE_PRECAUTIONS,
   HEALTHY_MONITORING_PRECAUTIONS
 } from '../utils/cropDiseaseResolver';
 
+/**
+ * ResultView Component for Field Diagnostic Reporting
+ * 
+ * Enforces:
+ * - Clean, professional, high-tech diagnostic outcome layout
+ * - Exact 65% scientific safety gate:
+ *   - Under 65%: "⚠️ Low Confidence — Further Inspection Needed", Disease: "Not confidently identified",
+ *     crop retained if valid, treatments & pathogens strictly suppressed.
+ *   - 65% and above: "✅ High Confidence", verified disease name & treatments displayed.
+ * - Out-of-Distribution (OOD) and Image Quality failure states
+ * - Separate Detected Crop & Crop Confidence alongside Disease & Disease Confidence
+ * - Observable foliar symptoms supported by model data
+ * - Compact interactive guidelines / precautions checklist
+ * - AI response time when provided by backend
+ */
 export default function ResultView({
   result,
   isAnalyzing,
@@ -29,54 +43,121 @@ export default function ResultView({
     window.print();
   };
 
+  // 1. Analyzing state
   if (isAnalyzing) {
     return (
-      <div className="panel-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '380px' }}>
-        <div style={{ fontSize: '2.8rem', animation: 'spin 1.5s linear infinite' }}>⚙️</div>
-        <h4 style={{ marginTop: '1.25rem', color: '#fff', fontSize: '1.2rem' }}>Processing Deep Neural Forward Pass...</h4>
-        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-emerald)', fontSize: '0.85rem' }}>✓ Decoding image buffer with OpenCV</span>
-          <span style={{ color: 'var(--text-emerald)', fontSize: '0.85rem' }}>✓ Standardizing 224×224 tensor normalization</span>
-          <span style={{ color: '#60a5fa', fontSize: '0.85rem' }}>⚡ Computing PyTorch class probabilities</span>
+      <div className="panel-card" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '340px',
+        textAlign: 'center',
+        padding: '2.5rem 1.5rem'
+      }}>
+        <div style={{
+          fontSize: '3rem',
+          animation: 'spin 1.4s linear infinite',
+          filter: 'drop-shadow(0 0 16px rgba(52, 211, 153, 0.5))'
+        }}>
+          🔄
         </div>
-        <style>{`
-          @keyframes spin { 100% { transform: rotate(360deg); } }
-        `}</style>
+        <h3 style={{ marginTop: '1.25rem', color: '#fff', fontSize: '1.25rem', fontWeight: 800 }}>
+          Analyzing Leaf...
+        </h3>
+        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.35rem', maxWidth: '340px' }}>
+          AI model is processing the specimen.
+        </p>
+        <div style={{
+          marginTop: '1.2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.45rem',
+          alignItems: 'center',
+          background: 'rgba(0, 0, 0, 0.3)',
+          padding: '0.85rem 1.25rem',
+          borderRadius: '10px',
+          border: '1px solid rgba(52, 211, 153, 0.2)'
+        }}>
+          <span style={{ color: '#34d399', fontSize: '0.82rem', fontWeight: 600 }}>
+            ✓ Image tensor normalization (224×224)
+          </span>
+          <span style={{ color: '#38bdf8', fontSize: '0.82rem', fontWeight: 600 }}>
+            ✓ Computing universal crop & disease probabilities
+          </span>
+          <span style={{ color: '#fef08a', fontSize: '0.82rem', fontWeight: 600 }}>
+            ⚡ Calibrating 65% safety gate threshold
+          </span>
+        </div>
       </div>
     );
   }
 
+  // 2. Error state
   if (error) {
     return (
-      <div className="panel-card" style={{ minHeight: '380px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
-        <h3 style={{ marginTop: '0.75rem', color: '#f87171' }}>Diagnostic Failed</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '350px', marginTop: '0.35rem' }}>
+      <div className="panel-card" style={{
+        minHeight: '320px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        padding: '2.5rem 1.5rem'
+      }}>
+        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⚠️</div>
+        <h3 style={{ color: '#f87171', fontSize: '1.2rem', fontWeight: 700 }}>Diagnostic Request Failed</h3>
+        <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.88rem', maxWidth: '380px', marginTop: '0.4rem', lineHeight: 1.5 }}>
           {error}
         </p>
       </div>
     );
   }
 
+  // 3. Awaiting Leaf Specimen placeholder state
   if (!result) {
     return (
-      <div className="panel-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '380px', textAlign: 'center' }}>
-        <div style={{ fontSize: '3.2rem', opacity: 0.4 }}>📋</div>
-        <h4 style={{ marginTop: '0.75rem', color: 'var(--text-secondary)', fontSize: '1.15rem' }}>Awaiting Leaf Inspection</h4>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '320px', marginTop: '0.35rem' }}>
-          Upload or capture a leaf photo on the left. The neural network will inspect foliar patterns, evaluate confidence thresholds, and generate safety-gated field recommendations.
+      <div className="result-placeholder-box">
+        <div className="placeholder-icon">🌱</div>
+        <h4>Awaiting Leaf Specimen</h4>
+        <p>
+          Upload an image to start AI disease classification.
         </p>
+        <div className="feature-bullets">
+          <div className="bullet-item">✓ 38 supported disease & healthy classes</div>
+          <div className="bullet-item">✓ Separate Crop & Disease confidence calibration</div>
+          <div className="bullet-item">✓ Strict 65% safety gate preventing false prescriptions</div>
+        </div>
       </div>
     );
   }
 
-  // Resolve scientific safety thresholds and canonical crop mapping
-  const { percentStr, percentNum, isLowConfidence, tier, barColor } = resolveConfidence(result);
-  const resolvedCrop = resolveCrop(result);
-  const isHealthy = isHealthyClass(result, isLowConfidence);
-  const pathogen = resolvePathogen(result, isLowConfidence, isHealthy);
+  // 4. Resolve states, confidence, and canonical crop
+  const isOOD = Boolean(result.is_ood || result.status === 'out_of_distribution' || result.status === 'unsupported');
+  const isQualityFail = Boolean(result.quality_ok === false || result.status === 'undetermined');
 
-  // Weather data extraction (real API values only)
+  const { percentStr, percentNum, isLowConfidence, tier, barColor } = resolveConfidence(result);
+  const rawResolvedCrop = resolveCrop(result);
+  const resolvedCrop = (isOOD || isQualityFail) ? null : rawResolvedCrop;
+  const isHealthy = !isOOD && !isQualityFail && isHealthyClass(result, isLowConfidence);
+  const pathogen = (!isOOD && !isQualityFail) ? resolvePathogen(result, isLowConfidence, isHealthy) : null;
+
+  // Crop confidence calculation (separate from disease confidence)
+  let cropConfidenceStr = '--';
+  if (result.crop_confidence !== undefined && result.crop_confidence !== null) {
+    const cc = parseFloat(result.crop_confidence);
+    cropConfidenceStr = `${Math.round(cc > 1 ? cc : cc * 100)}%`;
+  } else if (resolvedCrop && !isLowConfidence) {
+    // If crop is solidly resolved, display calibrated confidence or disease confidence
+    cropConfidenceStr = percentStr;
+  }
+
+  // Disease confidence calculation
+  const diseaseConfidenceStr = result.disease_confidence !== undefined && result.disease_confidence !== null
+    ? `${Math.round(parseFloat(result.disease_confidence) * 100)}%`
+    : percentStr;
+
+  // Weather Context
   const isWeatherAvailable = Boolean(
     weatherData &&
     (weatherData.weather || typeof weatherData.temperature === 'number' || typeof weatherData.weather?.temperature === 'number')
@@ -94,26 +175,38 @@ export default function ResultView({
     }
   };
 
-  // Determine precautions array based on state
+  // Guidelines compact checklist
+  const lowConfidenceChecklist = [
+    'Upload a clearer, high-resolution leaf image',
+    'Use natural daylight and avoid artificial color cast',
+    'Keep the leaf in sharp focus',
+    'Avoid blur, glare and harsh shadows',
+    'Capture the complete leaf surface',
+    'Inspect both upper and lower surfaces where appropriate'
+  ];
+
+  // Active precautions determination
   let activePrecautions = [];
-  if (isLowConfidence) {
-    activePrecautions = SAFE_LOW_CONFIDENCE_PRECAUTIONS;
+  if (isOOD || isQualityFail || isLowConfidence) {
+    activePrecautions = lowConfidenceChecklist;
   } else if (isHealthy) {
     activePrecautions = HEALTHY_MONITORING_PRECAUTIONS;
   } else {
-    activePrecautions = result.precautions && result.precautions.length > 0 ? result.precautions : [
-      'Remove affected foliage to prevent spore proliferation',
-      'Improve canopy ventilation and sanitize pruning tools',
-      'Avoid overhead sprinkler irrigation to minimize leaf wetness duration'
-    ];
+    activePrecautions = (result.precautions && result.precautions.length > 0)
+      ? result.precautions
+      : [
+        'Prune and isolate affected foliar branches to curtail spore spread',
+        'Improve canopy airflow and sanitize tools between cuts',
+        'Avoid overhead sprinkler watering to reduce leaf surface wetness'
+      ];
   }
 
   const handleAssistantClick = () => {
     if (!onNavigateToAssistant) return;
-    if (isLowConfidence) {
+    if (isOOD || isQualityFail || isLowConfidence) {
       onNavigateToAssistant({
         isLowConfidence: true,
-        safePrompt: 'The model was unable to confidently identify the disease. Please upload a clearer image.',
+        safePrompt: 'The model was unable to confidently identify the disease (<65% confidence). Please provide recommendations on how to capture a clear specimen.',
         crop: resolvedCrop || 'Undetermined'
       });
     } else {
@@ -126,192 +219,350 @@ export default function ResultView({
   };
 
   return (
-    <div className="panel-card" id="diagnostic-report-panel">
-      {/* Panel Header */}
-      <div className="panel-header">
-        <h3 className="panel-title">🌿 Field Diagnostic Report</h3>
+    <div id="diagnostic-report-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Top Bar: Field Diagnostic Report Header + Response Time + Export */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.65rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        paddingBottom: '0.85rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>🌿</span>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
+            Field Diagnostic Report
+          </h3>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {result.processing_time_ms && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-emerald)', fontWeight: 'bold' }}>
+            <span style={{
+              fontSize: '0.75rem',
+              color: '#34d399',
+              fontWeight: 700,
+              background: 'rgba(16, 185, 129, 0.12)',
+              padding: '0.2rem 0.6rem',
+              borderRadius: '999px',
+              border: '1px solid rgba(52, 211, 153, 0.3)'
+            }}>
               ⚡ {result.processing_time_ms} ms
             </span>
           )}
           <button
+            type="button"
             className="btn-secondary"
-            style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+            style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
             onClick={handlePrintReport}
-            title="Print or save verified PDF report"
+            title="Export report"
           >
             🖨️ Export PDF
           </button>
         </div>
       </div>
 
-      {/* State Badge & Crop Resolution */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        {isLowConfidence ? (
-          <span
-            className="result-header-badge"
-            style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.35)' }}
-          >
-            ⚠️ Low Confidence
-          </span>
+      {/* Safety Status Banner */}
+      <div>
+        {isOOD ? (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '999px',
+            background: 'rgba(239, 68, 68, 0.15)',
+            color: '#fca5a5',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            <span>⚠️</span>
+            <span>Unsupported / Unknown Specimen</span>
+          </div>
+        ) : isQualityFail ? (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '999px',
+            background: 'rgba(245, 158, 11, 0.15)',
+            color: '#fef08a',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            <span>⚠️</span>
+            <span>Undetermined — Low Image Quality</span>
+          </div>
+        ) : isLowConfidence ? (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '999px',
+            background: 'rgba(239, 68, 68, 0.15)',
+            color: '#fca5a5',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            <span>⚠️</span>
+            <span>Low Confidence</span>
+          </div>
         ) : isHealthy ? (
-          <span
-            className="result-header-badge"
-            style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#6ee7b7', border: '1px solid rgba(16, 185, 129, 0.35)' }}
-          >
-            🟢 Healthy Crop
-          </span>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '999px',
+            background: 'rgba(16, 185, 129, 0.18)',
+            color: '#6ee7b7',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            <span>✅</span>
+            <span>High Confidence • Healthy Foliage</span>
+          </div>
         ) : (
-          <span
-            className="result-header-badge"
-            style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.35)' }}
-          >
-            🌿 Pathology Detected
-          </span>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '999px',
+            background: 'rgba(16, 185, 129, 0.18)',
+            color: '#6ee7b7',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            <span>✅</span>
+            <span>High Confidence</span>
+          </div>
         )}
-
-        {/* Crop Information: "Possible Crop" for <65%, "Crop" for >=65%, "Undetermined" only if unmapped */}
-        <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          {isLowConfidence ? (
-            resolvedCrop ? (
-              <>Possible Crop: <strong style={{ color: '#fef08a' }}>{resolvedCrop}</strong></>
-            ) : (
-              <>Crop: <strong style={{ color: '#9ca3af' }}>Undetermined</strong></>
-            )
-          ) : (
-            <>Crop: <strong style={{ color: '#fff' }}>{resolvedCrop || result.crop || 'Undetermined'}</strong></>
-          )}
-        </span>
       </div>
 
-      {/* Universal 14-Plant Pipeline Intelligence Summary */}
+      {/* Primary Key Metrics Grid: Detected Crop | Crop Confidence | Disease | Disease Confidence | Status */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-        gap: '0.5rem',
-        marginTop: '0.75rem',
-        marginBottom: '0.5rem',
-        background: 'rgba(255, 255, 255, 0.03)',
-        padding: '0.6rem 0.8rem',
-        borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.06)'
+        gap: '0.65rem',
+        background: 'rgba(0, 0, 0, 0.35)',
+        padding: '0.85rem 1rem',
+        borderRadius: '12px',
+        border: '1px solid rgba(52, 211, 153, 0.2)'
       }}>
+        {/* Detected Crop */}
         <div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Detected Crop</div>
-          <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#fff' }}>
-            {resolvedCrop || result.crop || 'Undetermined'}
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Detected Crop
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginTop: '0.15rem' }}>
+            {isOOD ? 'Unsupported / Unknown' : isQualityFail ? 'Undetermined' : (resolvedCrop || result.crop || 'Undetermined')}
           </div>
         </div>
-        {result.crop_confidence !== undefined && result.crop_confidence !== null && (
-          <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Crop Confidence</div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#38bdf8' }}>
-              {Math.round(result.crop_confidence * 100)}%
-            </div>
-          </div>
-        )}
+
+        {/* Crop Confidence */}
         <div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Disease</div>
-          <div style={{ fontSize: '0.92rem', fontWeight: 600, color: isLowConfidence ? '#fca5a5' : isHealthy ? '#6ee7b7' : '#f87171' }}>
-            {isLowConfidence ? 'Not confidently identified' : isHealthy ? 'Healthy' : (result.disease || 'Detected Condition')}
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Crop Confidence
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.15rem' }}>
+            {isOOD || isQualityFail ? '--' : cropConfidenceStr}
           </div>
         </div>
+
+        {/* Disease */}
         <div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Disease Confidence</div>
-          <div style={{ fontSize: '0.92rem', fontWeight: 600, color: barColor }}>
-            {result.disease_confidence !== undefined && result.disease_confidence !== null ? `${Math.round(result.disease_confidence * 100)}%` : percentStr}
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Disease
+          </div>
+          <div style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: (isOOD || isQualityFail || isLowConfidence) ? '#fca5a5' : isHealthy ? '#6ee7b7' : '#f87171',
+            marginTop: '0.15rem'
+          }}>
+            {(isOOD || isQualityFail || isLowConfidence)
+              ? 'Not confidently identified'
+              : isHealthy
+              ? 'Healthy'
+              : (result.disease || 'Detected Condition')}
           </div>
         </div>
+
+        {/* Disease Confidence */}
         <div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</div>
-          <div style={{ fontSize: '0.92rem', fontWeight: 600, color: isHealthy ? '#6ee7b7' : isLowConfidence ? '#f59e0b' : '#ef4444' }}>
-            {result.status || (isHealthy ? 'Healthy' : isLowConfidence ? 'Low Confidence' : 'Diseased')}
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Disease Confidence
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: barColor, marginTop: '0.15rem' }}>
+            {isOOD || isQualityFail ? '--' : diseaseConfidenceStr}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div>
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Status
+          </div>
+          <div style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: (isOOD || isQualityFail || isLowConfidence) ? '#f59e0b' : isHealthy ? '#34d399' : '#ef4444',
+            marginTop: '0.15rem'
+          }}>
+            {isOOD ? 'Unknown' : isQualityFail ? 'Undetermined' : isLowConfidence ? 'Low Confidence' : isHealthy ? 'Healthy' : 'Diseased'}
           </div>
         </div>
       </div>
 
       {/* Main Condition Heading */}
-      {isLowConfidence ? (
-        <div style={{ marginTop: '0.65rem' }}>
-          <h2 className="disease-main-title" style={{ color: '#fca5a5', fontSize: '1.4rem' }}>
-            Low Confidence — Further Inspection Needed
-          </h2>
-          <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginTop: '0.2rem' }}>
-            Disease: <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>Not confidently identified</span>
+      <div>
+        {isOOD ? (
+          <div>
+            <h2 style={{ color: '#fca5a5', fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              Unsupported / Unknown Specimen
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+              The uploaded image is outside the distribution of supported crop classes.
+            </p>
           </div>
-        </div>
-      ) : isHealthy ? (
-        <div style={{ marginTop: '0.65rem' }}>
-          <h2 className="disease-main-title" style={{ color: '#34d399', fontSize: '1.5rem' }}>
-            {resolvedCrop ? `${resolvedCrop} Healthy` : 'Healthy Foliage'}
-          </h2>
-          <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginTop: '0.2rem' }}>
-            Result: <strong style={{ color: '#6ee7b7' }}>Healthy</strong>
+        ) : isQualityFail ? (
+          <div>
+            <h2 style={{ color: '#fca5a5', fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              Undetermined Specimen
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+              Image quality metrics are insufficient for reliable feature extraction.
+            </p>
           </div>
-        </div>
-      ) : (
-        <div style={{ marginTop: '0.65rem' }}>
-          <h2 className="disease-main-title">
-            {result.disease}
-          </h2>
-        </div>
-      )}
+        ) : isLowConfidence ? (
+          <div>
+            <h2 style={{ color: '#fca5a5', fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              Low Confidence — Further Inspection Needed
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+              Disease: <span style={{ color: '#e2e8f0', fontStyle: 'italic' }}>Not confidently identified</span>
+            </p>
+          </div>
+        ) : isHealthy ? (
+          <div>
+            <h2 style={{ color: '#34d399', fontSize: '1.45rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              {resolvedCrop ? `${resolvedCrop} Healthy` : 'Healthy Foliage'}
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+              No infectious foliar pathogens or necrotic lesions detected.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <h2 style={{ color: '#fff', fontSize: '1.45rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              {result.disease}
+            </h2>
+            {resolvedCrop && (
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                Foliar pathology identified on <strong style={{ color: '#fff' }}>{resolvedCrop}</strong>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Improved Confidence Visualization (Safety Gate at 65%) */}
-      <div style={{ marginTop: '1rem', padding: '0.75rem 0.85rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>AI Diagnostic Confidence:</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span
-              style={{
+      {/* Confidence Visualization Bar (Strict 65% Safety Gate) */}
+      {!isOOD && !isQualityFail && (
+        <div style={{
+          padding: '0.75rem 1rem',
+          background: 'rgba(0, 0, 0, 0.25)',
+          borderRadius: '10px',
+          border: '1px solid rgba(255, 255, 255, 0.06)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
+              Diagnostic Confidence Calibration
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
                 fontSize: '0.72rem',
-                padding: '0.15rem 0.5rem',
-                borderRadius: '999px',
-                fontWeight: 600,
+                fontWeight: 700,
                 color: barColor,
                 background: `${barColor}22`,
                 border: `1px solid ${barColor}44`,
+                padding: '0.15rem 0.5rem',
+                borderRadius: '999px'
+              }}>
+                {tier}
+              </span>
+              <strong style={{ color: barColor, fontSize: '0.95rem' }}>{percentStr}</strong>
+            </div>
+          </div>
+
+          <div style={{
+            height: '8px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '999px',
+            overflow: 'hidden'
+          }}>
+            <div
+              style={{
+                width: `${percentNum}%`,
+                height: '100%',
+                background: barColor,
+                borderRadius: '999px',
+                transition: 'width 0.8s ease'
               }}
-            >
-              {tier}
-            </span>
-            <strong style={{ color: barColor, fontSize: '0.95rem' }}>{percentStr}</strong>
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '0.7rem',
+            color: '#64748b',
+            marginTop: '0.35rem'
+          }}>
+            <span>0% (Uncertain)</span>
+            <span style={{ color: '#f59e0b', fontWeight: 600 }}>65% Safety Gate</span>
+            <span style={{ color: '#10b981', fontWeight: 600 }}>85%+ (Verified)</span>
           </div>
         </div>
-        <div className="confidence-bar-container" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.08)' }}>
-          <div
-            className="confidence-bar-fill"
-            style={{
-              width: `${percentNum}%`,
-              background: barColor,
-              transition: 'width 0.6s ease'
-            }}
-          />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-          <span>0% (Low)</span>
-          <span style={{ color: '#f59e0b' }}>65% Safety Gate</span>
-          <span style={{ color: '#10b981' }}>85%+ (High)</span>
-        </div>
-      </div>
+      )}
 
       {/* Causal Pathogen (High confidence diseased only; strictly suppressed for <65% and healthy) */}
-      {!isLowConfidence && !isHealthy && (
-        <div className="result-section">
-          <div className="section-label">🔬 Causal Pathogen</div>
-          <div className="section-body" style={{ fontStyle: 'italic', color: '#f3f4f6' }}>
+      {!isLowConfidence && !isHealthy && !isOOD && !isQualityFail && pathogen && (
+        <div style={{
+          padding: '0.85rem 1rem',
+          borderRadius: '10px',
+          background: 'rgba(0, 0, 0, 0.25)',
+          border: '1px solid rgba(255, 255, 255, 0.06)'
+        }}>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '0.3rem' }}>
+            🔬 Causal Pathogen
+          </div>
+          <div style={{ fontStyle: 'italic', color: '#f1f5f9', fontSize: '0.9rem' }}>
             {pathogen}
           </div>
         </div>
       )}
 
-      {/* Observable Symptoms */}
-      <div className="result-section">
-        <div className="section-label">🔍 Observable Foliar Symptoms</div>
-        <div className="section-body" style={{ color: '#f3f4f6' }}>
-          {isLowConfidence ? (
+      {/* Observable Foliar Symptoms */}
+      <div style={{
+        padding: '0.85rem 1rem',
+        borderRadius: '10px',
+        background: 'rgba(0, 0, 0, 0.25)',
+        border: '1px solid rgba(255, 255, 255, 0.06)'
+      }}>
+        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '0.35rem' }}>
+          🔍 Observable Foliar Symptoms
+        </div>
+        <div style={{ color: '#e2e8f0', fontSize: '0.88rem', lineHeight: 1.5 }}>
+          {(isOOD || isQualityFail || isLowConfidence) ? (
             'Unable to determine symptoms with high confidence. Please provide a clearer, well-lit specimen.'
           ) : isHealthy ? (
             'Crisp emerald foliage with uniform color, intact cuticle, and no necrotic pustules or lesions.'
@@ -321,68 +572,96 @@ export default function ResultView({
         </div>
       </div>
 
-      {/* Recommended Precautions & Action Plan */}
-      <div
-        className="result-section"
-        style={{
-          borderLeft: isLowConfidence ? '3px solid #ef4444' : '3px solid #10b981',
-          background: isLowConfidence ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)'
-        }}
-      >
-        <div
-          className="section-label"
-          style={{ color: isLowConfidence ? '#fca5a5' : '#34d399' }}
-        >
-          {isLowConfidence ? '🛡️ Recommended Precautions & Image Guidelines' : '🛡️ Recommended Precautions & Action Plan'}
+      {/* Recommended Precautions & Action Plan / Quality Checklist */}
+      <div style={{
+        padding: '0.85rem 1rem',
+        borderRadius: '10px',
+        background: (isLowConfidence || isOOD || isQualityFail) ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)',
+        borderLeft: (isLowConfidence || isOOD || isQualityFail) ? '3px solid #ef4444' : '3px solid #10b981',
+        borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.04)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.04)'
+      }}>
+        <div style={{
+          fontSize: '0.78rem',
+          fontWeight: 700,
+          color: (isLowConfidence || isOOD || isQualityFail) ? '#fca5a5' : '#34d399',
+          marginBottom: '0.65rem'
+        }}>
+          {(isLowConfidence || isOOD || isQualityFail)
+            ? '🛡️ Recommended Image Guidelines'
+            : '🛡️ Recommended Precautions & Action Plan'}
         </div>
-        <ul className="precaution-checklist">
+
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {activePrecautions.map((precaution, idx) => (
             <li
               key={idx}
-              className="precaution-item"
               onClick={() => togglePrecaution(idx)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.6rem',
+                cursor: 'pointer',
+                fontSize: '0.84rem',
+                color: checkedPrecautions[idx] ? '#94a3b8' : '#e2e8f0',
+                textDecoration: checkedPrecautions[idx] ? 'line-through' : 'none'
+              }}
             >
               <input
                 type="checkbox"
                 checked={!!checkedPrecautions[idx]}
                 onChange={() => togglePrecaution(idx)}
-                className="precaution-checkbox"
+                style={{ marginTop: '0.2rem', accentColor: '#10b981', cursor: 'pointer' }}
               />
-              <span className={`precaution-text ${checkedPrecautions[idx] ? 'checked' : ''}`}>
-                {precaution}
-              </span>
+              <span>{precaution}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Curative Agronomic Treatment (Strictly suppressed for <65% and healthy) */}
-      {!isLowConfidence && !isHealthy && result.treatment && (
-        <div className="result-section" style={{ borderLeft: '3px solid #3b82f6' }}>
-          <div className="section-label" style={{ color: '#93c5fd' }}>💊 Curative Agronomic Treatment</div>
-          <div className="section-body" style={{ color: '#dbeafe' }}>{result.treatment}</div>
+      {/* Curative Agronomic Treatment (STRICTLY SUPPRESSED FOR <65%, OOD, QUALITY FAIL, AND HEALTHY) */}
+      {!isLowConfidence && !isHealthy && !isOOD && !isQualityFail && result.treatment && (
+        <div style={{
+          padding: '0.85rem 1rem',
+          borderRadius: '10px',
+          background: 'rgba(59, 130, 246, 0.08)',
+          borderLeft: '3px solid #3b82f6',
+          borderTop: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRight: '1px solid rgba(59, 130, 246, 0.2)',
+          borderBottom: '1px solid rgba(59, 130, 246, 0.2)'
+        }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#93c5fd', marginBottom: '0.35rem' }}>
+            💊 AI-Powered Curative Treatment Guidance
+          </div>
+          <div style={{ color: '#dbeafe', fontSize: '0.88rem', lineHeight: 1.55 }}>
+            {result.treatment}
+          </div>
         </div>
       )}
 
-      {/* Weather Context Card (Real Weather Intelligence data ONLY; never fake/hardcoded) */}
+      {/* Weather Context Card (Only if real weather intelligence exists) */}
       {isWeatherAvailable && (
-        <div
-          className="result-section weather-context-card"
-          style={{
-            marginTop: '1rem',
-            padding: '0.85rem 1rem',
-            background: 'rgba(15, 23, 42, 0.65)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: '10px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{
+          padding: '0.85rem 1rem',
+          borderRadius: '10px',
+          background: 'rgba(15, 23, 42, 0.65)',
+          border: '1px solid rgba(16, 185, 129, 0.25)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '0.6rem',
+            flexWrap: 'wrap',
+            gap: '0.5rem'
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <span style={{ fontSize: '1.25rem' }}>🌦️</span>
               <div>
                 <strong style={{ color: '#fff', fontSize: '0.88rem' }}>Weather Context</strong>
                 {weatherData.location && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.4rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '0.4rem' }}>
                     • {weatherData.location}
                   </span>
                 )}
@@ -390,6 +669,7 @@ export default function ResultView({
             </div>
             {onNavigateToWeather && (
               <button
+                type="button"
                 className="btn-secondary"
                 style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', borderColor: 'rgba(16, 185, 129, 0.4)', color: '#a7f3d0' }}
                 onClick={onNavigateToWeather}
@@ -401,25 +681,25 @@ export default function ResultView({
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '0.5rem', fontSize: '0.8rem' }}>
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem' }}>Temperature:</span>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.7rem' }}>Temperature:</span>
               <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
                 {weatherTemp != null ? `${Number(weatherTemp).toFixed(1)}°C` : '--'}
               </strong>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem' }}>Humidity:</span>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.7rem' }}>Humidity:</span>
               <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
                 {weatherHumidity != null ? `${Math.round(weatherHumidity)}%` : '--'}
               </strong>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem' }}>Rain Probability:</span>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.7rem' }}>Rain Probability:</span>
               <strong style={{ color: '#fff', fontSize: '0.88rem' }}>
                 {weatherRainProb != null ? `${Math.round(weatherRainProb)}%` : '--'}
               </strong>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem' }}>Weather Risk:</span>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.7rem' }}>Weather Risk:</span>
               <strong style={{ color: getRiskBadgeColor(weatherRisk), fontSize: '0.88rem' }}>
                 {weatherRisk || 'LOW'}
               </strong>
@@ -428,23 +708,23 @@ export default function ResultView({
         </div>
       )}
 
-      {/* Alternative Differential Diagnoses (STRICTLY HIDDEN for <65% confidence and healthy) */}
-      {!isLowConfidence && !isHealthy && result.top_predictions && result.top_predictions.length > 1 && (
-        <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      {/* Alternative Differential Diagnoses (Strictly hidden for <65% confidence, OOD, and healthy) */}
+      {!isLowConfidence && !isHealthy && !isOOD && !isQualityFail && result.top_predictions && result.top_predictions.length > 1 && (
+        <div style={{ marginTop: '0.25rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Top Alternative Differential Diagnoses:
           </span>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
-            {result.top_predictions.slice(1).map((item, idx) => (
+            {result.top_predictions.slice(1, 4).map((item, idx) => (
               <span
                 key={idx}
                 style={{
                   fontSize: '0.75rem',
                   padding: '0.25rem 0.55rem',
                   borderRadius: '6px',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-secondary)'
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#cbd5e1'
                 }}
               >
                 {item.disease}: <strong style={{ color: '#fff' }}>{item.confidence}</strong>
@@ -454,17 +734,20 @@ export default function ResultView({
         </div>
       )}
 
-      {/* Consult AI Assistant Action (Passes safe prompt on low confidence) */}
+      {/* Consult AI Assistant Action */}
       {onNavigateToAssistant && (
-        <div style={{ marginTop: '1.25rem' }}>
-          <button
-            className="btn-primary"
-            style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)' }}
-            onClick={handleAssistantClick}
-          >
-            💬 Ask AI Assistant About This Result
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn-primary"
+          style={{
+            marginTop: '0.25rem',
+            background: 'linear-gradient(135deg, #10b981, #3b82f6)',
+            boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+          }}
+          onClick={handleAssistantClick}
+        >
+          💬 Ask AI Assistant About This Diagnostic Result
+        </button>
       )}
     </div>
   );

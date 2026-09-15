@@ -18,9 +18,9 @@ class OODDetector:
     """
     def __init__(
         self,
-        min_crop_confidence: float = 0.42,
+        min_crop_confidence: float = 0.25,
         max_entropy_ratio: float = 0.82,
-        energy_threshold: float = -3.5,
+        energy_threshold: float = -2.5,
         temperature: float = 1.0
     ):
         self.min_crop_confidence = min_crop_confidence

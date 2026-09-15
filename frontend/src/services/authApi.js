@@ -120,14 +120,23 @@ export const authApi = {
   /**
    * Changes user password.
    */
-  async changePassword(email, currentPassword, newPassword) {
+  async changePassword(emailOrObj, currentPassword, newPassword) {
+    let email = emailOrObj;
+    let oldPwd = currentPassword;
+    let newPwd = newPassword;
+    if (typeof emailOrObj === 'object' && emailOrObj !== null) {
+      const user = this.getCurrentUser();
+      email = emailOrObj.email || user?.email;
+      oldPwd = emailOrObj.old_password || emailOrObj.current_password;
+      newPwd = emailOrObj.new_password;
+    }
     const res = await fetch(`${API_BASE}/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email,
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: oldPwd,
+        new_password: newPwd,
       }),
     });
 
@@ -135,8 +144,54 @@ export const authApi = {
     if (!res.ok) {
       throw new Error(data.detail || 'Failed to change password.');
     }
-
     return data;
+  },
+
+  /**
+   * Fetches latest profile data for current user.
+   */
+  async getMe() {
+    const res = await fetch(`${API_BASE}/me`, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to fetch user profile.');
+    }
+    const currentUser = this.getCurrentUser() || {};
+    const updatedUser = { ...currentUser, ...data };
+    this.saveUser(updatedUser);
+    return updatedUser;
+  },
+
+  /**
+   * Uploads user profile photo.
+   */
+  async uploadProfilePhoto(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = {};
+    const user = this.getCurrentUser();
+    if (user && user.token) {
+      headers['Authorization'] = `Bearer ${user.token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/profile-photo`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to upload photo.');
+    }
+
+    const currentUser = this.getCurrentUser() || {};
+    const updatedUser = { ...currentUser, ...data };
+    this.saveUser(updatedUser);
+    return updatedUser;
   },
 
   /**
@@ -497,6 +552,38 @@ export const authApi = {
     const data = await res.json();
     if (!res.ok) {
       const err = new Error(data.detail || 'Failed to cancel connection.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetch agronomic crop statistics across connected farms.
+   */
+  async getStakeholderCropStatistics() {
+    const res = await fetch('/api/v1/stakeholder/crop-statistics', {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch crop statistics.');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /**
+   * Stakeholder API: Fetch chronological activity ledger from connected farm nodes.
+   */
+  async getStakeholderActivity(limit = 50) {
+    const res = await fetch(`/api/v1/stakeholder/activity?limit=${limit}`, {
+      headers: this.getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.detail || 'Failed to fetch activity ledger.');
       err.status = res.status;
       throw err;
     }

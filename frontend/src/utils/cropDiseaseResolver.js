@@ -146,9 +146,15 @@ export function resolveCrop(result) {
  */
 function matchCanonicalCrop(cropName) {
   if (!cropName) return null;
-  const lower = cropName.trim().toLowerCase();
+  const trimmed = cropName.trim();
+  const lower = trimmed.toLowerCase();
+  
+  if (lower === 'pepper, bell' || lower === 'pepper,bell' || lower === 'pepper_bell' || lower.includes('bell pepper') || lower.includes('bell_pepper')) {
+    return 'Bell Pepper';
+  }
+  
   for (const canonical of SUPPORTED_CROPS) {
-    if (canonical.toLowerCase() === lower) {
+    if (canonical.toLowerCase() === lower || canonical.toLowerCase().replace(/\s+/g, '') === lower.replace(/[,_\s-]/g, '')) {
       return canonical;
     }
   }
@@ -162,7 +168,7 @@ function extractCropFromText(text) {
   if (!text || typeof text !== 'string') return null;
   const lower = text.toLowerCase();
 
-  if (lower.startsWith('bell_pepper') || lower.startsWith('bell pepper') || lower.includes('bell pepper')) {
+  if (lower.startsWith('pepper, bell') || lower.startsWith('pepper,_bell') || lower.startsWith('bell_pepper') || lower.startsWith('bell pepper') || lower.includes('bell pepper') || lower.includes('pepper, bell')) {
     return 'Bell Pepper';
   }
   if (lower.startsWith('apple') || lower.includes('apple')) {

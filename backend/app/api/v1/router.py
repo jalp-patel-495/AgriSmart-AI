@@ -13,6 +13,7 @@ from backend.app.api.v1.endpoints import (
     admin,
     stakeholder,
     farmer_connections,
+    farmer,
 )
 
 api_router = APIRouter()
@@ -29,6 +30,7 @@ api_router.include_router(expert.router, prefix="", tags=["Agricultural Expert R
 api_router.include_router(admin.router, prefix="", tags=["System Administration"])
 api_router.include_router(stakeholder.router, prefix="", tags=["Agricultural Stakeholder Intelligence"])
 api_router.include_router(farmer_connections.router, prefix="", tags=["Farmer Stakeholder Connections"])
+api_router.include_router(farmer.router, prefix="", tags=["Farmer Operations & History"])
 
 
 

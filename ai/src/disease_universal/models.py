@@ -116,7 +116,10 @@ class CropSpecificDiseaseHeads(nn.Module):
             )
 
     def _get_key(self, crop_name: str) -> str:
-        return crop_name.replace(", ", "_").replace(" ", "_").lower()
+        key = crop_name.replace(", ", "_").replace(" ", "_").lower()
+        if key in ("bell_pepper", "pepper_bell", "pepper"):
+            return "pepper_bell"
+        return key
 
     def forward_for_crop(self, features: torch.Tensor, crop_name: str) -> torch.Tensor:
         key = self._get_key(crop_name)

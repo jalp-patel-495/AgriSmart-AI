@@ -1,11 +1,12 @@
-"""
-AgriSmart AI – Authentication API Endpoints
-Provides Signup, Login, Demo-Login, and Profile endpoints.
-"""
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import time
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, status
 from sqlalchemy.orm import Session
 
 from backend.app.db.database import get_db
+from backend.app.db.models import User
+from backend.app.api.deps import get_current_user, extract_token_from_request
 from backend.app.schemas.auth import (
     UserSignupRequest,
     UserLoginRequest,
@@ -20,16 +21,23 @@ from backend.app.services.auth_service import (
     get_or_create_demo_user,
     update_user_profile,
     change_user_password,
+    generate_session_token,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+AVATAR_UPLOAD_DIR = Path("backend/uploads/avatars")
+AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-def build_user_response(user, token: str, message: str) -> UserResponse:
+
+def build_user_response(user: User, token: str, message: str) -> UserResponse:
+    created_at_str = user.created_at.strftime("%Y-%m-%d %H:%M UTC") if hasattr(user, "created_at") and user.created_at else None
     return UserResponse(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
+        phone_number=getattr(user, "phone_number", None),
+        profile_image=getattr(user, "profile_image", None),
         farm_name=user.farm_name,
         farm_location=user.farm_location,
         preferred_crop=user.preferred_crop,
@@ -41,6 +49,7 @@ def build_user_response(user, token: str, message: str) -> UserResponse:
         operating_regions=getattr(user, "operating_regions", None),
         primary_crops=getattr(user, "primary_crops", None),
         stakeholder_type=getattr(user, "stakeholder_type", None),
+        created_at=created_at_str,
         message=message,
     )
 
@@ -83,9 +92,16 @@ def demo_login(req: DemoLoginRequest = None, db: Session = Depends(get_db)):
     return build_user_response(user, token, f"Logged in as Demo {display_role}.")
 
 
+@router.get("/me", response_model=UserResponse)
+def get_me(request: Request, current_user: User = Depends(get_current_user)):
+    """Returns the authenticated user's profile and session data."""
+    token = extract_token_from_request(request) or generate_session_token(current_user.id, current_user.email)
+    return build_user_response(current_user, token, "Profile fetched successfully.")
+
+
 @router.put("/profile", response_model=UserResponse)
 def update_profile(req: UpdateProfileRequest, db: Session = Depends(get_db)):
-    """Updates the user's name, farm name, location, preferred crop, or organization fields."""
+    """Updates the user's name, phone, farm name, location, preferred crop, or organization fields."""
     try:
         user, token = update_user_profile(db, req)
         return build_user_response(user, token, "Profile updated successfully.")
@@ -93,6 +109,53 @@ def update_profile(req: UpdateProfileRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update profile: {e}")
+
+
+@router.post("/profile-photo", response_model=UserResponse)
+async def upload_profile_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Uploads and validates a user profile photo (max 2MB, JPG/PNG/WebP).
+    Stores file locally and updates user's profile_image URL.
+    """
+    valid_mime_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+    if file.content_type and file.content_type.lower() not in valid_mime_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image format. Allowed formats: JPG, PNG, WebP."
+        )
+
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds maximum allowed limit of 2MB."
+        )
+
+    # Determine extension
+    ext = ".jpg"
+    if file.filename and "." in file.filename:
+        ext = "." + file.filename.rsplit(".", 1)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+            ext = ".jpg"
+
+    filename = f"user_{current_user.id}_{int(time.time())}{ext}"
+    target_path = AVATAR_UPLOAD_DIR / filename
+    with open(target_path, "wb") as f:
+        f.write(content)
+
+    # Relative URL accessible via static mount
+    image_url = f"/uploads/avatars/{filename}"
+    current_user.profile_image = image_url
+    db.commit()
+    db.refresh(current_user)
+
+    token = extract_token_from_request(request) or generate_session_token(current_user.id, current_user.email)
+    return build_user_response(current_user, token, "Profile photo uploaded successfully.")
 
 
 @router.post("/change-password")
@@ -108,4 +171,5 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to change password: {e}")
+
 

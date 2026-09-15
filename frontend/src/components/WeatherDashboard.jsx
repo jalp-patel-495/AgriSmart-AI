@@ -6,13 +6,20 @@ import {
 
 const SUPPORTED_CROPS = [
   'All Crops',
-  'Tomato',
-  'Potato',
-  'Corn',
   'Apple',
+  'Blueberry',
+  'Cherry',
+  'Corn',
   'Grape',
-  'Bell Pepper',
+  'Orange',
   'Peach',
+  'Bell Pepper',
+  'Potato',
+  'Raspberry',
+  'Soybean',
+  'Squash',
+  'Strawberry',
+  'Tomato',
 ];
 
 export default function WeatherDashboard({ onNavigateToDiagnose, onWeatherUpdate }) {
@@ -119,13 +126,21 @@ export default function WeatherDashboard({ onNavigateToDiagnose, onWeatherUpdate
 
   const cropEmoji = (crop) => {
     switch (crop) {
-      case 'Tomato': return '🍅';
-      case 'Potato': return '🥔';
+      case 'Apple': return '🍎';
+      case 'Blueberry': return '🫐';
+      case 'Cherry': return '🍒';
       case 'Corn': return '🌽';
-      case 'Apple': return '🍏';
       case 'Grape': return '🍇';
-      case 'Bell Pepper': return '🫑';
+      case 'Orange': return '🍊';
       case 'Peach': return '🍑';
+      case 'Bell Pepper': return '🫑';
+      case 'Potato': return '🥔';
+      case 'Raspberry': return '🫐';
+      case 'Soybean': return '🌱';
+      case 'Squash': return '🎃';
+      case 'Strawberry': return '🍓';
+      case 'Tomato': return '🍅';
+      case 'All Crops': return '🌱';
       default: return '🌱';
     }
   };
@@ -243,7 +258,7 @@ export default function WeatherDashboard({ onNavigateToDiagnose, onWeatherUpdate
         </div>
       </div>
 
-      {/* 2. Crop Risk Filter Bar (7 Supported Crops) */}
+      {/* 2. Crop Risk Filter Bar (14 Supported Crops) */}
       <div className="crop-filter-row">
         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
           Crop Risk Filter:

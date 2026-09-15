@@ -72,7 +72,15 @@ class DiseaseDiagnosisRecord(Base):
     image_filename = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    expert_reviewed = Column(Boolean, default=False)
+    expert_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    expert_status = Column(String(50), default="PENDING")  # PENDING, CONFIRMED, CORRECTED, REJECTED
+    expert_notes = Column(Text, nullable=True)
+    expert_treatment = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+
     farmer = relationship("User", backref="disease_diagnoses", foreign_keys=[farmer_id])
+    expert = relationship("User", backref="reviewed_diagnoses", foreign_keys=[expert_id])
 
 
 class IoTSensorReading(Base):
@@ -96,6 +104,8 @@ class User(Base):
     email = Column(String(150), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     salt = Column(String(64), nullable=False)
+    phone_number = Column(String(50), nullable=True)
+    profile_image = Column(String(255), nullable=True)
     farm_name = Column(String(150), nullable=True)
     farm_location = Column(String(150), nullable=True)
     preferred_crop = Column(String(80), nullable=True)
@@ -130,6 +140,40 @@ class StakeholderFarmerRelationship(Base):
 
     stakeholder = relationship("User", foreign_keys=[stakeholder_id], backref="connected_farmer_relations")
     farmer = relationship("User", foreign_keys=[farmer_id], backref="stakeholder_connections")
+
+
+class CropItem(Base):
+    """
+    Catalog of agricultural crops managed by Admin and displayed to farmers and stakeholders.
+    """
+    __tablename__ = "crops"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, index=True, nullable=False)
+    scientific_name = Column(String(120), nullable=True)
+    category = Column(String(80), default="Cereal / Fruit / Vegetable")
+    season = Column(String(80), default="Kharif / Rabi")
+    description = Column(Text, nullable=True)
+    image_url = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DiseaseItem(Base):
+    """
+    Catalog of crop diseases and expert-verified management guidelines managed by Admin & Experts.
+    """
+    __tablename__ = "diseases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    crop_name = Column(String(100), index=True, nullable=False)
+    name = Column(String(150), index=True, nullable=False)
+    pathogen = Column(String(150), nullable=True)
+    symptoms = Column(Text, nullable=True)
+    treatment = Column(Text, nullable=True)
+    prevention = Column(Text, nullable=True)
+    expert_reviewed = Column(Boolean, default=False, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 
 
 

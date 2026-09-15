@@ -7,15 +7,23 @@ from backend.app.api.v1.router import api_router
 from backend.app.api.v1.endpoints.predict import load_prediction_model, load_classes_metadata
 
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from backend.app.db.database import init_db
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Lifespan event: loads model and disease classes during server startup
+    Lifespan event: initializes database schema and loads model and disease classes during server startup
     into memory for ultra-fast response times.
     """
     print("=" * 65)
     print("[*] Starting AgriSmart AI Backend Prediction Service...")
     print("=" * 65)
+    try:
+        init_db()
+    except Exception as e:
+        print(f"[!] Warning during DB init: {e}")
     load_classes_metadata()
     load_prediction_model()
     print("[*] Model cached in memory. Ready for farmer requests!")
@@ -41,6 +49,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Static files for profile photos and uploads
+uploads_dir = Path("backend/uploads")
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 # Mount API routers
 app.include_router(api_router, prefix=settings.API_V1_STR)

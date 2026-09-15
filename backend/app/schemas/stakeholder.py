@@ -39,6 +39,10 @@ class StakeholderDashboardResponse(BaseModel):
     weather_summary: Dict[str, Any]
     sustainability_summary: Dict[str, Any]
     data_availability_notice: str
+    most_affected_crops: Optional[List[Dict[str, Any]]] = None
+    recent_activity: Optional[List[Dict[str, Any]]] = None
+    healthy_vs_diseased: Optional[Dict[str, Any]] = None
+
 
 
 class CropIntelligenceItem(BaseModel):
@@ -204,4 +208,47 @@ class FarmerConnectionsResponse(BaseModel):
     status: str
     connections: List[FarmerConnectionItem]
     available_stakeholders: List[Dict[str, Any]]
+
+
+class StakeholderCropStatsItem(BaseModel):
+    crop: str
+    monitored_acreage: Optional[float] = None
+    acreage_formatted: Optional[str] = None
+    estimated_yield: Optional[str] = None
+    health_score: Optional[int] = None
+    health_score_formatted: Optional[str] = None
+    water_stress: Optional[str] = None
+    economic_value: Optional[str] = None
+    total_scans: int = 0
+    diseased_scans: int = 0
+    healthy_scans: int = 0
+
+
+class StakeholderCropStatsResponse(BaseModel):
+    status: str
+    total_crops_monitored: int
+    crop_stats: List[StakeholderCropStatsItem]
+    empty_state_message: Optional[str] = None
+
+
+class StakeholderActivityItem(BaseModel):
+    id: str
+    type: str  # DISEASE, IRRIGATION, CROP_REC, FARMER
+    icon: str
+    title: str
+    description: str
+    timestamp: str
+    timestamp_raw: Optional[str] = None
+    farmer_name: Optional[str] = None
+    farm_name: Optional[str] = None
+    crop: Optional[str] = None
+    status: Optional[str] = None
+
+
+class StakeholderActivityResponse(BaseModel):
+    status: str
+    total_events: int
+    activities: List[StakeholderActivityItem]
+    empty_state_message: Optional[str] = None
+
 

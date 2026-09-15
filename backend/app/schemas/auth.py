@@ -59,6 +59,8 @@ def normalize_role(role: Optional[str]) -> str:
 class UserBase(BaseModel):
     email: str
     full_name: str
+    phone_number: Optional[str] = None
+    profile_image: Optional[str] = None
     farm_name: Optional[str] = "My Family Farm"
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
@@ -74,6 +76,8 @@ class UserSignupRequest(BaseModel):
     full_name: str
     email: str
     password: str
+    phone_number: Optional[str] = None
+    profile_image: Optional[str] = None
     farm_name: Optional[str] = "My Family Farm"
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
@@ -118,6 +122,8 @@ class DemoLoginRequest(BaseModel):
 class UpdateProfileRequest(BaseModel):
     email: str
     full_name: str
+    phone_number: Optional[str] = None
+    profile_image: Optional[str] = None
     farm_name: Optional[str] = "Family Homestead Farm"
     farm_location: Optional[str] = "Punjab, India"
     preferred_crop: Optional[str] = "Wheat"
@@ -138,6 +144,8 @@ class UserResponse(BaseModel):
     id: int
     email: str
     full_name: str
+    phone_number: Optional[str] = None
+    profile_image: Optional[str] = None
     farm_name: Optional[str]
     farm_location: Optional[str]
     preferred_crop: Optional[str]
@@ -149,6 +157,7 @@ class UserResponse(BaseModel):
     operating_regions: Optional[str] = None
     primary_crops: Optional[str] = None
     stakeholder_type: Optional[str] = None
+    created_at: Optional[str] = None
     message: Optional[str] = "Success"
 
 
@@ -156,6 +165,8 @@ class AdminUserListItem(BaseModel):
     id: int
     email: str
     full_name: str
+    phone_number: Optional[str] = None
+    profile_image: Optional[str] = None
     farm_name: Optional[str]
     farm_location: Optional[str]
     preferred_crop: Optional[str]

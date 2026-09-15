@@ -9,15 +9,19 @@ const BASE_URL = '';
  * Predict irrigation need using the real 3-feature trained ML model
  * Input features: soil_moisture, temperature, humidity
  */
-export async function predictRealIrrigation({ soil_moisture, temperature, humidity }) {
+export async function predictRealIrrigation({ soil_moisture, temperature, humidity, rainfall }) {
+  const payload = {
+    soil_moisture: Number(soil_moisture),
+    temperature: Number(temperature),
+    humidity: Number(humidity),
+  };
+  if (rainfall !== undefined && rainfall !== null && rainfall !== '') {
+    payload.rainfall = Number(rainfall);
+  }
   const res = await fetch(`${BASE_URL}/api/v1/predict/advisory`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      soil_moisture: Number(soil_moisture),
-      temperature: Number(temperature),
-      humidity: Number(humidity),
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     let msg = `Irrigation prediction failed with HTTP ${res.status}`;
@@ -28,7 +32,26 @@ export async function predictRealIrrigation({ soil_moisture, temperature, humidi
     throw new Error(msg);
   }
   const data = await res.json();
-  return data.irrigation;
+  const irr = data.irrigation || {};
+  const recs = data.farmer_advisor?.recommendations || [];
+  const primaryRec = recs.find(r => 
+    r.toLowerCase().includes('irrigation model predicts') || 
+    r.toLowerCase().includes('moisture')
+  ) || (irr.required 
+    ? 'The irrigation model predicts that irrigation is required under the provided conditions.' 
+    : 'Optimal soil moisture: The irrigation model predicts that irrigation is not required under the provided conditions.');
+
+  return {
+    irrigation_required: irr.required,
+    required: irr.required,
+    prediction: irr.prediction || (irr.required ? 'YES' : 'NO'),
+    confidence: irr.confidence ?? 0.95,
+    priority: irr.priority || (irr.required ? 'HIGH' : 'NONE'),
+    recommendation: primaryRec,
+    recommendations: recs,
+    warnings: data.farmer_advisor?.warnings || [],
+    farm_status: data.farmer_advisor?.farm_status || 'Normal',
+  };
 }
 
 function getAuthHeaders() {
