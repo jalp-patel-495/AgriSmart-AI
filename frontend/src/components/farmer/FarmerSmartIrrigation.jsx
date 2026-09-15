@@ -485,15 +485,15 @@ export default function FarmerSmartIrrigation() {
             🌱 AI Crop Recommender{' '}
             <span style={{
               fontSize: '0.68rem',
-              background: 'rgba(234, 179, 8, 0.2)',
-              color: '#facc15',
-              border: '1px solid rgba(250, 204, 21, 0.5)',
+              background: 'rgba(16, 185, 129, 0.2)',
+              color: '#34d399',
+              border: '1px solid rgba(52, 211, 153, 0.5)',
               borderRadius: '4px',
               padding: '0.1rem 0.35rem',
               marginLeft: '0.35rem',
               fontWeight: 700
             }}>
-              95 Crops ⚠️ EXPERIMENTAL
+              95 Crops
             </span>
           </button>
           <button
@@ -1018,7 +1018,7 @@ export default function FarmerSmartIrrigation() {
                   transition: 'all 0.2s',
                 }}
               >
-                🧪 95-Crop (⚠️ EXPERIMENTAL)
+                🧪 95-Crop
               </button>
               <button
                 type="button"
@@ -1232,7 +1232,7 @@ export default function FarmerSmartIrrigation() {
                     border: `1px solid ${cropResult.is_experimental ? '#facc15' : 'rgba(52, 211, 153, 0.3)'}`,
                     fontWeight: 700
                   }}>
-                    {cropResult.is_experimental ? '95-Class Model ⚠️ EXPERIMENTAL' : '22-Class Production Model'}
+                    {cropResult.is_experimental ? '95-Class Model' : '22-Class Production Model'}
                   </span>
                 )}
               </div>

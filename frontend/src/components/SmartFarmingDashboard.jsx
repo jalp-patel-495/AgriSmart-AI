@@ -549,8 +549,7 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
               setSubTab('crops');
             }}
           >
-            🌱 AI Crop Recommender (95 Crops){' '}
-            <span style={{ fontSize: '0.68rem', background: 'rgba(234, 179, 8, 0.25)', color: '#facc15', border: '1px solid #facc15', borderRadius: '4px', padding: '0.1rem 0.35rem', marginLeft: '0.35rem', fontWeight: 700 }}>⚠️ EXPERIMENTAL</span>
+            🌱 AI Crop Recommender (95 Crops)
           </button>
           <button
             className={`sub-tab-btn ${subTab === 'history' ? 'active' : ''}`}
@@ -932,7 +931,7 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
                   transition: 'all 0.2s',
                 }}
               >
-                🧪 95-Crop (⚠️ EXPERIMENTAL)
+                🧪 95-Crop
               </button>
             </div>
 
@@ -1289,7 +1288,7 @@ export default function SmartFarmingDashboard({ initialSubTab = 'irrigation' }) 
                     border: `1px solid ${cropResult.is_experimental ? '#facc15' : 'rgba(52, 211, 153, 0.3)'}`,
                     fontWeight: 700
                   }}>
-                    {cropResult.is_experimental ? '95-Class Model ⚠️ EXPERIMENTAL' : '22-Class Production Model'}
+                    {cropResult.is_experimental ? '95-Class Model' : '22-Class Production Model'}
                   </span>
                 )}
               </div>
