@@ -207,7 +207,7 @@ export default function LoginPage({ onAuthSuccess, initialMode = 'login' }) {
               <input
                 type="text"
                 required
-                placeholder="e.g. Ramesh Kumar"
+                placeholder="Enter Your Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="login-input"
@@ -219,7 +219,7 @@ export default function LoginPage({ onAuthSuccess, initialMode = 'login' }) {
               <input
                 type="email"
                 required
-                placeholder="e.g. ramesh@farmmail.com"
+                placeholder="Enter Your Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="login-input"
@@ -274,7 +274,7 @@ export default function LoginPage({ onAuthSuccess, initialMode = 'login' }) {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Bharat Agro Consortium"
+                    placeholder="Enter Your Organization Name"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
                     className="login-input"
