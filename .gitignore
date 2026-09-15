@@ -38,6 +38,7 @@ venv.bak/
 # PyTorch / Model checkpoints & weights
 *.pth
 *.pt
+!models/disease/plantvillage_model.pt
 *.onnx
 *.engine
 *.h5
