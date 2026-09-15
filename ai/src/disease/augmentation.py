@@ -1,4 +1,7 @@
-import albumentations as A
+try:
+    import albumentations as A
+except ImportError:
+    A = None
 import cv2
 import numpy as np
 import torch
