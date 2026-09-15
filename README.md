@@ -38,7 +38,7 @@ Output returns structured JSON with verified crop identity, disease classificati
 ## 🌾 System Architecture & Modules
 
 ### 1. Core Module: Crop Disease Diagnostics (PlantVillage 38-Class Pipeline)
-- **Architecture**: MobileNetV3 / EfficientNet transfer learning models trained on verified agricultural leaf specimens from the canonical **PlantVillage Dataset** ([spMohanty/PlantVillage-Dataset](https://github.com/spMohanty/PlantVillage-Dataset)).
+- **Architecture**: MobileNetV3 / EfficientNet transfer learning models trained on verified agricultural leaf specimens from the canonical **PlantVillage Dataset** .
 - **Scope**: **38 classes across all 14 crops**:
   - **Apple**: Apple Scab, Black Rot, Cedar Apple Rust, Healthy
   - **Blueberry**: Healthy
