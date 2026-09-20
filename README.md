@@ -182,7 +182,7 @@ pip install -r backend/requirements.txt
 # Start FastAPI server on port 8000
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
-Interactive Swagger API documentation is available at `http://127.0.0.1:8000/docs`..
+Interactive Swagger API documentation is available at `http://127.0.0.1:8000/docs`.
 
 ### 3. Frontend Setup
 ```bash
